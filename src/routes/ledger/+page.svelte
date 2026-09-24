@@ -12,7 +12,7 @@
 	import ComboboxMultiSelect, {
 		type ComboboxOption
 	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
-
+	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
 	// Filters
 	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
 		'this_month'
@@ -148,6 +148,16 @@
 			net: inSum - outSum
 		};
 	});
+
+	// Point-in-time portfolio Net Worth anchor based on T_akhir
+	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
+	const pointInTimeNetWorth = $derived(
+		calculatePointInTimeNetWorth({
+			currentNetWorth,
+			allTransactions: allTxs,
+			endDate: filterEndDate
+		})
+	);
 
 	// Pagination slice
 	const totalPages = $derived(Math.max(1, Math.ceil(filteredTransactions.length / pageSize)));
@@ -371,34 +381,56 @@
 		</div>
 	</div>
 
-	<!-- Live Filtered Aggregate Summary Strip -->
+	<!-- Dual-Layer Live Summary Strip -->
 	<div
-		class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#EAEAEA] bg-white px-4 py-2.5 text-xs shadow-2xs"
+		class="flex flex-col gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between lg:gap-6"
 	>
-		<div class="flex items-center gap-2">
-			<span class="font-mono text-xs font-semibold text-[#111111]">
-				{aggregateStats.count} transaksi
-			</span>
-			<span class="text-[#787774]">dalam filter aktif</span>
+		<!-- Layer 1: Local Filter Scope (Left Zone) -->
+		<div class="flex flex-wrap items-center gap-3 text-xs sm:gap-4">
+			<div
+				class="flex items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1"
+			>
+				<span class="font-mono text-xs font-semibold text-[#111111]">
+					{aggregateStats.count} transaksi
+				</span>
+				<span class="text-[11px] text-[#787774]">dalam filter aktif</span>
+			</div>
+
+			<div class="flex flex-wrap items-center gap-3 font-mono text-xs tabular-nums sm:gap-4">
+				<div>
+					<span class="text-[10px] text-[#787774] uppercase">Masuk:</span>
+					<span class="ml-1 font-semibold text-[#346538]">+{fmtIDR(aggregateStats.income)}</span>
+				</div>
+				<div>
+					<span class="text-[10px] text-[#787774] uppercase">Keluar:</span>
+					<span class="ml-1 font-semibold text-[#111111]">−{fmtIDR(aggregateStats.expense)}</span>
+				</div>
+				<div class="border-l border-[#EAEAEA] pl-3">
+					<span class="text-[10px] text-[#787774] uppercase">Net Terfilter:</span>
+					<span
+						class="ml-1 font-semibold {aggregateStats.net >= 0
+							? 'text-[#346538]'
+							: 'text-[#9F2F2D]'}"
+					>
+						{aggregateStats.net >= 0 ? '+' : '−'}{fmtIDR(Math.abs(aggregateStats.net))}
+					</span>
+				</div>
+			</div>
 		</div>
 
-		<div class="flex items-center gap-4 font-mono text-xs tabular-nums">
-			<div>
-				<span class="text-[10px] text-[#787774] uppercase">Masuk:</span>
-				<span class="ml-1 font-semibold text-[#346538]">+{fmtIDR(aggregateStats.income)}</span>
-			</div>
-			<div>
-				<span class="text-[10px] text-[#787774] uppercase">Keluar:</span>
-				<span class="ml-1 font-semibold text-[#111111]">−{fmtIDR(aggregateStats.expense)}</span>
-			</div>
-			<div class="border-l border-[#EAEAEA] pl-3">
-				<span class="text-[10px] text-[#787774] uppercase">Net Arus Kas:</span>
-				<span
-					class="ml-1 font-semibold {aggregateStats.net >= 0 ? 'text-[#346538]' : 'text-[#9F2F2D]'}"
-				>
-					{aggregateStats.net >= 0 ? '+' : '−'}{fmtIDR(Math.abs(aggregateStats.net))}
-				</span>
-			</div>
+		<!-- Layer 2: Global Balance Sheet Anchor (Right Zone) -->
+		<div
+			class="flex shrink-0 flex-col border-t border-[#EAEAEA] pt-2.5 text-left lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:text-right"
+		>
+			<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
+				{pointInTimeNetWorth.label}
+			</span>
+			<span class="font-mono text-sm font-bold text-[#111111] tabular-nums">
+				{fmtIDR(pointInTimeNetWorth.amount)}
+			</span>
+			<span class="text-[10px] text-[#787774]">
+				{pointInTimeNetWorth.subtext}
+			</span>
 		</div>
 	</div>
 
