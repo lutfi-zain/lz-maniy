@@ -183,7 +183,11 @@
 	{#if activeSubTab === 'goals'}
 		<div class="space-y-4">
 			{#each goals as g (g.goalId)}
-				{@const p = Math.round(g.progressPercentage || 0)}
+				{@const liveCurrent =
+					g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
+						? g.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
+						: g.currentAmount}
+				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 				{@const linked = g.linkedWalletsBreakdown ?? []}
 				<div class="space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs">
 					<div class="flex flex-wrap items-start justify-between gap-3">
@@ -206,7 +210,7 @@
 						</div>
 
 						<div class="text-right font-mono tabular-nums">
-							<span class="text-lg font-semibold text-[#346538]">{fmtIDR(g.currentAmount)}</span>
+							<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
 							<span class="ml-1 text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
 						</div>
 					</div>
@@ -225,7 +229,7 @@
 							<div class="mb-2 flex items-center justify-between font-medium text-[#111111]">
 								<span>Rincian Dompet Penyusun Target:</span>
 								<span class="font-mono text-[11px] text-[#787774]"
-									>Total Live: {fmtIDR(g.currentAmount)}</span
+									>Total Live: {fmtIDR(liveCurrent)}</span
 								>
 							</div>
 

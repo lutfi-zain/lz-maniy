@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fmtIDR, fmtCurrency, fmtCompactIDR } from './currency';
+import { fmtIDR, fmtCurrency, fmtCompactIDR, getConvertedBalanceInIDR } from './currency';
 import { dFmt, mLabel } from './dates';
 
 describe('currency utils', () => {
@@ -29,6 +29,13 @@ describe('currency utils', () => {
 		expect(fmtCompactIDR(5570000)).toBe('Rp 5,57 jt');
 		expect(fmtCompactIDR(17330000)).toBe('Rp 17,33 jt');
 		expect(fmtCompactIDR(1500000000)).toBe('Rp 1,5 M');
+	});
+
+	it('converts foreign currencies to IDR accurately', () => {
+		expect(getConvertedBalanceInIDR(100000, 'IDR')).toBe(100000);
+		const usdtVal = getConvertedBalanceInIDR(115.61, 'USDT');
+		expect(usdtVal).toBeCloseTo(2061999.82, 0);
+		expect(getConvertedBalanceInIDR(100, 'USD', { USD: 16000 })).toBe(1600000);
 	});
 });
 

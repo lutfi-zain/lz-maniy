@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
-	import { fmtCurrency } from '$lib/utils/currency';
+	import { fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
@@ -26,7 +26,7 @@
 			if (nw?.byInstitution && nw.byInstitution[inst] !== undefined) {
 				group.total = nw.byInstitution[inst];
 			} else {
-				group.total += w.balance;
+				group.total += getConvertedBalanceInIDR(w.balance, w.currency);
 			}
 		}
 		return Array.from(map.entries());

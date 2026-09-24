@@ -4,21 +4,31 @@
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import type { TransactionRecord } from '$lib/types/account-detail';
 
 	let recentTransactions = $state<TransactionRecord[]>([]);
 	let isLoading = $state(false);
+	let filterStartDate = $state<string>('');
+	let filterEndDate = $state<string>('');
+	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
+		'this_month'
+	);
 
 	$effect(() => {
-		// Load initial batch of transactions for recent feed
+		// Load transactions when dates or preset change
 		loadRecent();
 	});
 
 	async function loadRecent() {
 		isLoading = true;
+		const queryParts = ['limit=30'];
+		if (filterStartDate) queryParts.push(`startDate=${filterStartDate}`);
+		if (filterEndDate) queryParts.push(`endDate=${filterEndDate}`);
+
 		try {
 			const res = await fetch(
-				'https://reedrich-mcp.lutfidmz.workers.dev/api/v1/transactions?limit=25',
+				`https://reedrich-mcp.lutfidmz.workers.dev/api/v1/transactions?${queryParts.join('&')}`,
 				{
 					headers: {
 						'X-API-Key': reedrichStore.apiToken,
@@ -44,18 +54,31 @@
 </script>
 
 <div class="rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
-	<div class="mb-3 flex items-center justify-between border-b border-[#EAEAEA] pb-2.5">
+	<!-- Card Header with Date Range Filter -->
+	<div
+		class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EAEAEA] pb-2.5"
+	>
 		<div class="flex items-center gap-1.5">
 			<Table class="size-4 text-[#111111]" weight="bold" />
 			<h3 class="text-xs font-semibold text-[#111111]">Mutasi Terkini</h3>
 		</div>
-		<a
-			href="/ledger"
-			class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
-		>
-			<span>Buka Ledger Lengkap</span>
-			<ArrowRight class="size-3" weight="bold" />
-		</a>
+
+		<div class="flex items-center gap-2">
+			<DateRangePicker
+				bind:start={filterStartDate}
+				bind:end={filterEndDate}
+				bind:preset={datePreset}
+				onchange={loadRecent}
+			/>
+
+			<a
+				href="/ledger"
+				class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
+			>
+				<span>Semua</span>
+				<ArrowRight class="size-3" weight="bold" />
+			</a>
+		</div>
 	</div>
 
 	{#if isLoading && recentTransactions.length === 0}
@@ -110,7 +133,7 @@
 					{:else}
 						<tr>
 							<td colspan="4" class="py-8 text-center font-mono text-xs text-[#787774]">
-								Belum ada transaksi termuat.
+								Tidak ada transaksi pada rentang tanggal ini.
 							</td>
 						</tr>
 					{/each}

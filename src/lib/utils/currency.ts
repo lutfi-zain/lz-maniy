@@ -1,4 +1,24 @@
 /**
+ * Default live peg rate: 1 USDT ≈ 17,835.8258 IDR (computed from Bitget USDT 115.61 -> Rp 2.061.999,82)
+ */
+export const DEFAULT_USDT_TO_IDR_RATE = 17835.8258;
+
+/**
+ * Converts any currency balance to IDR using live peg or snapshot rates.
+ */
+export function getConvertedBalanceInIDR(
+	balance: number | null | undefined,
+	currency: string = 'IDR',
+	customRates?: Record<string, number>
+): number {
+	const n = Number(balance || 0);
+	const c = String(currency || 'IDR').toUpperCase();
+	if (c === 'IDR') return n;
+	const rate = customRates?.[c] ?? (c === 'USDT' || c === 'USD' ? DEFAULT_USDT_TO_IDR_RATE : 1);
+	return n * rate;
+}
+
+/**
  * Formats a numeric amount into Indonesian Rupiah (IDR) currency format.
  * Examples:
  *   12500000 -> "Rp 12.500.000"

@@ -6,24 +6,28 @@
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
-	import Funnel from 'phosphor-svelte/lib/Funnel';
-	import Calendar from 'phosphor-svelte/lib/Calendar';
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import ComboboxMultiSelect, {
+		type ComboboxOption
+	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
 
 	// Filters
-	let datePreset = $state<'all' | 'this_month' | 'last_month' | 'last_3_months' | 'custom'>('all');
-	let customStartDate = $state<string>('');
-	let customEndDate = $state<string>('');
-	let selectedWalletId = $state<string>('');
-	let selectedCategory = $state<string>('');
+	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
+		'this_month'
+	);
+	let filterStartDate = $state<string>('');
+	let filterEndDate = $state<string>('');
+	let selectedWalletIds = $state<string[]>([]);
+	let selectedCategoryIds = $state<string[]>([]);
 	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>('all');
 	let selectedStatus = $state<'all' | 'realized' | 'planned'>('all');
 	let searchKeyword = $state<string>('');
 
 	// Pagination
 	let currentPage = $state<number>(1);
-	const pageSize = 50;
+	let pageSize = $state<number>(50);
 
 	onMount(() => {
 		// Read initial query params
@@ -31,14 +35,22 @@
 		const qCat = page.url.searchParams.get('category');
 		const qType = page.url.searchParams.get('type');
 
-		if (qWallet) selectedWalletId = qWallet;
-		if (qCat) selectedCategory = qCat;
+		if (qWallet) selectedWalletIds = [qWallet];
 		if (qType && ['expense', 'income', 'transfer'].includes(qType)) {
 			selectedType = qType as typeof selectedType;
 		}
 
-		// Ensure all transactions are loaded
-		reedrichStore.fetchAllTransactions();
+		// Ensure all transactions and categories are loaded
+		reedrichStore.fetchAllTransactions().then(() => {
+			if (qCat) {
+				const found = reedrichStore.categories.find(
+					(c) => c.categoryName.toLowerCase() === qCat.toLowerCase()
+				);
+				if (found) {
+					selectedCategoryIds = [found.categoryId];
+				}
+			}
+		});
 	});
 
 	// Quick search shortcut: pressing '/' focuses search input
@@ -52,41 +64,32 @@
 
 	const allTxs = $derived(reedrichStore.allTransactions);
 	const allWallets = $derived(reedrichStore.allWallets);
-	const categories = $derived(
-		Array.from(new Set(reedrichStore.categories.map((c) => c.categoryName))).sort()
+	const categories = $derived(reedrichStore.categories);
+
+	// Combobox options for Wallets
+	const walletOptions = $derived<ComboboxOption[]>(
+		allWallets.map((w) => ({
+			value: w.walletId,
+			label: w.walletName,
+			group: w.institution,
+			subtext: w.isLocked === 1 ? 'Locked' : 'Open'
+		}))
 	);
 
-	// Date preset range bounds calculation
-	const dateRange = $derived.by(() => {
-		const now = new Date();
-		const year = now.getFullYear();
-		const month = now.getMonth();
-
-		if (datePreset === 'this_month') {
-			const start = new Date(year, month, 1).toISOString().slice(0, 10);
-			const end = new Date(year, month + 1, 0).toISOString().slice(0, 10);
-			return { start, end };
-		}
-		if (datePreset === 'last_month') {
-			const start = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-			const end = new Date(year, month, 0).toISOString().slice(0, 10);
-			return { start, end };
-		}
-		if (datePreset === 'last_3_months') {
-			const start = new Date(year, month - 2, 1).toISOString().slice(0, 10);
-			const end = new Date(year, month + 1, 0).toISOString().slice(0, 10);
-			return { start, end };
-		}
-		if (datePreset === 'custom') {
-			return { start: customStartDate, end: customEndDate };
-		}
-		return { start: '', end: '' };
-	});
+	// Combobox options for Categories
+	const categoryOptions = $derived<ComboboxOption[]>(
+		categories.map((c) => ({
+			value: c.categoryId,
+			label: c.categoryName,
+			subtext: c.categoryType
+		}))
+	);
 
 	// Filtered transactions
 	const filteredTransactions = $derived.by(() => {
 		const q = searchKeyword.trim().toLowerCase();
-		const { start, end } = dateRange;
+		const start = filterStartDate;
+		const end = filterEndDate;
 
 		return allTxs.filter((t) => {
 			// Type filter
@@ -96,24 +99,25 @@
 			if (selectedStatus === 'realized' && t.transactionIsPlanned !== 0) return false;
 			if (selectedStatus === 'planned' && t.transactionIsPlanned !== 1) return false;
 
-			// Wallet filter
-			if (
-				selectedWalletId &&
-				t.transactionWalletId !== selectedWalletId &&
-				t.transactionTargetWalletId !== selectedWalletId
-			) {
-				return false;
+			// Wallet filter (multi-selection)
+			if (selectedWalletIds.length > 0) {
+				const isSource = selectedWalletIds.includes(t.transactionWalletId);
+				const isTarget = t.transactionTargetWalletId
+					? selectedWalletIds.includes(t.transactionTargetWalletId)
+					: false;
+				if (!isSource && !isTarget) return false;
+			}
+
+			// Category filter (matched by categoryId)
+			if (selectedCategoryIds.length > 0) {
+				if (!t.transactionCategoryId || !selectedCategoryIds.includes(t.transactionCategoryId)) {
+					return false;
+				}
 			}
 
 			// Date range filter
 			if (start && t.transactionDate.slice(0, 10) < start) return false;
 			if (end && t.transactionDate.slice(0, 10) > end) return false;
-			if (
-				selectedCategory &&
-				!(t.transactionDescription || '').toLowerCase().includes(selectedCategory.toLowerCase())
-			) {
-				return false;
-			}
 
 			// Search keyword filter
 			if (q) {
@@ -153,10 +157,10 @@
 
 	function resetFilters() {
 		datePreset = 'all';
-		customStartDate = '';
-		customEndDate = '';
-		selectedWalletId = '';
-		selectedCategory = '';
+		filterStartDate = '';
+		filterEndDate = '';
+		selectedWalletIds = [];
+		selectedCategoryIds = [];
 		selectedType = 'all';
 		selectedStatus = 'all';
 		searchKeyword = '';
@@ -167,6 +171,12 @@
 		if (!id) return '—';
 		const w = allWallets.find((x) => x.walletId === id);
 		return w?.walletName ?? 'Akun';
+	}
+
+	function getCategoryName(catId?: string | null): string {
+		if (!catId) return '—';
+		const c = categories.find((x) => x.categoryId === catId);
+		return c?.categoryName ?? '—';
 	}
 </script>
 
@@ -199,7 +209,7 @@
 
 	<!-- Super Dynamic Filter Bar -->
 	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
-		<!-- Row 1: Search + Date Range Presets -->
+		<!-- Row 1: Search + Date Range Picker -->
 		<div class="flex flex-wrap items-center gap-3">
 			<!-- Instant Search with Keyboard Shortcut -->
 			<div class="relative min-w-[240px] flex-1">
@@ -217,79 +227,43 @@
 				<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
 			</div>
 
-			<!-- Date Range Presets -->
-			<div class="flex items-center gap-1 text-xs">
-				<Calendar class="mr-1 size-3.5 text-[#787774]" weight="bold" />
-				<select
-					bind:value={datePreset}
-					class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-xs text-[#111111] focus:border-[#111111] focus:outline-hidden"
-				>
-					<option value="all">Semua Waktu</option>
-					<option value="this_month">Bulan Ini</option>
-					<option value="last_month">Bulan Lalu</option>
-					<option value="last_3_months">3 Bulan Terakhir</option>
-					<option value="custom">Rentang Khusus...</option>
-				</select>
-			</div>
-
-			<!-- Custom Date Inputs when Custom is selected -->
-			{#if datePreset === 'custom'}
-				<div class="flex items-center gap-1.5 text-xs">
-					<input
-						type="date"
-						bind:value={customStartDate}
-						class="rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-					/>
-					<span class="text-[#787774]">→</span>
-					<input
-						type="date"
-						bind:value={customEndDate}
-						class="rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-					/>
-				</div>
-			{/if}
+			<!-- Custom 2-Click Date Range Picker with Presets -->
+			<DateRangePicker
+				bind:start={filterStartDate}
+				bind:end={filterEndDate}
+				bind:preset={datePreset}
+				onchange={() => (currentPage = 1)}
+			/>
 		</div>
 
-		<!-- Row 2: Entity & Status Filters -->
+		<!-- Row 2: Multi-select Comboboxes + Type & Status Buttons -->
 		<div class="flex flex-wrap items-center gap-2.5 border-t border-[#EAEAEA] pt-2 text-xs">
-			<div class="flex items-center gap-1 text-[#787774]">
-				<Funnel class="size-3.5 text-[#787774]" weight="bold" />
-				<span>Filter:</span>
-			</div>
+			<!-- Searchable Multi-Select Wallet Combobox -->
+			<ComboboxMultiSelect
+				options={walletOptions}
+				bind:selected={selectedWalletIds}
+				placeholder="Semua Dompet"
+				searchPlaceholder="Ketik nama akun/bank..."
+				onchange={() => (currentPage = 1)}
+			/>
 
-			<!-- Wallet Filter (Grouped by Bank) -->
-			<select
-				bind:value={selectedWalletId}
-				class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1 text-xs text-[#111111]"
-			>
-				<option value="">Semua Dompet & Akun ({allWallets.length})</option>
-				{#each Array.from(new Set(allWallets.map((w) => w.institution))) as inst (inst)}
-					<optgroup label={inst}>
-						{#each allWallets.filter((w) => w.institution === inst) as w (w.walletId)}
-							<option value={w.walletId}>
-								{w.walletName} ({w.isLocked === 1 ? 'Locked' : 'Open'})
-							</option>
-						{/each}
-					</optgroup>
-				{/each}
-			</select>
-
-			<!-- Category Filter -->
-			<select
-				bind:value={selectedCategory}
-				class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1 text-xs text-[#111111]"
-			>
-				<option value="">Semua Kategori ({categories.length})</option>
-				{#each categories as cat (cat)}
-					<option value={cat}>{cat}</option>
-				{/each}
-			</select>
+			<!-- Searchable Multi-Select Category Combobox -->
+			<ComboboxMultiSelect
+				options={categoryOptions}
+				bind:selected={selectedCategoryIds}
+				placeholder="Semua Kategori"
+				searchPlaceholder="Ketik nama kategori..."
+				onchange={() => (currentPage = 1)}
+			/>
 
 			<!-- Type Buttons -->
 			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
 				<button
 					type="button"
-					onclick={() => (selectedType = 'all')}
+					onclick={() => {
+						selectedType = 'all';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedType ===
 					'all'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -299,7 +273,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (selectedType = 'expense')}
+					onclick={() => {
+						selectedType = 'expense';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedType ===
 					'expense'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -309,7 +286,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (selectedType = 'income')}
+					onclick={() => {
+						selectedType = 'income';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedType ===
 					'income'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -319,7 +299,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (selectedType = 'transfer')}
+					onclick={() => {
+						selectedType = 'transfer';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedType ===
 					'transfer'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -333,7 +316,10 @@
 			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
 				<button
 					type="button"
-					onclick={() => (selectedStatus = 'all')}
+					onclick={() => {
+						selectedStatus = 'all';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedStatus ===
 					'all'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -343,7 +329,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (selectedStatus = 'realized')}
+					onclick={() => {
+						selectedStatus = 'realized';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedStatus ===
 					'realized'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -353,7 +342,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (selectedStatus = 'planned')}
+					onclick={() => {
+						selectedStatus = 'planned';
+						currentPage = 1;
+					}}
 					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {selectedStatus ===
 					'planned'
 						? 'bg-white text-[#111111] shadow-2xs'
@@ -361,6 +353,20 @@
 				>
 					Planned
 				</button>
+			</div>
+
+			<!-- Page Size Selector -->
+			<div class="ml-auto flex items-center gap-1.5 text-xs text-[#787774]">
+				<span>Baris:</span>
+				<select
+					bind:value={pageSize}
+					onchange={() => (currentPage = 1)}
+					class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-0.5 text-xs text-[#111111]"
+				>
+					<option value={25}>25</option>
+					<option value={50}>50</option>
+					<option value={100}>100</option>
+				</select>
 			</div>
 		</div>
 	</div>
@@ -415,6 +421,7 @@
 						<tr>
 							<th class="px-4 py-2.5 font-medium">Tanggal</th>
 							<th class="px-4 py-2.5 font-medium">Deskripsi</th>
+							<th class="px-4 py-2.5 font-medium">Kategori</th>
 							<th class="px-4 py-2.5 font-medium">Tipe</th>
 							<th class="px-4 py-2.5 font-medium">Dari Akun</th>
 							<th class="px-4 py-2.5 font-medium">Ke Akun</th>
@@ -430,13 +437,16 @@
 								<td class="px-4 py-2.5 font-mono text-[11px] whitespace-nowrap text-[#787774]">
 									{dFmt(t.transactionDate)}
 								</td>
-								<td class="max-w-[280px] px-4 py-2.5">
+								<td class="max-w-[260px] px-4 py-2.5">
 									<div
 										class="truncate font-medium text-[#111111]"
 										title={t.transactionDescription || ''}
 									>
 										{t.transactionDescription || '(tanpa deskripsi)'}
 									</div>
+								</td>
+								<td class="max-w-[130px] truncate px-4 py-2.5 font-medium text-[#111111]">
+									{getCategoryName(t.transactionCategoryId)}
 								</td>
 								<td class="px-4 py-2.5 whitespace-nowrap">
 									<span
@@ -450,10 +460,10 @@
 										{t.transactionType}
 									</span>
 								</td>
-								<td class="max-w-[130px] truncate px-4 py-2.5 text-[#787774]">
+								<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
 									{getWalletName(t.transactionWalletId)}
 								</td>
-								<td class="max-w-[130px] truncate px-4 py-2.5 text-[#787774]">
+								<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
 									{getWalletName(t.transactionTargetWalletId)}
 								</td>
 								<td class="px-4 py-2.5 whitespace-nowrap">
@@ -478,7 +488,7 @@
 				</table>
 			</div>
 
-			<!-- Pagination Footer -->
+			<!-- Pagination Footer with Page Size & Stepper -->
 			<div
 				class="flex items-center justify-between border-t border-[#EAEAEA] bg-[#F9F9F8] px-4 py-2.5 text-xs text-[#787774]"
 			>
