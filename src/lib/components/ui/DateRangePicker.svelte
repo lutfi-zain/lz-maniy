@@ -21,7 +21,56 @@
 	} = $props();
 
 	let isOpen = $state(false);
+	let triggerBtn = $state<HTMLButtonElement | null>(null);
+	let popoverStyle = $state<string>('left: 0px; right: auto;');
 
+	function updatePopoverPosition() {
+		if (!triggerBtn) return;
+		const rect = triggerBtn.getBoundingClientRect();
+		const popoverWidth = 590;
+		const viewportWidth = window.innerWidth;
+		const padding = 12;
+
+		// Check if opening with left-0 overflows the right edge of viewport
+		const overflowsRight = rect.left + popoverWidth > viewportWidth - padding;
+		// Check if opening with right-0 overflows the left edge of viewport
+		const overflowsLeft = rect.right - popoverWidth < padding;
+
+		if (overflowsRight && !overflowsLeft) {
+			// Align to the right edge of trigger button
+			popoverStyle = 'right: 0px; left: auto;';
+		} else if (!overflowsRight) {
+			// Default: Align to the left edge of trigger button
+			popoverStyle = 'left: 0px; right: auto;';
+		} else {
+			// Both would overflow (e.g. narrow screen or centered trigger):
+			// Shift so it stays securely within [padding, viewportWidth - padding]
+			const shift = Math.max(
+				padding - rect.left,
+				viewportWidth - padding - (rect.left + popoverWidth)
+			);
+			popoverStyle = `left: ${Math.round(shift)}px; right: auto; max-width: calc(100vw - 24px);`;
+		}
+	}
+
+	function toggleOpen() {
+		if (!isOpen) {
+			updatePopoverPosition();
+		}
+		isOpen = !isOpen;
+	}
+
+	$effect(() => {
+		if (isOpen) {
+			updatePopoverPosition();
+			window.addEventListener('resize', updatePopoverPosition);
+			window.addEventListener('scroll', updatePopoverPosition, true);
+			return () => {
+				window.removeEventListener('resize', updatePopoverPosition);
+				window.removeEventListener('scroll', updatePopoverPosition, true);
+			};
+		}
+	});
 	// Calendar viewing month/year for Month 1 (left)
 	const now = new Date();
 	let viewYear = $state(now.getFullYear());
@@ -214,8 +263,9 @@
 <div class="relative inline-block text-xs">
 	<!-- Trigger Button (Fixed width w-[240px] to prevent shifting/resizing) -->
 	<button
+		bind:this={triggerBtn}
 		type="button"
-		onclick={() => (isOpen = !isOpen)}
+		onclick={toggleOpen}
 		class="flex w-[240px] shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-1.5 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF]"
 		aria-haspopup="dialog"
 		aria-expanded={isOpen}
@@ -235,7 +285,8 @@
 		<div class="fixed inset-0 z-30" onclick={() => (isOpen = false)}></div>
 
 		<div
-			class="absolute top-full left-0 z-40 mt-1.5 w-[590px] max-w-[95vw] rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-xl"
+			class="absolute top-full z-40 mt-1.5 w-[590px] max-w-[95vw] rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-xl transition-all"
+			style={popoverStyle}
 		>
 			<!-- Presets Bar at Top -->
 			<div

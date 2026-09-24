@@ -29,4 +29,30 @@ test.describe('Custom 2-Click DateRangePicker Component', () => {
 		await bulanIniBtn.click();
 		await expect(page.locator('button:has-text("Bulan Ini")').first()).toBeVisible();
 	});
+
+	test('does not overflow viewport bounds when opened on the right side in Cockpit', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.goto('/');
+
+		// Find DateRangePicker trigger in Cockpit
+		const datePickerTrigger = page.locator('button:has-text("Bulan Ini")').first();
+		await expect(datePickerTrigger).toBeVisible();
+		await datePickerTrigger.click();
+
+		// Find the popover
+		const popover = page
+			.locator('button:has-text("Bulan Depan")')
+			.locator('xpath=ancestor::div[contains(@class, "shadow-xl")]');
+		await expect(popover).toBeVisible();
+
+		const box = await popover.boundingBox();
+		expect(box).not.toBeNull();
+		if (box) {
+			// Must stay inside 1280px viewport with margin
+			expect(box.x).toBeGreaterThanOrEqual(0);
+			expect(box.x + box.width).toBeLessThanOrEqual(1280);
+		}
+	});
 });
