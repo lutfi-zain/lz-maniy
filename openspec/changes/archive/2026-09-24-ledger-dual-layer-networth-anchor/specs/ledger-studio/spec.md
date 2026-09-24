@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Dynamic Filtered Financial Aggregates
-The ledger studio SHALL render a dual-layer summary strip partitioned into a localized filter metrics zone (left) and an independent global point-in-time Net Worth anchor zone (right). The left zone computes metrics exclusively from the currently filtered transaction subset (count, total income, total expense, and net filtered cashflow). The right zone computes a portfolio-wide point-in-time Net Worth anchored to the filter's ending horizon date ($T_{\text{akhir}}$), remaining invariant to category, wallet, or keyword filter narrowing.
+The ledger studio SHALL render a dual-layer summary strip partitioned into a localized filter metrics zone (left) and an independent global point-in-time Net Worth anchor zone (right) evaluated at ending horizon $T_{\text{akhir}}$, remaining invariant to category or wallet narrowing.
 
 #### Scenario: Display Filtered Aggregate Bar
 - **WHEN** any filter (date, wallet, category, or type) is applied or adjusted
