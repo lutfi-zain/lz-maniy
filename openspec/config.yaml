@@ -1,32 +1,58 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Project context
+context: |
+  Project: Maniyy V2 - Financial Planning & Account Detail Intelligence Dashboard
+  Tech Stack:
+    - Svelte 5 (Runes: $state, $derived, $effect)
+    - SvelteKit (SPA mode with adapter-static)
+    - TypeScript (strict type checking)
+    - Tailwind CSS (v4 or v3 with theme tokens)
+    - Component Primitives: shadcn-svelte / bits-ui
+    - Iconography: phosphor-svelte (Bold / Fill weight, no emojis, no generic lucide)
+    - Package Manager: bun (preferred runner: bun, bunx)
+    - Testing: Vitest (unit tests) + Playwright (e2e tests)
+    - Linting & Quality: svelte-check, eslint, prettier
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Design Directives:
+    - Protocol: minimalist-ui (Premium Utilitarian Minimalism & Editorial UI)
+    - Surface & Canvas: Warm Bone (#F7F6F3), Pure White cards (#FFFFFF), 1px solid #EAEAEA borders
+    - Typography: Editorial Serif (Newsreader, tracking -0.025em), Body (Geist Sans / system-ui), Mono (JetBrains Mono)
+    - Color Palette: Warm monochrome with spot pastels (pale red #FDEBEC, pale blue #E1F3FE, pale green #EDF3EC, pale yellow #FBF3DB)
+    - Strict Negative Constraints: NO heavy drop shadows (< 0.05 opacity only), NO emojis, NO pill-shaped large containers (pills only for small badges/tags), NO gradients/glassmorphism
+    - Impeccable Shape: High contrast (>= 4.5:1), responsive desktop (60/40 asymmetric workspace) and mobile (<1024px single column, 100vw slide-over drawer)
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Domain & Backend:
+    - Primary Data Engine: Reedrich Financial Intelligence edge API
+    - Primary Endpoint: GET /api/v1/account-detail (atomic snapshot of netWorth, wallets, monthlyCashFlow, budgets, goals, obligations)
+    - Secondary Drilldown Endpoints: GET /api/v1/transactions (filtered by walletId, categoryId, budgetId), GET /api/v1/categories
+    - Offline Resilience: Snapshot mock cache fallback when API token is unavailable or offline
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Explicitly define the problem, user outcomes, and clear scope boundaries (in-scope vs non-goals)
+    - Keep proposals concise, technical, and grounded in the Reedrich API model
+  design:
+    - Specify component hierarchy, Svelte 5 runes state architecture, and store patterns
+    - Detail responsive layout behavior for both desktop (>= 1024px) and mobile (< 1024px)
+    - Document data contract mapping from GET /api/v1/account-detail
+    - Include test strategy covering unit test cases (Vitest) and e2e user journeys (Playwright)
+  tasks:
+    - Sequence tasks logically: project scaffold -> design system & tokens -> state store -> core components -> drilldown drawer -> test suites -> validation
+    - Every task must have verifiable acceptance criteria with concrete commands
+    - Do not mark tasks done without executing checks and test suites
+  spec:
+    - Follow Gherkin-style or requirement-scenario format
+    - Cover edge cases (e.g. offline fallback, empty transactions, deficit safe-to-spend, currency conversions)
+
+# Per-operation guidance
+operations:
+  apply:
+    guidance:
+      - Always run `bun test` (Vitest) and `bun run check` (svelte-check) after component mutations
+      - Execute Playwright e2e tests (`bunx playwright test`) to prove interactive drilldown behavior
+      - Verify both desktop and mobile viewports in browser before completing
+  archive:
+    guidance:
+      - Summarize verified test results, component inventory, and git commit status before archiving
