@@ -39,13 +39,12 @@ rules:
     - Document data contract mapping from GET /api/v1/account-detail
     - Include test strategy covering unit test cases (Vitest) and e2e user journeys (Playwright)
   tasks:
-    - Sequence tasks logically: project scaffold -> design system & tokens -> state store -> core components -> drilldown drawer -> test suites -> validation
-    - Every task must have verifiable acceptance criteria with concrete commands
-    - Do not mark tasks done without executing checks and test suites
-  spec:
-    - Follow Gherkin-style or requirement-scenario format
-    - Cover edge cases (e.g. offline fallback, empty transactions, deficit safe-to-spend, currency conversions)
-
+    - "Sequence tasks logically: project scaffold -> design system & tokens -> state store -> core components -> drilldown drawer -> test suites -> validation"
+    - "Every task must have verifiable acceptance criteria with concrete commands"
+    - "Do not mark tasks done without executing checks and test suites"
+  specs:
+    - "Follow Gherkin-style or requirement-scenario format"
+    - "Cover edge cases (e.g. offline fallback, empty transactions, deficit safe-to-spend, currency conversions)"
 # Per-operation guidance
 operations:
   apply:
