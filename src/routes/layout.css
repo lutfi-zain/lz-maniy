@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+
+@theme {
+	--font-serif: 'Newsreader', 'Lyon Text', 'Playfair Display', 'Instrument Serif', Georgia, serif;
+	--font-mono: 'JetBrains Mono', 'Geist Mono', 'SF Mono', monospace;
+	--font-sans: 'Geist Sans', 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+	--color-canvas: #f7f6f3;
+	--color-surface: #ffffff;
+	--color-surface-subtle: #f9f9f8;
+	--color-border: #eaeaea;
+	--color-border-soft: rgba(0, 0, 0, 0.06);
+
+	--color-ink: #111111;
+	--color-ink-secondary: #2f3437;
+	--color-muted: #787774;
+
+	--color-pastel-red-bg: #fdebec;
+	--color-pastel-red-text: #9f2f2d;
+	--color-pastel-blue-bg: #e1f3fe;
+	--color-pastel-blue-text: #1f6c9f;
+	--color-pastel-green-bg: #edf3ec;
+	--color-pastel-green-text: #346538;
+	--color-pastel-yellow-bg: #fbf3db;
+	--color-pastel-yellow-text: #956400;
+}
+
+:root {
+	--canvas: #f7f6f3;
+	--surface: #ffffff;
+	--surface2: #f9f9f8;
+	--border: #eaeaea;
+	--ink: #111111;
+	--ink2: #2f3437;
+	--muted: #787774;
+}
+
+body {
+	background-color: var(--canvas);
+	color: var(--ink2);
+	font-family: var(--font-sans);
+	line-height: 1.6;
+	font-size: 14px;
+	-webkit-font-smoothing: antialiased;
+}
+
+.serif {
+	font-family: var(--font-serif);
+	letter-spacing: -0.025em;
+	line-height: 1.15;
+}
+
+.mono {
+	font-family: var(--font-mono);
+}
+
+kbd {
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	background: #f7f6f3;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	padding: 2px 6px;
+	color: var(--ink2);
+}
