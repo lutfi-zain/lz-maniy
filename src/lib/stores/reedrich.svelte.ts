@@ -28,6 +28,9 @@ export class ReedrichStore {
 	isDrawerLoading = $state<boolean>(false);
 	drawerSearch = $state<string>('');
 
+	// Ledger full dataset
+	allTransactions = $state<TransactionRecord[]>([]);
+	isLedgerLoading = $state<boolean>(false);
 	// Cache to avoid refetching identical entity queries
 	private transactionCache = new SvelteMap<string, TransactionRecord[]>();
 
@@ -143,6 +146,37 @@ export class ReedrichStore {
 		}
 	}
 
+	async fetchAllTransactions() {
+		if (this.allTransactions.length > 0) return;
+		this.isLedgerLoading = true;
+		const headers: Record<string, string> = {
+			'X-API-Key': this.apiToken,
+			Authorization: 'Bearer ' + this.apiToken
+		};
+		try {
+			let offset = 0;
+			const accumulated: TransactionRecord[] = [];
+			while (true) {
+				const res = await fetch(
+					`${DEFAULT_API_URL}/api/v1/transactions?limit=200&offset=${offset}`,
+					{ headers }
+				);
+				if (!res.ok) break;
+				const data = await res.json();
+				const items: TransactionRecord[] = Array.isArray(data) ? data : (data.items ?? []);
+				accumulated.push(...items);
+				if (items.length < 200) break;
+				offset += 200;
+			}
+			if (accumulated.length > 0) {
+				this.allTransactions = accumulated;
+			}
+		} catch (e) {
+			console.warn('Gagal memuat seluruh transaksi:', e);
+		} finally {
+			this.isLedgerLoading = false;
+		}
+	}
 	async fetchTransactionsForDrawer(param: {
 		walletId?: string;
 		categoryId?: string;

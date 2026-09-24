@@ -41,6 +41,16 @@ describe('ReedrichStore', () => {
 		expect(store.filteredWallets.length).toBe(17);
 	});
 
+	it('computes bank subtotals accurately', () => {
+		const bcaWallets = store.allWallets.filter((w) => w.institution === 'BCA');
+		expect(bcaWallets.length).toBe(2);
+		const bcaTotal = bcaWallets.reduce((acc, w) => acc + w.balance, 0);
+		expect(bcaTotal).toBeCloseTo(8975931.69, 1);
+
+		const jagoWallets = store.allWallets.filter((w) => w.institution === 'Bank Jago');
+		expect(jagoWallets.length).toBe(11);
+	});
+
 	it('manages drawer open and close transitions', () => {
 		expect(store.activeDrawer).toBeNull();
 
