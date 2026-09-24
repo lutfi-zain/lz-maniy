@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maniyy — Potret Keuangan & Perencanaan Komprehensif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{
+  --canvas:#F7F6F3;
+  --surface:#FFFFFF;
+  --surface2:#F9F9F8;
+  --border:#EAEAEA;
+  --border-soft:rgba(0,0,0,.06);
+  --ink:#111111;
+  --ink2:#2F3437;
+  --muted:#787774;
+  --red-bg:#FDEBEC; --red-tx:#9F2F2D;
+  --blue-bg:#E1F3FE; --blue-tx:#1F6C9F;
+  --green-bg:#EDF3EC; --green-tx:#346538;
+  --yellow-bg:#FBF3DB; --yellow-tx:#956400;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Geist Sans','SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;
+  background:var(--canvas);
+  color:var(--ink2);
+  line-height:1.6;
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body.drawer-open{overflow:hidden}
+.serif{
+  font-family:'Lyon Text','Newsreader','Playfair Display','Instrument Serif',Georgia,serif;
+  letter-spacing:-.025em;
+  line-height:1.15;
+  color:var(--ink);
+}
+.mono{font-family:'Geist Mono','SF Mono','JetBrains Mono',monospace}
+.wrap{max-width:1320px;margin:0 auto;padding:0 32px}
+
+/* ambient ambient layer */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0}
+.ambient span{
+  position:absolute;width:580px;height:580px;border-radius:50%;
+  background:#EAE4D7;opacity:.12;filter:blur(130px);
+  animation:drift 28s ease-in-out infinite alternate;
+}
+.ambient span:last-child{right:-180px;top:25%;background:#DCE9EE;animation-delay:-14s}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(-70px,60px)}}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:30;background:rgba(247,246,243,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.topbar-in{display:flex;align-items:center;gap:18px;padding:12px 32px;max-width:1320px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink);text-decoration:none}
+.brand i{font-size:22px}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:10px;letter-spacing:.06em}
+.nav{display:flex;gap:4px;margin-left:14px}
+.nav button{border:0;background:transparent;padding:7px 12px;border-radius:6px;color:var(--muted);font-size:13px;cursor:pointer;display:flex;gap:6px;align-items:center;transition:background .15s,color .15s}
+.nav button.active,.nav button:hover{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--border)}
+.conn{margin-left:auto;display:flex;gap:10px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:#C9C4B8}
+.dot.live{background:var(--green-tx)}
+kbd{border:1px solid var(--border);border-radius:4px;background:#F7F6F3;font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 6px;color:var(--ink2)}
+
+/* hero */
+.hero{padding:48px 0 20px;position:relative;z-index:1}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hero h1{font-size:40px;font-weight:500;max-width:18ch;margin:8px 0 10px}
+.hero p{max-width:68ch;color:var(--muted);font-size:14px}
+.apibar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px}
+.apibar input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;min-width:320px;flex:1;color:var(--ink)}
+.apibar input:focus{outline:0;border-color:var(--ink)}
+.btn{background:var(--ink);color:#fff;border:0;border-radius:5px;padding:8px 15px;font-size:13px;cursor:pointer;display:inline-flex;gap:8px;align-items:center;transition:background .15s,transform .1s}
+.btn:hover{background:#333}.btn:active{transform:scale(.98)}
+.btn.ghost{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--border)}
+.btn.ghost:hover{background:#F9F9F8}
+.btn.sm{padding:5px 10px;font-size:12px}
+
+/* KPI Bento Grid */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:box-shadow .2s;position:relative}
+.kpi:hover{box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;gap:7px;align-items:center}
+.kpi .val{font-family:'Newsreader',serif;font-size:28px;color:var(--ink);margin:6px 0 2px;letter-spacing:-.02em}
+.kpi .sub{font-size:12px;color:var(--muted)}
+.kpi-click{cursor:pointer}
+.kpi-click:hover{border-color:#D0CFCB}
+.pill-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pill{font-size:11px;padding:2px 8px;border-radius:9999px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);text-decoration:none;cursor:pointer;transition:all .15s}
+.pill:hover,.pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* main workspace split (60% / 40%) */
+.workspace{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start;position:relative;z-index:1;margin-bottom:60px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:18px;transition:box-shadow .2s}
+.panel:hover{box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.panel-h h2{font-family:'Newsreader',serif;font-size:22px;font-weight:500;color:var(--ink)}
+.panel-h .hint{font-size:12px;color:var(--muted)}
+
+/* wallet cards */
+.wallet-tabs{display:flex;gap:6px;margin-bottom:16px}
+.wallet-tab{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.wallet-tab.active,.wallet-tab:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.wallet-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.wallet-card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;
+  cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;
+  display:flex;flex-direction:column;gap:8px;
+}
+.wallet-card:hover{
+  border-color:#C8C6BF;box-shadow:0 2px 10px rgba(0,0,0,.04);transform:translateY(-1px);
+}
+.wallet-card-head{display:flex;justify-content:space-between;align-items:flex-start}
+.wallet-title{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink);font-size:14px}
+.wallet-bal{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--ink)}
+.wallet-last{
+  background:var(--surface2);border:1px solid var(--border-soft);border-radius:6px;
+  padding:8px 10px;font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;align-items:center;
+}
+.wallet-last-desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;color:var(--muted)}
+.wallet-last-amt{font-family:'JetBrains Mono',monospace;font-weight:500;white-space:nowrap}
+.wallet-action{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);margin-top:2px}
+.wallet-card:hover .wallet-action{color:var(--ink)}
+
+/* tags */
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:9999px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;font-weight:600;white-space:nowrap}
+.t-spendable{background:var(--green-bg);color:var(--green-tx)}
+.t-locked{background:var(--yellow-bg);color:var(--yellow-tx)}
+.t-expense{background:var(--red-bg);color:var(--red-tx)}
+.t-income{background:var(--green-bg);color:var(--green-tx)}
+.t-transfer{background:var(--blue-bg);color:var(--blue-tx)}
+.t-neutral{background:#EFEFED;color:var(--ink)}
+
+/* categories list */
+.cat-item{
+  display:grid;grid-template-columns:minmax(140px,1.2fr) 1fr 140px;gap:12px;align-items:center;
+  padding:10px 12px;border-bottom:1px solid var(--border);border-radius:6px;
+  cursor:pointer;transition:background .15s;
+}
+.cat-item:last-child{border-bottom:0}
+.cat-item:hover{background:var(--surface2)}
+.cat-name{font-weight:500;color:var(--ink);display:flex;align-items:center;gap:6px}
+.cat-bar{height:6px;background:#F0EFEC;border-radius:4px;overflow:hidden}
+.cat-bar i{display:block;height:100%;background:var(--ink)}
+.cat-val{text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap}
+
+/* goals */
+.goal-card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer;background:#fff;transition:border-color .15s}
+.goal-card:hover{border-color:#C8C6BF}
+.progress-bar{height:8px;background:#F0EFEC;border-radius:4px;overflow:hidden;margin:10px 0 6px}
+.progress-bar i{display:block;height:100%;background:var(--ink)}
+.goal-linked-table{width:100%;margin-top:10px;font-size:11px;border-collapse:collapse}
+.goal-linked-table td{padding:4px 0;border-bottom:1px dashed var(--border);color:var(--muted)}
+.goal-linked-table td:last-child{text-align:right;font-family:'JetBrains Mono',monospace;color:var(--ink2)}
+
+/* obligations */
+.ob-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:#fff;transition:border-color .15s}
+.ob-item:hover{border-color:#C8C6BF}
+
+/* slide-over detail drawer */
+.drawer-backdrop{
+  position:fixed;inset:0;background:rgba(17,17,17,.28);backdrop-filter:blur(4px);
+  z-index:90;opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.drawer-backdrop.open{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:620px;max-width:100vw;
+  background:#FFFFFF;border-left:1px solid var(--border);z-index:100;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1);
+  display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.06);
+}
+.drawer.open{transform:translateX(0)}
+.drawer-head{
+  padding:20px 24px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:flex-start;background:var(--surface2);
+}
+.drawer-head-info{display:flex;flex-direction:column;gap:4px}
+.drawer-title{font-family:'Newsreader',serif;font-size:24px;color:var(--ink);line-height:1.2}
+.drawer-close{
+  border:1px solid var(--border);background:#fff;border-radius:6px;padding:6px 10px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);
+  transition:all .15s;
+}
+.drawer-close:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.drawer-body{flex:1;overflow-y:auto;padding:24px}
+.drawer-section-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 10px}
+.drawer-meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.drawer-meta-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.drawer-meta-box .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.drawer-meta-box .val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);margin-top:2px}
+
+/* drawer transaction table */
+.drawer-tx-filter{display:flex;gap:8px;margin-bottom:12px}
+.drawer-tx-filter input{
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;
+  font-size:12px;flex:1;color:var(--ink);
+}
+.drawer-tx-table{width:100%;border-collapse:collapse;font-size:12px}
+.drawer-tx-table th{
+  text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  padding:8px 10px;background:var(--surface2);border-bottom:1px solid var(--border);
+}
+.drawer-tx-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top}
+.drawer-tx-table tr:hover{background:#FBFBFA}
+.tx-amt{font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap}
+.tx-amt.in{color:var(--green-tx)}
+.tx-amt.out{color:var(--ink)}
+
+/* scroll entry reveal */
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* loading skeleton */
+.skeleton{
+  background:linear-gradient(90deg, #F0EFEC 25%, #E5E3DF 50%, #F0EFEC 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:1040px){
+  .workspace{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .drawer{width:100vw}
+  .nav{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ambient"><span></span><span></span></div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a href="#" class="brand">
+      <i class="ph-bold ph-shield-check"></i>
+      <div>Maniyy<small>ACCOUNT DETAIL INTELLIGENCE</small></div>
+    </a>
+    <nav class="nav" id="nav">
+      <button class="active" onclick="scrollSection('sec-wallets')"><i class="ph-bold ph-wallet"></i>Dompet (<span id="nWallets">17</span>)</button>
+      <button onclick="scrollSection('sec-cashflow')"><i class="ph-bold ph-chart-bar"></i>Arus Kas</button>
+      <button onclick="scrollSection('sec-budgets')"><i class="ph-bold ph-chart-pie-slice"></i>Budget</button>
+      <button onclick="scrollSection('sec-goals')"><i class="ph-bold ph-target"></i>Goals</button>
+      <button onclick="scrollSection('sec-obligations')"><i class="ph-bold ph-handshake"></i>Kewajiban</button>
+    </nav>
+    <div class="conn">
+      <span class="dot live" id="dot"></span>
+      <span class="mono" id="connLabel" style="font-size:11px;color:var(--muted)">LIVE</span>
+      <kbd id="baseCur">IDR</kbd>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero reveal">
+    <div class="eyebrow mono">Reedrich Financial Engine · snapshot atomik</div>
+    <h1 class="serif">Potret Keuangan Komprehensif.</h1>
+    <p>Seluruh metrik di bawah ini diproduksi langsung dari rilis endpoint <code>GET /api/v1/account-detail</code>. Klik pada dompet, kategori, budget, atau kewajiban untuk membuka detail lengkap dan riwayat transaksi.</p>
+    
+    <div class="apibar">
+      <i class="ph-bold ph-key" style="font-size:18px;color:var(--muted)"></i>
+      <input id="token" type="text" spellcheck="false" value="REDACTED_API_TOKEN">
+      <button class="btn" id="btnRefresh"><i class="ph-bold ph-arrows-clockwise"></i>Sinkronkan Snapshot</button>
+      <button class="btn ghost" id="btnMock">Pakai Cache Mock</button>
+      <span class="meta mono" id="apiStatus" style="font-size:11px;color:var(--muted)">Siap. Klik item untuk drilldown.</span>
+    </div>
+  </section>
+
+  <!-- Macro KPIs from Account Detail -->
+  <section class="kpis" id="kpis">
+    <div class="kpi reveal kpi-click" onclick="openNetWorthModal()">
+      <div class="lbl"><i class="ph-bold ph-vault"></i>Kekayaan Bersih Konsolidasi</div>
+      <div class="val" id="kNetWorth">—</div>
+      <div class="sub" id="kNetWorthSub">Live FX valuation</div>
+      <div class="pill-list" id="kInstList"></div>
+    </div>
+    <div class="kpi reveal kpi-click" onclick="filterWalletTab('spendable')">
+      <div class="lbl"><i class="ph-bold ph-wallet"></i>Spendable (Tak Terkunci)</div>
+      <div class="val" id="kSpendable">—</div>
+      <div class="sub" id="kSpendableSub">—</div>
+    </div>
+    <div class="kpi reveal kpi-click" onclick="filterWalletTab('locked')">
+      <div class="lbl"><i class="ph-bold ph-lock-key"></i>Locked (Dana Cadangan)</div>
+      <div class="val" id="kLocked">—</div>
+      <div class="sub" id="kLockedSub">—</div>
+    </div>
+    <div class="kpi reveal kpi-click" onclick="scrollSection('sec-cashflow')">
+      <div class="lbl"><i class="ph-bold ph-scales"></i>Tabungan Bersih Bulan Ini</div>
+      <div class="val" id="kNetSavings">—</div>
+      <div class="sub" id="kCashFlowSub">—</div>
+    </div>
+  </section>
+
+  <!-- Workspace Grid: Left Wallets & Budgets (60%), Right Cashflow & Goals (40%) -->
+  <div class="workspace">
+    <!-- LEFT COLUMN -->
+    <div class="workspace-col">
+      <!-- WALLETS -->
+      <section id="sec-wallets" class="panel reveal">
+        <div class="panel-h">
+          <div>
+            <h2>Daftar Dompet & Rekening</h2>
+            <div class="hint">Klik dompet mana pun untuk membuka transaksi dan histori mutasi.</div>
+          </div>
+          <span class="tag t-neutral mono" id="walletCounter">17 dompet</span>
+        </div>
+
+        <div class="wallet-tabs" id="walletTabs">
+          <button class="wallet-tab active" data-tab="all" onclick="setWalletTab('all')">Semua (17)</button>
+          <button class="wallet-tab" data-tab="spendable" onclick="setWalletTab('spendable')">Spendable (11)</button>
+          <button class="wallet-tab" data-tab="locked" onclick="setWalletTab('locked')">Locked / Cadangan (6)</button>
+        </div>
+
+        <div class="wallet-grid" id="walletList">
+          <!-- dynamically populated -->
+        </div>
+      </section>
+
+      <!-- BUDGETS -->
+      <section id="sec-budgets" class="panel reveal">
+        <div class="panel-h">
+          <div>
+            <h2>Batas Belanja Aktif (Budgets)</h2>
+            <div class="hint">Realisasi pengeluaran terhadap pagu bulanan. Klik untuk transaksi.</div>
+          </div>
+          <span class="tag t-neutral mono" id="budgetCounter">1 budget</span>
+        </div>
+        <div id="budgetList">
+          <!-- dynamically populated -->
+        </div>
+      </section>
+
+      <!-- OBLIGATIONS (DEBTS & LOANS) -->
+      <section id="sec-obligations" class="panel reveal">
+        <div class="panel-h">
+          <div>
+            <h2>Kewajiban & Tagihan Aktif</h2>
+            <div class="hint">Utang yang wajib dilunasi dan piutang (talangan) yang diharapkan kembali.</div>
+          </div>
+          <span class="tag t-neutral mono" id="obCounter">3 catatan</span>
+        </div>
+        <div id="obligationList">
+          <!-- dynamically populated -->
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="workspace-col">
+      <!-- MONTHLY CASHFLOW & CATEGORY BREAKDOWN -->
+      <section id="sec-cashflow" class="panel reveal">
+        <div class="panel-h">
+          <div>
+            <h2>Breakdown Pengeluaran</h2>
+            <div class="hint" id="cashflowPeriod">Bulan Berjalan · Klik kategori untuk melihat daftar transaksi</div>
+          </div>
+          <span class="tag t-spendable mono" id="cashflowSavingsTag">+Rp 5,57 jt</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+          <div>
+            <div class="eyebrow">Pemasukan</div>
+            <div class="mono" style="font-weight:600;color:var(--green-tx);font-size:15px" id="cfIncome">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="eyebrow">Pengeluaran</div>
+            <div class="mono" style="font-weight:600;color:var(--ink);font-size:15px" id="cfExpense">—</div>
+          </div>
+        </div>
+
+        <div id="catBreakdownList">
+          <!-- dynamically populated -->
+        </div>
+      </section>
+
+      <!-- GOALS (TARGET TABUNGAN & DERIVED BREAKDOWN) -->
+      <section id="sec-goals" class="panel reveal">
+        <div class="panel-h">
+          <div>
+            <h2>Target Tabungan (Goals)</h2>
+            <div class="hint">Pencapaian target otomatis yang dikonsolidasikan dari dompet terhubung.</div>
+          </div>
+          <span class="tag t-neutral mono" id="goalCounter">3 target</span>
+        </div>
+        <div id="goalList">
+          <!-- dynamically populated -->
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE-OVER DETAIL DRAWER -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-head-info">
+      <div><span class="tag t-neutral" id="drawerTypeTag">DETAIL</span></div>
+      <h2 class="drawer-title" id="drawerTitle">—</h2>
+      <div class="meta" id="drawerSubtitle">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()"><kbd>ESC</kbd><i class="ph-bold ph-x"></i></button>
+  </div>
+  <div class="drawer-body" id="drawerBody">
+    <!-- dynamic content rendered based on what item was clicked -->
+  </div>
+</aside>
+
+<script>
+const API = "https://reedrich-mcp.lutfidmz.workers.dev";
+const $ = id => document.getElementById(id);
+const fmtIDR = n => "Rp " + Number(n || 0).toLocaleString("id-ID");
+const fmt = (n, c = "IDR") => String(c).toUpperCase() === "IDR" ? fmtIDR(n) : Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " " + c;
+const dFmt = s => s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const dFmtTime = s => s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+
+let SNAPSHOT = null;
+let CATEGORIES = [];
+let ACTIVE_TAB = "all";
+let ACTIVE_DRAWER_ITEM = null;
+
+/* ---- DEFAULT MOCK SNAPSHOT (from real account-detail payload) ---- */
+const MOCK_SNAPSHOT = {
+  "netWorth": {
+    "consolidated": { "total": 17333190.67, "currency": "IDR", "isEstimated": true, "fxSource": "live" },
+    "byCurrency": { "IDR": 15271190.85, "USDT": 115.61 },
+    "byInstitution": { "OCBC": 959368, "BCA": 8975931.69, "Bank Jago": 4872868.16, "GoPay": 10023, "Bitget": 115.61, "General": 453000 }
+  },
+  "wallets": {
+    "spendable": {
+      "total": 1102293.15,
+      "items": [
+        { "walletId": "731417c2-cb2c-4e52-8b36-05bb64e1c53b", "walletName": "BCA Main", "institution": "BCA", "type": "bank", "currency": "IDR", "balance": 141994, "isLocked": 0, "lastTransaction": { "transactionId": "38c4ea4c", "date": "2026-09-22T10:00:00+07:00", "type": "transfer", "direction": "out", "amount": 120200, "description": "Pengganti KFC 120.200 dari BCA Main ke BCA Pocket Sewa Rumah", "category": "Transfer" } },
+        { "walletId": "40fc8137-fd9f-41a9-bae2-4f7682ec2d25", "walletName": "Main Wallet", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 11507.03, "isLocked": 0, "lastTransaction": { "transactionId": "04c86c3b", "date": "2026-09-22T08:00:00+07:00", "type": "transfer", "direction": "out", "amount": 20000, "description": "Top up GoPay dari Main Wallet pagi ini", "category": "Transfer" } },
+        { "walletId": "c92f8229-d642-4368-b280-23966da29fd7", "walletName": "HUZ", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 42639, "isLocked": 0, "lastTransaction": { "transactionId": "496ea846", "date": "2026-09-19T20:51:00+07:00", "type": "expense", "direction": "out", "amount": 105000, "description": "Pembayaran VPS SumoPod via DANA", "category": "Taktis / Operasional" } },
+        { "walletId": "9c403c2d-53f5-45fc-8074-f1c15f3c8945", "walletName": "Vitamin Istri", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 328600, "isLocked": 0, "lastTransaction": { "transactionId": "54ae34d5", "date": "2026-09-05T10:35:00+07:00", "type": "transfer", "direction": "in", "amount": 250000, "description": "Alokasi Pos Vitamin Istri September 2026", "category": "Transfer" } },
+        { "walletId": "db498393-3f84-41ec-a995-db7b2e529859", "walletName": "Bensin & Transport", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 109530, "isLocked": 0, "lastTransaction": { "transactionId": "b1de5e0d", "date": "2026-09-18T08:33:00+07:00", "type": "expense", "direction": "out", "amount": 184240, "description": "Tokopedia Baju Renang Pria Dewasa", "category": "Taktis / Operasional" } },
+        { "walletId": "b5142896-2c37-4d69-b437-c1a9ab19dfed", "walletName": "Events", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 0, "isLocked": 0, "lastTransaction": { "transactionId": "8799040f", "date": "2026-08-19T00:00:00.000Z", "type": "transfer", "direction": "out", "amount": 1500000, "description": "Pindah dana Events ke kantong Global untuk kencan", "category": "Transfer" } },
+        { "walletId": "1a509652-22dd-46ed-b814-fa6503596881", "walletName": "Savings", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 0, "isLocked": 0, "lastTransaction": null },
+        { "walletId": "9c970b74-5065-46c8-91bf-76bce8dca510", "walletName": "Comet", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 5000, "isLocked": 0, "lastTransaction": { "transactionId": "87c3bbbb", "date": "2026-08-20T00:00:00.000Z", "type": "transfer", "direction": "out", "amount": 295000, "description": "Pindah dana Comet ke kantong Global", "category": "Transfer" } },
+        { "walletId": "571b3a78-03d3-4240-8663-e50f16b99c4a", "walletName": "GoPay", "institution": "GoPay", "type": "e-wallet", "currency": "IDR", "balance": 10023, "isLocked": 0, "lastTransaction": { "transactionId": "6d8cb76e", "date": "2026-09-22T08:30:00+07:00", "type": "expense", "direction": "out", "amount": 106000, "description": "Point Coffee untuk suami dan istri plus roti anak", "category": "Makan & Minum" } },
+        { "walletId": "6d78cec4-7aee-4f43-a7d3-b2e8e99f5303", "walletName": "Global", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 0.12, "isLocked": 0, "lastTransaction": { "transactionId": "c9ebe6c9", "date": "2026-08-22T00:00:00.000Z", "type": "transfer", "direction": "out", "amount": 156600, "description": "Sweep sisa saldo Global ke Main Pocket", "category": "Transfer" } },
+        { "walletId": "80c9260e-c4be-480e-9823-82c773d7e2d1", "walletName": "Dompet Tunai", "institution": "General", "type": "cash", "currency": "IDR", "balance": 453000, "isLocked": 0, "lastTransaction": { "transactionId": "f0ceb552", "date": "2026-09-20T16:02:00+07:00", "type": "expense", "direction": "out", "amount": 170000, "description": "Bayar pak Unang (tukang)", "category": "Belanja Kebutuhan Rumah" } }
+      ]
+    },
+    "locked": {
+      "total": 16230897.52,
+      "items": [
+        { "walletId": "43da8b6d-5a84-4bc1-a387-92fc65a1b42e", "walletName": "OCBC Main Sewa Rumah", "institution": "OCBC", "type": "bank", "currency": "IDR", "balance": 959368, "isLocked": 1, "lastTransaction": { "transactionId": "d3686beb", "date": "2026-09-07T10:00:00+07:00", "type": "expense", "direction": "out", "amount": 500000, "description": "Koreksi transfer", "category": "Transfer" } },
+        { "walletId": "eb15e4b7-4cab-4d7c-9e33-27bc7f28760b", "walletName": "BCA Pocket Sewa Rumah", "institution": "BCA", "type": "bank", "currency": "IDR", "balance": 8833937.69, "isLocked": 1, "lastTransaction": { "transactionId": "38c4ea4c", "date": "2026-09-22T10:00:00+07:00", "type": "transfer", "direction": "in", "amount": 120200, "description": "Pengganti KFC dari BCA Main", "category": "Transfer" } },
+        { "walletId": "52bbe86f-0ac5-4e6f-a987-f761c24e25ca", "walletName": "Dokter Anak", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 1500000, "isLocked": 1, "lastTransaction": { "transactionId": "941087b4", "date": "2026-09-05T10:34:00+07:00", "type": "transfer", "direction": "in", "amount": 712500, "description": "Subsidi Dana Vaksin Saada", "category": "Transfer" } },
+        { "walletId": "26ee0170-e6af-4e1c-864f-5e1eb06c279d", "walletName": "Taktis", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 500000, "isLocked": 1, "lastTransaction": { "transactionId": "c8733577", "date": "2026-09-21T10:00:00+07:00", "type": "transfer", "direction": "in", "amount": 500000, "description": "Pindah 500k Jago Sewa Rumah ke Jago Taktis", "category": "Transfer" } },
+        { "walletId": "f87ca599-9e0b-4894-957a-b681e533a324", "walletName": "Bitget Sewa Rumah", "institution": "Bitget", "type": "crypto", "currency": "USDT", "balance": 115.61, "isLocked": 1, "lastTransaction": null },
+        { "walletId": "81f6276f-6b1e-4702-8e27-9e0c702d96a0", "walletName": "Sewa Rumah", "institution": "Bank Jago", "type": "bank", "currency": "IDR", "balance": 2375592.01, "isLocked": 1, "lastTransaction": { "transactionId": "eac71af8", "date": "2026-09-21T20:00:00+07:00", "type": "expense", "direction": "out", "amount": 120200, "description": "KFC suami dan istri", "category": "Makan & Minum" } }
+      ]
+    }
+  },
+  "monthlyCashFlow": {
+    "period": { "start": "2026-09-01T00:00:00.000Z", "end": "2026-09-30T23:59:59.999Z" },
+    "totalIncome": 21835000, "totalExpense": 16261065, "netSavings": 5573935,
+    "categoryBreakdown": [
+      { "categoryName": "Makan & Minum", "amount": 4009700, "percentage": 24.66 },
+      { "categoryName": "Tagihan & Utilitas", "amount": 2388300, "percentage": 14.69 },
+      { "categoryName": "Nafkah Istri", "amount": 2030000, "percentage": 12.48 },
+      { "categoryName": "Nafkah Anak", "amount": 1500000, "percentage": 9.22 },
+      { "categoryName": "Cicilan Motor", "amount": 1300000, "percentage": 7.99 },
+      { "categoryName": "Belanja Kebutuhan Rumah", "amount": 815400, "percentage": 5.01 },
+      { "categoryName": "Taktis / Operasional", "amount": 784140, "percentage": 4.82 },
+      { "categoryName": "Nafkah Ibu", "amount": 600000, "percentage": 3.69 },
+      { "categoryName": "Pinjaman / Talangan Pribadi", "amount": 500000, "percentage": 3.07 },
+      { "categoryName": "Transfer", "amount": 500000, "percentage": 3.07 },
+      { "categoryName": "Pendidikan / Kuliah", "amount": 406500, "percentage": 2.50 },
+      { "categoryName": "Dokter Anak", "amount": 302808, "percentage": 1.86 },
+      { "categoryName": "Sedekah & Infaq", "amount": 300000, "percentage": 1.84 },
+      { "categoryName": "Laundry", "amount": 250000, "percentage": 1.54 },
+      { "categoryName": "Bensin & Transportasi", "amount": 228540, "percentage": 1.41 },
+      { "categoryName": "Uang Suami (Huz)", "amount": 161000, "percentage": 0.99 },
+      { "categoryName": "Jajan & Nongkrong", "amount": 142000, "percentage": 0.87 },
+      { "categoryName": "Biaya Admin & Transfer", "amount": 20000, "percentage": 0.12 },
+      { "categoryName": "Service Motor", "amount": 20000, "percentage": 0.12 },
+      { "categoryName": "Sisa Saldo & Penyesuaian", "amount": 2677, "percentage": 0.02 }
+    ]
+  },
+  "budgets": [
+    { "budgetId": "5260371e-2153-4f52-808f-0a11a333cb0b", "budgetName": "Jenguk Mertua Bekasi (Sep 2026)", "categoryName": "General", "amount": 1500000, "spent": 0, "remaining": 1500000, "percentUsed": 0, "status": "on_track" }
+  ],
+  "goals": [
+    {
+      "goalId": "393b2c26-ad98-4d84-a83a-443d5c316c96",
+      "goalName": "Sewa Rumah 2026",
+      "targetAmount": 18000000,
+      "currentAmount": 14230897.52,
+      "progressPercentage": 79.06,
+      "isDerived": true,
+      "daysRemaining": 21,
+      "linkedWalletsBreakdown": [
+        { "walletId": "eb15e4b7", "walletName": "BCA Pocket Sewa Rumah", "balance": 8833937.69, "currency": "IDR", "convertedAmount": 8833937.69, "usedPeg": false },
+        { "walletId": "81f6276f", "walletName": "Sewa Rumah", "balance": 2375592.01, "currency": "IDR", "convertedAmount": 2375592.01, "usedPeg": false },
+        { "walletId": "43da8b6d", "walletName": "OCBC Main Sewa Rumah", "balance": 959368, "currency": "IDR", "convertedAmount": 959368, "usedPeg": false },
+        { "walletId": "f87ca599", "walletName": "Bitget Sewa Rumah", "balance": 115.61, "currency": "USDT", "convertedAmount": 2061999.82, "usedPeg": true }
+      ]
+    },
+    { "goalId": "28229723", "goalName": "Safety Net 10jt (Milestone 1)", "targetAmount": 10000000, "currentAmount": 0, "progressPercentage": 0, "isDerived": false, "daysRemaining": 129 },
+    { "goalId": "02ce5461", "goalName": "Tabungan Lebaran 2027", "targetAmount": 5000000, "currentAmount": 0, "progressPercentage": 0, "isDerived": false, "daysRemaining": 176 }
+  ],
+  "obligations": {
+    "totalDebt": 6645000,
+    "totalReceivable": 302808,
+    "activeDebts": [
+      { "debtLoanId": "e25eef7b", "personName": "Istri (Nabila Nurul Anisa)", "remainingAmount": 800000, "dueDate": "2026-09-30", "status": "partially_paid" },
+      { "debtLoanId": "804677cc", "personName": "Cicilan Yamaha Nmax Turbo Ultimate", "remainingAmount": 5845000, "dueDate": "2027-02-06", "status": "partially_paid" }
+    ],
+    "activeLoans": [
+      { "debtLoanId": "f8b12720", "personName": "Nafkah Anak Oktober (pengganti Vitamin D)", "remainingAmount": 302808, "dueDate": "2026-10-31", "status": "unpaid" }
+    ]
+  }
+};
+
+/* ---- FETCH REAL DATA FROM /api/v1/account-detail ---- */
+async function fetchSnapshot() {
+  const tok = $("token").value.trim();
+  const headers = { "X-API-Key": tok, "Authorization": "Bearer " + tok };
+  
+  $("apiStatus").textContent = "Mengambil data snapshot account-detail…";
+  
+  try {
+    const [accRes, catRes] = await Promise.all([
+      fetch(`${API}/api/v1/account-detail`, { headers }),
+      fetch(`${API}/api/v1/categories`, { headers }).catch(() => null)
+    ]);
+    
+    if (!accRes.ok) throw new Error("HTTP " + accRes.status);
+    SNAPSHOT = await accRes.json();
+    if (catRes && catRes.ok) {
+      CATEGORIES = await catRes.json();
+    }
+    
+    $("dot").className = "dot live";
+    $("connLabel").textContent = "LIVE";
+    $("apiStatus").textContent = "Snapshot mutakhir berhasil dimuat dari API.";
+    render();
+  } catch (err) {
+    console.warn("Gagal fetch snapshot live, memakai fallback mock:", err);
+    SNAPSHOT = MOCK_SNAPSHOT;
+    $("dot").className = "dot";
+    $("connLabel").textContent = "MOCK / OFFLINE";
+    $("apiStatus").textContent = "Gagal menghubungi API (" + err.message + "). Menampilkan data cache snapshot.";
+    render();
+  }
+}
+
+/* ---- RENDER DASHBOARD ---- */
+function render() {
+  if (!SNAPSHOT) return;
+
+  const nw = SNAPSHOT.netWorth;
+  const wl = SNAPSHOT.wallets;
+  const cf = SNAPSHOT.monthlyCashFlow;
+  const bg = SNAPSHOT.budgets || [];
+  const gl = SNAPSHOT.goals || [];
+  const ob = SNAPSHOT.obligations || { totalDebt: 0, totalReceivable: 0, activeDebts: [], activeLoans: [] };
+
+  // KPIs
+  $("kNetWorth").textContent = fmtIDR(nw.consolidated.total);
+  $("kNetWorthSub").textContent = nw.consolidated.isEstimated ? "Terkonsolidasi (kurs live: USDT/IDR)" : "Nilai pasti";
+
+  // Institution Pills
+  const instEntries = Object.entries(nw.byInstitution || {});
+  $("kInstList").innerHTML = instEntries.map(([k, v]) => `
+    <span class="pill" onclick="filterByInstitution('${k}'); event.stopPropagation()">${k}: ${fmt(v, k === 'Bitget' ? 'USDT' : 'IDR')}</span>
+  `).join("");
+
+  $("kSpendable").textContent = fmtIDR(wl.spendable.total);
+  $("kSpendableSub").textContent = `${wl.spendable.items.length} dompet siap transaksi harian`;
+
+  $("kLocked").textContent = fmtIDR(wl.locked.total);
+  $("kLockedSub").textContent = `${wl.locked.items.length} dompet cadangan & sewa rumah`;
+
+  const netSav = cf.netSavings;
+  $("kNetSavings").textContent = (netSav >= 0 ? "+" : "−") + fmtIDR(Math.abs(netSav));
+  $("kNetSavings").style.color = netSav >= 0 ? "var(--green-tx)" : "var(--red-tx)";
+  $("kCashFlowSub").textContent = `Masuk ${fmtIDR(cf.totalIncome)} · Keluar ${fmtIDR(cf.totalExpense)}`;
+
+  // Wallet counts
+  const allWallets = [...wl.spendable.items, ...wl.locked.items];
+  $("nWallets").textContent = allWallets.length;
+  $("walletCounter").textContent = `${allWallets.length} dompet`;
+  
+  // Render Wallets
+  renderWalletList();
+
+  // Render Budgets
+  $("budgetCounter").textContent = `${bg.length} budget`;
+  if (bg.length === 0) {
+    $("budgetList").innerHTML = `<div class="meta" style="padding:16px 0">Tidak ada batas belanja aktif bulan ini.</div>`;
+  } else {
+    $("budgetList").innerHTML = bg.map(b => {
+      const p = b.percentUsed || 0;
+      return `
+        <div class="wallet-card" onclick="openBudgetDrawer('${b.budgetId}')">
+          <div class="wallet-card-head">
+            <div>
+              <div class="wallet-title"><i class="ph-bold ph-chart-pie-slice"></i> ${b.budgetName}</div>
+              <div class="meta" style="margin-top:2px">Kategori: ${b.categoryName || 'General'}</div>
+            </div>
+            <span class="tag ${p > 90 ? 't-expense' : 't-spendable'}">${b.status || 'aktif'}</span>
+          </div>
+          <div class="progress-bar"><i style="width:${Math.min(100, p)}%"></i></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px">
+            <span class="meta">Terpakai ${p}% (${fmtIDR(b.spent)})</span>
+            <span class="mono" style="font-weight:600">Pagu ${fmtIDR(b.amount)}</span>
+          </div>
+          <div class="wallet-action"><i class="ph-bold ph-arrow-right"></i> Klik untuk melihat transaksi budget ini</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // Render Obligations
+  const debts = ob.activeDebts || [];
+  const loans = ob.activeLoans || [];
+  $("obCounter").textContent = `${debts.length + loans.length} kewajiban`;
+  
+  let obHtml = "";
+  if (debts.length > 0) {
+    obHtml += `<div class="eyebrow" style="margin-bottom:8px">Utang (Wajib Dibayar) · Total ${fmtIDR(ob.totalDebt)}</div>`;
+    obHtml += debts.map(d => `
+      <div class="ob-item" onclick="openObligationDrawer('debt', '${d.debtLoanId}')">
+        <div>
+          <div style="font-weight:600;color:var(--ink)">${d.personName}</div>
+          <div class="meta">Jatuh tempo: ${dFmt(d.dueDate)} · ${d.status}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mono" style="font-weight:600;color:var(--red-tx)">−${fmtIDR(d.remainingAmount)}</div>
+          <div class="wallet-action" style="justify-content:flex-end"><i class="ph-bold ph-arrow-right"></i> Detail</div>
+        </div>
+      </div>
+    `).join("");
+  }
+  if (loans.length > 0) {
+    obHtml += `<div class="eyebrow" style="margin:16px 0 8px">Piutang (Talangan Diharapkan Kembali) · Total ${fmtIDR(ob.totalReceivable)}</div>`;
+    obHtml += loans.map(l => `
+      <div class="ob-item" onclick="openObligationDrawer('loan', '${l.debtLoanId}')">
+        <div>
+          <div style="font-weight:600;color:var(--ink)">${l.personName}</div>
+          <div class="meta">Jatuh tempo: ${dFmt(l.dueDate)} · ${l.status}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mono" style="font-weight:600;color:var(--green-tx)">+${fmtIDR(l.remainingAmount)}</div>
+          <div class="wallet-action" style="justify-content:flex-end"><i class="ph-bold ph-arrow-right"></i> Detail</div>
+        </div>
+      </div>
+    `).join("");
+  }
+  $("obligationList").innerHTML = obHtml || `<div class="meta">Tidak ada catatan kewajiban aktif.</div>`;
+
+  // Render Cashflow Breakdown
+  $("cfIncome").textContent = "+" + fmtIDR(cf.totalIncome);
+  $("cfExpense").textContent = "−" + fmtIDR(cf.totalExpense);
+  $("cashflowSavingsTag").textContent = (netSav >= 0 ? "+" : "−") + fmtIDR(Math.abs(netSav));
+  if (cf.period) {
+    $("cashflowPeriod").textContent = `${dFmt(cf.period.start)} → ${dFmt(cf.period.end)} · Klik baris kategori untuk riwayat transaksi`;
+  }
+
+  const cb = cf.categoryBreakdown || [];
+  $("catBreakdownList").innerHTML = cb.map(c => `
+    <div class="cat-item" onclick="openCategoryDrawer('${c.categoryName}', ${c.amount}, ${c.percentage})">
+      <div class="cat-name"><i class="ph-bold ph-tag" style="font-size:12px;color:var(--muted)"></i> ${c.categoryName}</div>
+      <div class="cat-bar"><i style="width:${Math.min(100, c.percentage * 2.5)}%"></i></div>
+      <div class="cat-val">
+        <span class="mono" style="font-weight:600">${fmtIDR(c.amount)}</span>
+        <span class="meta" style="font-size:11px;margin-left:4px">(${c.percentage}%)</span>
+      </div>
+    </div>
+  `).join("");
+
+  // Render Goals
+  $("goalCounter").textContent = `${gl.length} target`;
+  $("goalList").innerHTML = gl.map(g => {
+    const p = Math.round(g.progressPercentage || 0);
+    const linked = g.linkedWalletsBreakdown || [];
+    return `
+      <div class="goal-card" onclick="openGoalDrawer('${g.goalId}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:600;color:var(--ink);font-size:15px">${g.goalName}</div>
+            <div class="meta">${g.daysRemaining !== null ? `${g.daysRemaining} hari tersisa` : 'Jangka panjang'} ${g.isDerived ? '· <span class="mono" style="font-size:10px">DERIVED DARI 4 DOMPET</span>' : ''}</div>
+          </div>
+          <span class="tag ${p >= 75 ? 't-spendable' : 't-neutral'}">${p}%</span>
+        </div>
+        <div class="progress-bar"><i style="width:${Math.min(100, p)}%"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span class="mono" style="font-weight:600;color:var(--green-tx)">${fmtIDR(g.currentAmount)}</span>
+          <span class="mono" style="color:var(--muted)">Target ${fmtIDR(g.targetAmount)}</span>
+        </div>
+        ${linked.length > 0 ? `
+          <table class="goal-linked-table">
+            ${linked.map(lw => `
+              <tr>
+                <td>${lw.walletName}</td>
+                <td>${lw.currency !== 'IDR' ? `${lw.balance} ${lw.currency} ≈ ` : ''}${fmtIDR(lw.convertedAmount)}</td>
+              </tr>
+            `).join("")}
+          </table>
+        ` : ''}
+        <div class="wallet-action" style="margin-top:10px"><i class="ph-bold ph-arrow-right"></i> Klik untuk melihat rincian & mutasi goal</div>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ---- WALLET LIST RENDERING & FILTERING ---- */
+function setWalletTab(tab) {
+  ACTIVE_TAB = tab;
+  document.querySelectorAll(".wallet-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === tab);
+  });
+  renderWalletList();
+}
+
+function filterWalletTab(tab) {
+  setWalletTab(tab);
+  scrollSection("sec-wallets");
+}
+
+let CURRENT_INST_FILTER = null;
+function filterByInstitution(inst) {
+  if (CURRENT_INST_FILTER === inst) {
+    CURRENT_INST_FILTER = null;
+  } else {
+    CURRENT_INST_FILTER = inst;
+  }
+  document.querySelectorAll(".pill").forEach(p => {
+    p.classList.toggle("active", p.textContent.startsWith(inst) && CURRENT_INST_FILTER === inst);
+  });
+  renderWalletList();
+  scrollSection("sec-wallets");
+}
+
+function renderWalletList() {
+  if (!SNAPSHOT) return;
+  const spendable = SNAPSHOT.wallets.spendable.items || [];
+  const locked = SNAPSHOT.wallets.locked.items || [];
+
+  let list = [];
+  if (ACTIVE_TAB === "spendable") list = spendable;
+  else if (ACTIVE_TAB === "locked") list = locked;
+  else list = [...spendable, ...locked];
+
+  if (CURRENT_INST_FILTER) {
+    list = list.filter(w => w.institution === CURRENT_INST_FILTER);
+  }
+
+  // Update tabs label counts
+  const spTab = document.querySelector('.wallet-tab[data-tab="spendable"]');
+  const lkTab = document.querySelector('.wallet-tab[data-tab="locked"]');
+  const alTab = document.querySelector('.wallet-tab[data-tab="all"]');
+  if (spTab) spTab.textContent = `Spendable (${spendable.length})`;
+  if (lkTab) lkTab.textContent = `Locked / Cadangan (${locked.length})`;
+  if (alTab) alTab.textContent = `Semua (${spendable.length + locked.length})`;
+
+  $("walletList").innerHTML = list.map(w => {
+    const isLocked = w.isLocked === 1;
+    const lt = w.lastTransaction;
+    return `
+      <div class="wallet-card" onclick="openWalletDrawer('${w.walletId}')">
+        <div class="wallet-card-head">
+          <div>
+            <div class="wallet-title">
+              <i class="ph-bold ${w.type === 'crypto' ? 'ph-currency-btc' : w.type === 'e-wallet' ? 'ph-device-mobile' : w.type === 'cash' ? 'ph-money' : 'ph-bank'}"></i>
+              ${w.walletName}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:3px">
+              <span class="tag t-neutral">${w.institution}</span>
+              <span class="tag ${isLocked ? 't-locked' : 't-spendable'}">${isLocked ? 'Locked' : 'Spendable'}</span>
+            </div>
+          </div>
+          <div class="wallet-bal">${fmt(w.balance, w.currency)}</div>
+        </div>
+
+        ${lt ? `
+          <div class="wallet-last">
+            <span class="wallet-last-desc"><i class="ph-bold ph-clock-counter-clockwise"></i> ${lt.description || lt.category}</span>
+            <span class="wallet-last-amt ${lt.direction === 'in' ? 'tx-amt in' : 'tx-amt out'}">${lt.direction === 'in' ? '+' : '−'} ${fmtIDR(lt.amount)}</span>
+          </div>
+        ` : `
+          <div class="wallet-last" style="color:var(--muted)">Belum ada riwayat mutasi baru</div>
+        `}
+
+        <div class="wallet-action"><i class="ph-bold ph-arrow-right"></i> Klik untuk membuka riwayat transaksi lengkap dompet ini</div>
+      </div>
+    `;
+  }).join("") || `<div class="meta" style="padding:20px;text-align:center">Tidak ada dompet pada filter ini.</div>`;
+}
+
+/* ---- DRILLDOWN DRAWER LOGIC ---- */
+function openDrawer(typeTag, title, subtitle) {
+  $("drawerTypeTag").textContent = typeTag;
+  $("drawerTitle").textContent = title;
+  $("drawerSubtitle").textContent = subtitle;
+  $("drawer").classList.add("open");
+  $("drawerBackdrop").classList.add("open");
+  document.body.classList.add("drawer-open");
+}
+
+function closeDrawer() {
+  $("drawer").classList.remove("open");
+  $("drawerBackdrop").classList.remove("open");
+  document.body.classList.remove("drawer-open");
+  ACTIVE_DRAWER_ITEM = null;
+}
+
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeDrawer();
+});
+
+/* 1. WALLET DRILLDOWN */
+async function openWalletDrawer(walletId) {
+  if (!SNAPSHOT) return;
+  const allWallets = [...SNAPSHOT.wallets.spendable.items, ...SNAPSHOT.wallets.locked.items];
+  const wallet = allWallets.find(w => w.walletId === walletId);
+  if (!wallet) return;
+
+  ACTIVE_DRAWER_ITEM = { type: 'wallet', id: walletId };
+  const isLocked = wallet.isLocked === 1;
+
+  openDrawer(
+    isLocked ? "DOMPET TERKUNCI" : "DOMPET SPENDABLE",
+    wallet.walletName,
+    `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`
+  );
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Saldo Saat Ini</div>
+        <div class="val">${fmt(wallet.balance, wallet.currency)}</div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Status Akses</div>
+        <div class="val" style="font-size:13px">${isLocked ? 'Cadangan / Terkunci' : 'Siap Dibelanjakan'}</div>
+      </div>
+    </div>
+
+    ${wallet.lastTransaction ? `
+      <div class="drawer-section-title">Transaksi Terakhir Tercatat</div>
+      <div class="wallet-last" style="margin-bottom:18px;padding:12px">
+        <div>
+          <div style="font-weight:600">${wallet.lastTransaction.description}</div>
+          <div class="meta">${dFmtTime(wallet.lastTransaction.date)} · ${wallet.lastTransaction.category}</div>
+        </div>
+        <div class="mono" style="font-weight:600;font-size:14px;color:${wallet.lastTransaction.direction === 'in' ? 'var(--green-tx)' : 'var(--ink)'}">
+          ${wallet.lastTransaction.direction === 'in' ? '+' : '−'} ${fmtIDR(wallet.lastTransaction.amount)}
+        </div>
+      </div>
+    ` : ''}
+
+    <div class="drawer-section-title">Riwayat Transaksi Dompet</div>
+    <div class="drawer-tx-filter">
+      <input type="search" id="txSearch" placeholder="Cari dalam transaksi dompet ini…" oninput="filterDrawerTx()">
+    </div>
+    <div id="drawerTxContainer">
+      <div style="padding:24px 0;text-align:center" class="meta mono">Mengambil mutasi transaksi…</div>
+    </div>
+  `;
+
+  // Fetch live transactions for this wallet
+  await loadTransactionsForDrawer(`/api/v1/transactions?walletId=${walletId}&limit=100`, wallet.currency);
+}
+
+/* 2. CATEGORY DRILLDOWN */
+async function openCategoryDrawer(categoryName, amount, percentage) {
+  openDrawer(
+    "KATEGORI PENGELUARAN",
+    categoryName,
+    `Total bulan ini: ${fmtIDR(amount)} (${percentage}% dari seluruh pengeluaran)`
+  );
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Total Terpakai</div>
+        <div class="val">${fmtIDR(amount)}</div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Porsi Arus Kas</div>
+        <div class="val">${percentage}%</div>
+      </div>
+    </div>
+
+    <div class="drawer-section-title">Daftar Transaksi Kategori "${categoryName}"</div>
+    <div class="drawer-tx-filter">
+      <input type="search" id="txSearch" placeholder="Cari deskripsi transaksi…" oninput="filterDrawerTx()">
+    </div>
+    <div id="drawerTxContainer">
+      <div style="padding:24px 0;text-align:center" class="meta mono">Mengambil transaksi kategori…</div>
+    </div>
+  `;
+
+  // Find categoryId from category list
+  const cat = CATEGORIES.find(c => c.categoryName.toLowerCase() === categoryName.toLowerCase());
+  if (cat && cat.categoryId) {
+    await loadTransactionsForDrawer(`/api/v1/transactions?categoryId=${cat.categoryId}&limit=100`);
+  } else {
+    // fallback search by name or general list
+    await loadTransactionsForDrawer(`/api/v1/transactions?limit=150`, "IDR", tx => {
+      const c = CATEGORIES.find(k => k.categoryId === tx.transactionCategoryId);
+      return c && c.categoryName.toLowerCase() === categoryName.toLowerCase();
+    });
+  }
+}
+
+/* 3. BUDGET DRILLDOWN */
+async function openBudgetDrawer(budgetId) {
+  if (!SNAPSHOT) return;
+  const b = (SNAPSHOT.budgets || []).find(x => x.budgetId === budgetId);
+  if (!b) return;
+
+  openDrawer("BUDGET & PAGU", b.budgetName, `Kategori: ${b.categoryName || 'General'} · Status: ${b.status}`);
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Pagu Batas Belanja</div>
+        <div class="val">${fmtIDR(b.amount)}</div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Sisa Pagu</div>
+        <div class="val" style="color:var(--green-tx)">${fmtIDR(b.remaining)}</div>
+      </div>
+    </div>
+    <div class="drawer-section-title">Status Utilisasi</div>
+    <div class="panel" style="padding:14px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span>Terpakai ${b.percentUsed}% (${fmtIDR(b.spent)})</span>
+        <span class="mono">${b.status}</span>
+      </div>
+      <div class="progress-bar"><i style="width:${Math.min(100, b.percentUsed)}%"></i></div>
+    </div>
+
+    <div class="drawer-section-title">Transaksi Di Bawah Budget Ini</div>
+    <div id="drawerTxContainer">
+      <div style="padding:20px 0;text-align:center" class="meta mono">Mengambil mutasi budget…</div>
+    </div>
+  `;
+
+  await loadTransactionsForDrawer(`/api/v1/transactions?budgetId=${budgetId}&limit=50`);
+}
+
+/* 4. GOAL DRILLDOWN */
+function openGoalDrawer(goalId) {
+  if (!SNAPSHOT) return;
+  const g = (SNAPSHOT.goals || []).find(x => x.goalId === goalId);
+  if (!g) return;
+
+  openDrawer("TARGET TABUNGAN", g.goalName, `${g.daysRemaining !== null ? `${g.daysRemaining} hari tersisa` : 'Jangka panjang'}`);
+
+  const linked = g.linkedWalletsBreakdown || [];
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Target Sasaran</div>
+        <div class="val">${fmtIDR(g.targetAmount)}</div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Terkumpul Saat Ini</div>
+        <div class="val" style="color:var(--green-tx)">${fmtIDR(g.currentAmount)}</div>
+      </div>
+    </div>
+
+    <div class="drawer-section-title">Pencapaian Target (${g.progressPercentage}%)</div>
+    <div class="progress-bar" style="height:12px;margin-bottom:20px"><i style="width:${Math.min(100, g.progressPercentage)}%"></i></div>
+
+    ${linked.length > 0 ? `
+      <div class="drawer-section-title">Dompet Terhubung (Linked Wallets)</div>
+      <p class="meta" style="margin-bottom:12px">Nilai total target dikonsolidasikan otomatis (derived) dari saldo dompet di bawah ini:</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${linked.map(lw => `
+          <div class="wallet-card" onclick="openWalletDrawer('${lw.walletId}')">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:600;color:var(--ink)">${lw.walletName}</div>
+                <div class="meta">${lw.currency} ${lw.usedPeg ? '· Menggunakan kurs live peg' : '· Saldo riil IDR'}</div>
+              </div>
+              <div style="text-align:right">
+                <div class="mono" style="font-weight:600">${lw.currency !== 'IDR' ? `${lw.balance} ${lw.currency}` : fmtIDR(lw.balance)}</div>
+                <div class="meta mono">${fmtIDR(lw.convertedAmount)}</div>
+              </div>
+            </div>
+            <div class="wallet-action"><i class="ph-bold ph-arrow-right"></i> Buka transaksi dompet ini</div>
+          </div>
+        `).join("")}
+      </div>
+    ` : `
+      <div class="meta" style="padding:16px 0">Target ini belum dihubungkan ke dompet cadangan tertentu.</div>
+    `}
+  `;
+}
+
+/* 5. OBLIGATION DRILLDOWN */
+function openObligationDrawer(type, id) {
+  if (!SNAPSHOT) return;
+  const list = type === 'debt' ? SNAPSHOT.obligations.activeDebts : SNAPSHOT.obligations.activeLoans;
+  const item = (list || []).find(x => x.debtLoanId === id);
+  if (!item) return;
+
+  const isDebt = type === 'debt';
+  openDrawer(
+    isDebt ? "KEWAJIBAN UTANG" : "PIUTANG / TALANGAN",
+    item.personName,
+    `Jatuh tempo: ${dFmt(item.dueDate)} · Status: ${item.status}`
+  );
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Sisa Nominal</div>
+        <div class="val" style="color:${isDebt ? 'var(--red-tx)' : 'var(--green-tx)'}">
+          ${isDebt ? '−' : '+'}${fmtIDR(item.remainingAmount)}
+        </div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Tenggat Waktu</div>
+        <div class="val" style="font-size:14px">${dFmt(item.dueDate)}</div>
+      </div>
+    </div>
+
+    <div class="drawer-section-title">Informasi Penyelesaian</div>
+    <div class="panel" style="padding:16px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span class="meta">Pihak Terkait:</span>
+        <b style="color:var(--ink)">${item.personName}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span class="meta">Status Pembayaran:</span>
+        <span class="tag t-neutral">${item.status}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span class="meta">Klasifikasi:</span>
+        <b>${isDebt ? 'Utang Wajib Bayar' : 'Piutang Berhak Diterima'}</b>
+      </div>
+    </div>
+  `;
+}
+
+/* 6. NET WORTH MODAL/DRAWER */
+function openNetWorthModal() {
+  if (!SNAPSHOT) return;
+  const nw = SNAPSHOT.netWorth;
+  openDrawer("KONSOLIDASI KEKAYAAN BERSIH", "Distribusi Portofolio", "Rincian saldo terdistribusi menurut institusi & mata uang");
+
+  const byInst = Object.entries(nw.byInstitution || {});
+  const byCur = Object.entries(nw.byCurrency || {});
+
+  $("drawerBody").innerHTML = `
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-box">
+        <div class="lbl">Total Konsolidasi</div>
+        <div class="val">${fmtIDR(nw.consolidated.total)}</div>
+      </div>
+      <div class="drawer-meta-box">
+        <div class="lbl">Sumber Valuasi Kurs</div>
+        <div class="val" style="font-size:13px">${nw.consolidated.fxSource || 'live edge'}</div>
+      </div>
+    </div>
+
+    <div class="drawer-section-title">Berdasarkan Mata Uang</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      ${byCur.map(([c, v]) => `
+        <div class="drawer-meta-box" style="flex:1">
+          <div class="lbl">${c}</div>
+          <div class="val">${fmt(v, c)}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="drawer-section-title">Berdasarkan Institusi Keuangan</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${byInst.map(([inst, val]) => `
+        <div class="cat-item" style="cursor:default">
+          <div class="cat-name"><i class="ph-bold ph-bank"></i> ${inst}</div>
+          <div class="cat-bar"><i style="width:${Math.min(100, (val / nw.consolidated.total) * 100)}%"></i></div>
+          <div class="cat-val mono" style="font-weight:600">${fmt(val, inst === 'Bitget' ? 'USDT' : 'IDR')}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+/* ---- LAZY LOAD TRANSACTIONS FOR DRAWER ---- */
+let CURRENT_DRAWER_TRANSACTIONS = [];
+async function loadTransactionsForDrawer(url, currency = "IDR", customFilter = null) {
+  const tok = $("token").value.trim();
+  const headers = { "X-API-Key": tok, "Authorization": "Bearer " + tok };
+
+  try {
+    const res = await fetch(`${API}${url}`, { headers });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    let txs = await res.json();
+    if (!Array.isArray(txs)) txs = txs.items || txs.data || [];
+    
+    if (customFilter) {
+      txs = txs.filter(customFilter);
+    }
+
+    CURRENT_DRAWER_TRANSACTIONS = txs;
+    renderDrawerTransactions(txs, currency);
+  } catch (err) {
+    $("drawerTxContainer").innerHTML = `
+      <div class="meta" style="padding:16px;text-align:center;color:var(--red-tx)">
+        Gagal memuat transaksi: ${err.message}. Periksa token atau koneksi.
+      </div>
+    `;
+  }
+}
+
+function filterDrawerTx() {
+  const q = $("txSearch") ? $("txSearch").value.toLowerCase() : "";
+  const filtered = CURRENT_DRAWER_TRANSACTIONS.filter(t => {
+    return (t.transactionDescription || "").toLowerCase().includes(q) ||
+           (t.transactionType || "").toLowerCase().includes(q);
+  });
+  renderDrawerTransactions(filtered);
+}
+
+function renderDrawerTransactions(txs, currency = "IDR") {
+  const container = $("drawerTxContainer");
+  if (!container) return;
+
+  if (txs.length === 0) {
+    container.innerHTML = `<div class="meta" style="padding:24px 0;text-align:center">Tidak ada transaksi ditemukan.</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px" class="mono">${txs.length} transaksi dimuat</div>
+    <div style="overflow-x:auto">
+      <table class="drawer-tx-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Deskripsi</th>
+            <th>Tipe</th>
+            <th>Status</th>
+            <th style="text-align:right">Nominal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${txs.map(t => {
+            const isInc = t.transactionType === "income";
+            const isPlan = t.transactionIsPlanned === 1;
+            return `
+              <tr>
+                <td class="mono" style="white-space:nowrap">${dFmt(t.transactionDate)}</td>
+                <td>
+                  <div style="font-weight:500;color:var(--ink)">${t.transactionDescription || '(tanpa deskripsi)'}</div>
+                </td>
+                <td><span class="tag t-${t.transactionType}">${t.transactionType}</span></td>
+                <td><span class="tag ${isPlan ? 't-locked' : 't-neutral'}">${isPlan ? 'planned' : 'realized'}</span></td>
+                <td style="text-align:right" class="tx-amt ${isInc ? 'in' : 'out'}">
+                  ${isInc ? '+' : '−'} ${fmt(t.transactionAmount, currency)}
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function scrollSection(id) {
+  const el = $(id);
+  if (el) el.scrollIntoView({ behavior: "smooth" });
+}
+
+/* ---- EVENTS & INIT ---- */
+$("btnRefresh").onclick = fetchSnapshot;
+$("btnMock").onclick = () => {
+  SNAPSHOT = MOCK_SNAPSHOT;
+  $("dot").className = "dot";
+  $("connLabel").textContent = "MOCK";
+  $("apiStatus").textContent = "Memakai cache data snapshot lokal.";
+  render();
+};
+
+// Initial run: load live snapshot
+fetchSnapshot();
+
+// Intersection observer for subtle reveal
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add("in");
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+</body>
+</html>
