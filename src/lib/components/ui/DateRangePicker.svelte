@@ -2,6 +2,7 @@
 	import Calendar from 'phosphor-svelte/lib/Calendar';
 	import CaretLeft from 'phosphor-svelte/lib/CaretLeft';
 	import CaretRight from 'phosphor-svelte/lib/CaretRight';
+	import CaretDown from 'phosphor-svelte/lib/CaretDown';
 	import X from 'phosphor-svelte/lib/X';
 	import { dFmt } from '$lib/utils/dates';
 
@@ -21,10 +22,18 @@
 
 	let isOpen = $state(false);
 
-	// Calendar viewing month/year
+	// Calendar viewing month/year for Month 1 (left)
 	const now = new Date();
 	let viewYear = $state(now.getFullYear());
 	let viewMonth = $state(now.getMonth()); // 0-indexed
+
+	// Month 2 (right) is always Month 1 + 1
+	const nextMonthData = $derived.by(() => {
+		if (viewMonth === 11) {
+			return { year: viewYear + 1, month: 0 };
+		}
+		return { year: viewYear, month: viewMonth + 1 };
+	});
 
 	// Initialize with default preset ("this_month")
 	$effect(() => {
@@ -85,20 +94,20 @@
 		return `${year}-${month}-${day}`;
 	}
 
-	// Days generation for current calendar view
-	const calendarDays = $derived.by(() => {
-		const firstDay = new Date(viewYear, viewMonth, 1);
-		const lastDay = new Date(viewYear, viewMonth + 1, 0);
-		const startingDayOfWeek = firstDay.getDay(); // 0 is Sun, 1 is Mon...
+	// Helper to generate calendar days for any given year & month
+	function getDaysForMonth(y: number, m: number) {
+		const firstDay = new Date(y, m, 1);
+		const lastDay = new Date(y, m + 1, 0);
+		const startingDayOfWeek = firstDay.getDay(); // 0 is Sun
 		const totalDays = lastDay.getDate();
 
 		const days: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
 
-		// Leading empty days from prev month
-		const prevMonthLastDay = new Date(viewYear, viewMonth, 0).getDate();
+		// Leading days from prev month
+		const prevMonthLastDay = new Date(y, m, 0).getDate();
 		for (let i = startingDayOfWeek - 1; i >= 0; i--) {
 			const d = prevMonthLastDay - i;
-			const prevDate = new Date(viewYear, viewMonth - 1, d);
+			const prevDate = new Date(y, m - 1, d);
 			days.push({
 				dateStr: formatDate(prevDate),
 				dayNum: d,
@@ -108,7 +117,7 @@
 
 		// Days of current month
 		for (let d = 1; d <= totalDays; d++) {
-			const currDate = new Date(viewYear, viewMonth, d);
+			const currDate = new Date(y, m, d);
 			days.push({
 				dateStr: formatDate(currDate),
 				dayNum: d,
@@ -117,20 +126,22 @@
 		}
 
 		// Trailing days to fill 35 or 42 grid cells
-		const remaining = 35 - days.length;
-		if (remaining > 0) {
-			for (let d = 1; d <= remaining; d++) {
-				const nextDate = new Date(viewYear, viewMonth + 1, d);
-				days.push({
-					dateStr: formatDate(nextDate),
-					dayNum: d,
-					isCurrentMonth: false
-				});
-			}
+		const needed = days.length <= 35 ? 35 : 42;
+		const remaining = needed - days.length;
+		for (let d = 1; d <= remaining; d++) {
+			const nextDate = new Date(y, m + 1, d);
+			days.push({
+				dateStr: formatDate(nextDate),
+				dayNum: d,
+				isCurrentMonth: false
+			});
 		}
 
 		return days;
-	});
+	}
+
+	const month1Days = $derived(getDaysForMonth(viewYear, viewMonth));
+	const month2Days = $derived(getDaysForMonth(nextMonthData.year, nextMonthData.month));
 
 	function handleDayClick(dateStr: string) {
 		preset = 'custom';
@@ -139,7 +150,7 @@
 			start = dateStr;
 			end = '';
 		} else if (start && !end) {
-			// Click 2: set end (or swap if earlier than start)
+			// Click 2: set end (swap if clicked earlier than start)
 			if (dateStr < start) {
 				end = start;
 				start = dateStr;
@@ -199,144 +210,90 @@
 	});
 </script>
 
+<!-- Outer Container with stable, non-resizing trigger -->
 <div class="relative inline-block text-xs">
-	<!-- Trigger Button -->
+	<!-- Trigger Button (Fixed width w-[240px] to prevent shifting/resizing) -->
 	<button
 		type="button"
 		onclick={() => (isOpen = !isOpen)}
-		class="flex cursor-pointer items-center gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-1.5 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF]"
+		class="flex w-[240px] shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-1.5 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF]"
+		aria-haspopup="dialog"
+		aria-expanded={isOpen}
 	>
-		<Calendar class="size-3.5 text-[#787774]" weight="bold" />
-		<span class="max-w-[220px] truncate">{triggerLabel}</span>
+		<div class="flex items-center gap-1.5 truncate">
+			<Calendar class="size-3.5 shrink-0 text-[#787774]" weight="bold" />
+			<span class="truncate">{triggerLabel}</span>
+		</div>
+		<CaretDown class="size-3 shrink-0 text-[#787774]" weight="bold" />
 	</button>
 
-	<!-- Popover Calendar Dropdown -->
+	<!-- Popover 2-Month Dual Calendar Dropdown -->
 	{#if isOpen}
+		<!-- Backdrop to dismiss -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="fixed inset-0 z-30" onclick={() => (isOpen = false)}></div>
 
 		<div
-			class="absolute top-full left-0 z-40 mt-1.5 w-[310px] rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-lg"
+			class="absolute top-full left-0 z-40 mt-1.5 w-[590px] max-w-[95vw] rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-xl"
 		>
-			<!-- Presets Bar -->
-			<div class="mb-2.5 flex flex-wrap gap-1 border-b border-[#EAEAEA] pb-2.5">
-				<button
-					type="button"
-					onclick={() => applyPreset('this_month')}
-					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {preset ===
-					'this_month'
-						? 'bg-[#111111] text-white'
-						: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
-				>
-					Bulan Ini
-				</button>
-				<button
-					type="button"
-					onclick={() => applyPreset('next_month')}
-					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {preset ===
-					'next_month'
-						? 'bg-[#111111] text-white'
-						: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
-				>
-					Bulan Depan
-				</button>
-				<button
-					type="button"
-					onclick={() => applyPreset('last_month')}
-					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {preset ===
-					'last_month'
-						? 'bg-[#111111] text-white'
-						: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
-				>
-					Bulan Lalu
-				</button>
-				<button
-					type="button"
-					onclick={() => applyPreset('today')}
-					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {preset ===
-					'today'
-						? 'bg-[#111111] text-white'
-						: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
-				>
-					Hari Ini
-				</button>
-				<button
-					type="button"
-					onclick={() => applyPreset('all')}
-					class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {preset ===
-					'all'
-						? 'bg-[#111111] text-white'
-						: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
-				>
-					Semua
-				</button>
-			</div>
-
-			<!-- Calendar Month Header -->
-			<div class="mb-2 flex items-center justify-between px-1">
-				<button
-					type="button"
-					onclick={prevMonth}
-					class="cursor-pointer rounded p-1 text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]"
-				>
-					<CaretLeft class="size-3.5" weight="bold" />
-				</button>
-				<span class="text-xs font-medium text-[#111111]">
-					{monthNames[viewMonth]}
-					{viewYear}
-				</span>
-				<button
-					type="button"
-					onclick={nextMonth}
-					class="cursor-pointer rounded p-1 text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]"
-				>
-					<CaretRight class="size-3.5" weight="bold" />
-				</button>
-			</div>
-
-			<!-- Calendar Grid Days Header -->
-			<div class="mb-1 grid grid-cols-7 text-center text-[10px] font-medium text-[#787774]">
-				<span>Min</span>
-				<span>Sen</span>
-				<span>Sel</span>
-				<span>Rab</span>
-				<span>Kam</span>
-				<span>Jum</span>
-				<span>Sab</span>
-			</div>
-
-			<!-- Calendar Grid -->
-			<div class="grid grid-cols-7 gap-y-1">
-				{#each calendarDays as d (d.dateStr)}
-					{@const isStart = d.dateStr === start}
-					{@const isEnd = d.dateStr === end}
-					{@const inRange = start && end && d.dateStr >= start && d.dateStr <= end}
-					{@const isSelected = isStart || isEnd}
+			<!-- Presets Bar at Top -->
+			<div
+				class="mb-3 flex flex-wrap items-center justify-between gap-1 border-b border-[#EAEAEA] pb-2.5"
+			>
+				<div class="flex flex-wrap gap-1">
 					<button
 						type="button"
-						onclick={() => handleDayClick(d.dateStr)}
-						class="flex size-8 cursor-pointer items-center justify-center text-center font-mono text-[11px] transition-colors {inRange &&
-						!isSelected
-							? 'bg-[#F0EFEC] text-[#111111]'
-							: ''} {isSelected
-							? 'rounded bg-[#111111] font-semibold text-white'
-							: 'rounded hover:bg-[#F9F9F8]'} {!d.isCurrentMonth && !isSelected
-							? 'text-[#C9C4B8]'
-							: 'text-[#111111]'}"
+						onclick={() => applyPreset('this_month')}
+						class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {preset ===
+						'this_month'
+							? 'bg-[#111111] font-semibold text-white'
+							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						{d.dayNum}
+						Bulan Ini
 					</button>
-				{/each}
-			</div>
+					<button
+						type="button"
+						onclick={() => applyPreset('next_month')}
+						class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {preset ===
+						'next_month'
+							? 'bg-[#111111] font-semibold text-white'
+							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
+					>
+						Bulan Depan
+					</button>
+					<button
+						type="button"
+						onclick={() => applyPreset('last_month')}
+						class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {preset ===
+						'last_month'
+							? 'bg-[#111111] font-semibold text-white'
+							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
+					>
+						Bulan Lalu
+					</button>
+					<button
+						type="button"
+						onclick={() => applyPreset('today')}
+						class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {preset ===
+						'today'
+							? 'bg-[#111111] font-semibold text-white'
+							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
+					>
+						Hari Ini
+					</button>
+					<button
+						type="button"
+						onclick={() => applyPreset('all')}
+						class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {preset ===
+						'all'
+							? 'bg-[#111111] font-semibold text-white'
+							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
+					>
+						Semua
+					</button>
+				</div>
 
-			<!-- Helper note -->
-			<div
-				class="mt-2.5 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-[10px] text-[#787774]"
-			>
-				<span>
-					{start && !end ? 'Klik tanggal ke-2 untuk akhir' : 'Klik tanggal untuk pilih rentang'}
-				</span>
 				{#if start || end}
 					<button
 						type="button"
@@ -346,12 +303,142 @@
 							preset = 'all';
 							onchange?.({ start, end, preset });
 						}}
-						class="flex cursor-pointer items-center gap-0.5 text-[#9F2F2D] hover:underline"
+						class="flex cursor-pointer items-center gap-1 text-[11px] text-[#9F2F2D] hover:underline"
 					>
 						<X class="size-3" />
-						<span>Hapus</span>
+						<span>Reset</span>
 					</button>
 				{/if}
+			</div>
+
+			<!-- 2-Month Calendar Grid Container -->
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<!-- MONTH 1 (Left) -->
+				<div class="space-y-2">
+					<div class="flex items-center justify-between px-1">
+						<button
+							type="button"
+							onclick={prevMonth}
+							class="cursor-pointer rounded p-1 text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]"
+							title="Bulan sebelumnya"
+						>
+							<CaretLeft class="size-3.5" weight="bold" />
+						</button>
+						<span class="text-xs font-semibold text-[#111111]">
+							{monthNames[viewMonth]}
+							{viewYear}
+						</span>
+						<span class="size-5"></span>
+						<!-- Spacer for alignment -->
+					</div>
+
+					<!-- Days of week -->
+					<div class="grid grid-cols-7 text-center text-[10px] font-medium text-[#787774]">
+						<span>Min</span>
+						<span>Sen</span>
+						<span>Sel</span>
+						<span>Rab</span>
+						<span>Kam</span>
+						<span>Jum</span>
+						<span>Sab</span>
+					</div>
+
+					<!-- Days grid -->
+					<div class="grid grid-cols-7 gap-y-0.5 text-center">
+						{#each month1Days as d (d.dateStr)}
+							{@const isStart = d.dateStr === start}
+							{@const isEnd = d.dateStr === end}
+							{@const inRange = start && end && d.dateStr >= start && d.dateStr <= end}
+							{@const isSelected = isStart || isEnd}
+							<button
+								type="button"
+								onclick={() => handleDayClick(d.dateStr)}
+								class="flex size-8 cursor-pointer items-center justify-center text-center font-mono text-[11px] transition-colors {inRange &&
+								!isSelected
+									? 'bg-[#F0EFEC] text-[#111111]'
+									: ''} {isSelected
+									? 'rounded bg-[#111111] font-semibold text-white'
+									: 'rounded hover:bg-[#F9F9F8]'} {!d.isCurrentMonth && !isSelected
+									? 'text-[#C9C4B8]'
+									: 'text-[#111111]'}"
+							>
+								{d.dayNum}
+							</button>
+						{/each}
+					</div>
+				</div>
+
+				<!-- MONTH 2 (Right) -->
+				<div class="space-y-2">
+					<div class="flex items-center justify-between px-1">
+						<span class="size-5"></span>
+						<!-- Spacer for alignment -->
+						<span class="text-xs font-semibold text-[#111111]">
+							{monthNames[nextMonthData.month]}
+							{nextMonthData.year}
+						</span>
+						<button
+							type="button"
+							onclick={nextMonth}
+							class="cursor-pointer rounded p-1 text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]"
+							title="Bulan berikutnya"
+						>
+							<CaretRight class="size-3.5" weight="bold" />
+						</button>
+					</div>
+
+					<!-- Days of week -->
+					<div class="grid grid-cols-7 text-center text-[10px] font-medium text-[#787774]">
+						<span>Min</span>
+						<span>Sen</span>
+						<span>Sel</span>
+						<span>Rab</span>
+						<span>Kam</span>
+						<span>Jum</span>
+						<span>Sab</span>
+					</div>
+
+					<!-- Days grid -->
+					<div class="grid grid-cols-7 gap-y-0.5 text-center">
+						{#each month2Days as d (d.dateStr)}
+							{@const isStart = d.dateStr === start}
+							{@const isEnd = d.dateStr === end}
+							{@const inRange = start && end && d.dateStr >= start && d.dateStr <= end}
+							{@const isSelected = isStart || isEnd}
+							<button
+								type="button"
+								onclick={() => handleDayClick(d.dateStr)}
+								class="flex size-8 cursor-pointer items-center justify-center text-center font-mono text-[11px] transition-colors {inRange &&
+								!isSelected
+									? 'bg-[#F0EFEC] text-[#111111]'
+									: ''} {isSelected
+									? 'rounded bg-[#111111] font-semibold text-white'
+									: 'rounded hover:bg-[#F9F9F8]'} {!d.isCurrentMonth && !isSelected
+									? 'text-[#C9C4B8]'
+									: 'text-[#111111]'}"
+							>
+								{d.dayNum}
+							</button>
+						{/each}
+					</div>
+				</div>
+			</div>
+
+			<!-- Helper instructions at bottom -->
+			<div
+				class="mt-3 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-[11px] text-[#787774]"
+			>
+				<span>
+					{#if !start}
+						Pilih tanggal awal
+					{:else if start && !end}
+						Pilih tanggal akhir (rentang akan otomatis tersorot)
+					{:else}
+						Rentang: <strong class="font-mono text-[#111111]">{dFmt(start)}</strong> s/d
+						<strong class="font-mono text-[#111111]">{dFmt(end)}</strong>
+					{/if}
+				</span>
+				<span class="font-mono text-[10px] text-[#787774]">2-Click Range</span>
 			</div>
 		</div>
 	{/if}
