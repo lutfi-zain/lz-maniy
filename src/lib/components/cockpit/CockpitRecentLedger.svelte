@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { fmtIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
@@ -28,7 +29,7 @@
 
 		try {
 			const res = await fetch(
-				`https://reedrich-mcp.lutfidmz.workers.dev/api/v1/transactions?${queryParts.join('&')}`,
+				`${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`,
 				{
 					headers: {
 						'X-API-Key': reedrichStore.apiToken,
