@@ -6,7 +6,7 @@ Renders a consolidated personal financial intelligence dashboard partitioned int
 ## Requirements
 
 ### Requirement: Consolidated Net Worth & Currency Breakdown
-The dashboard SHALL display the user's consolidated net worth in IDR, including sub-aggregations by currency and financial institution derived from the primary account detail snapshot.
+The dashboard SHALL display the user's consolidated net worth in IDR, including sub-aggregations by currency and financial institution derived from the primary account detail snapshot, using high-precision typography and tabular numbers without decorative literary serif fonts or ambient background animations.
 
 #### Scenario: Display Consolidated Net Worth
 - **WHEN** account detail data is successfully loaded
@@ -15,6 +15,13 @@ The dashboard SHALL display the user's consolidated net worth in IDR, including 
 #### Scenario: Filter Wallets by Institution Pill
 - **WHEN** a user clicks on an institution pill in the Net Worth card
 - **THEN** the wallet list highlights or filters to show only wallets associated with that institution.
+
+### Requirement: Executive Cockpit Operational Workbench
+The dashboard SHALL provide a compact 3-column operational cockpit at `/` containing quick bank balances on the left, a live recent transaction feed in the center, and monthly allocation pacing on the right.
+
+#### Scenario: Scan Daily Financial Cockpit
+- **WHEN** user loads the home cockpit route `/`
+- **THEN** user can view their entire cash position, recent transaction activity, and critical runway alerts on one screen without opening nested modals or drawers.
 
 ### Requirement: Partitioned Wallet Accounts
 The dashboard SHALL partition wallets into Spendable (unlocked operational cash) and Locked (protected reserves, house rent savings, child doctor funds).
