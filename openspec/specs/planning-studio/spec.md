@@ -13,11 +13,15 @@ The planning studio SHALL display category and period-based spending limits, cal
 - **THEN** each active budget displays its name, limit amount, spent amount, remaining allowance, and an alert state indicator (on track, warning >= 80%, or over budget > 100%).
 
 ### Requirement: Derived Savings Goals with Multi-Wallet Allocation
-The planning studio SHALL display savings goals, tracking target amounts, accumulated savings, days remaining to deadline, and a detailed breakdown of all underlying linked wallets and live conversion rates.
+The planning studio SHALL display savings goals, tracking target amounts, accumulated savings (including foreign currency wallets converted into IDR via live pegs), days remaining to deadline, and a detailed breakdown of all underlying linked wallets and live conversion rates.
 
 #### Scenario: View Sewa Rumah 2026 Goal Pacing
 - **WHEN** user views the "Sewa Rumah 2026" goal
 - **THEN** the interface displays target (Rp 18.000.000), current amount (Rp 14.230.897,52), progress percentage (79%), remaining days, and the exact contribution from BCA Pocket, Jago Sewa Rumah, OCBC, and Bitget USDT.
+
+#### Scenario: View Multi-Currency Accumulated Goal Total
+- **WHEN** user views the "Sewa Rumah 2026" goal
+- **THEN** the total accumulated savings reflects the sum of all contributing IDR wallets plus the converted IDR value of foreign currency wallets (e.g. Bitget 115.61 USDT converted to Rp 2.061.999), matching the live total of Rp 14.230.897,52.
 
 ### Requirement: Obligations & Recurring Cashflow Templates
 The planning studio SHALL display active liabilities (debts), receivables (loans), and recurring bill templates with scheduled next-run dates.

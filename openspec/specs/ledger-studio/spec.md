@@ -6,26 +6,30 @@ Provides a full-width dedicated transaction ledger studio at `/ledger` featuring
 ## Requirements
 
 ### Requirement: Full-Width Tabular Transaction Ledger
-The ledger studio SHALL render all user transactions in a full-width, high-density table displaying Date, Description, Category, Source Wallet, Destination Wallet (for transfers), Type, Status (realized/planned), and Amount with tabular numeric alignment.
+The ledger studio SHALL render all user transactions in a full-width, high-density table displaying Date, Description, Kategori (resolved category name), Dari Akun, Ke Akun (for transfers), Status (realized/planned), and Amount with tabular numeric alignment, and support configurable pagination bounds.
 
-#### Scenario: View Transaction Rows
+#### Scenario: View Transaction Rows with Category Column
 - **WHEN** user navigates to `/ledger`
-- **THEN** all transactions are rendered in a clean tabular grid with alternating row tints, monospaced tabular numbers, and semantic status indicators.
+- **THEN** each transaction row explicitly displays the resolved category name (e.g. "Makan & Minum", "Tagihan & Utilitas") alongside its description, source wallet, and amount.
+
+#### Scenario: Configure Pagination Page Size
+- **WHEN** user selects a page size limit (25, 50, or 100)
+- **THEN** the ledger renders the requested number of rows per page with a bounded navigation stepper.
 
 ### Requirement: Super Dynamic Multi-Faceted Filter Engine
-The ledger studio SHALL provide comprehensive client-side filtering by Date Range (quick presets: All, Today, This Month, Last Month, Last 3 Months, plus Custom Date Range), Wallet selection grouped by institution, Category selection, Transaction Type (income, expense, transfer), Status (realized vs planned), and Description search text.
+The ledger studio SHALL provide client-side filtering by 2-Click Date Range (presets: "Bulan Ini" [default], "Bulan Depan", "Bulan Lalu", "Hari Ini", "Semua Waktu", "Rentang Khusus" without native HTML inputs), Searchable Multi-Select Combobox for Wallets (grouped by bank) and Categories, Category ID matching, Type, Status, and Search.
 
-#### Scenario: Filter by Date Range Preset
-- **WHEN** user selects "This Month" from the date range dropdown
-- **THEN** the ledger filters immediately to transactions occurring within the current calendar month and updates the summary counts.
+#### Scenario: Filter by Category ID
+- **WHEN** user selects or navigates to category "Makan & Minum"
+- **THEN** the ledger matches transactions where `t.transactionCategoryId === categoryId`, correctly displaying all associated food and beverage transactions regardless of their individual description text.
 
-#### Scenario: Filter by Institution and Wallet
-- **WHEN** user selects "BCA" from the wallet filter
-- **THEN** only transactions belonging to BCA Main or BCA Pocket Sewa Rumah are displayed.
+#### Scenario: Select Date Range via 2-Click Calendar
+- **WHEN** user clicks a start date and an end date on the custom calendar popover
+- **THEN** the date range is immediately applied with active visual range highlighting.
 
-#### Scenario: Real-time Description Search
-- **WHEN** user focuses the search input (or presses `/`) and types "KFC"
-- **THEN** the ledger updates instantly to show only transactions matching "KFC" in their description or notes.
+#### Scenario: Search and Multi-Select in Combobox
+- **WHEN** user types in the wallet or category combobox search input
+- **THEN** the list filters instantly without requiring manual scrolling, and user can check multiple items simultaneously.
 
 ### Requirement: Dynamic Filtered Financial Aggregates
 The ledger studio SHALL dynamically compute and display the sum of income, sum of expenses, and net cashflow for the currently filtered set of transactions.
