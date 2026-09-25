@@ -17,9 +17,10 @@
 	);
 
 	onMount(() => {
-		// Sync live snapshot on mount if authenticated
+		// Sync live snapshot and user profile on mount if authenticated
 		if (authStore.isAuthenticated) {
 			reedrichStore.fetchSnapshot();
+			reedrichStore.fetchUserProfile();
 		}
 	});
 

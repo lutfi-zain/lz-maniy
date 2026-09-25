@@ -10,7 +10,8 @@ import type {
 	AccountDetail,
 	CategoryRecord,
 	DrawerState,
-	TransactionRecord
+	TransactionRecord,
+	UserProfileDTO
 } from '$lib/types/account-detail';
 
 export class ReedrichStore {
@@ -117,7 +118,8 @@ export class ReedrichStore {
 		try {
 			const [accRes, catRes] = await Promise.all([
 				this.request(`${DEFAULT_API_URL}/api/v1/account-detail`),
-				this.request(`${DEFAULT_API_URL}/api/v1/categories`).catch(() => null)
+				this.request(`${DEFAULT_API_URL}/api/v1/categories`).catch(() => null),
+				this.fetchUserProfile().catch(() => null)
 			]);
 
 			if (!accRes.ok) throw new Error(`HTTP ${accRes.status}`);
@@ -137,6 +139,26 @@ export class ReedrichStore {
 			this.statusMessage = `Offline / Gagal (${msg}). Memakai data cache mock.`;
 		} finally {
 			this.isLoading = false;
+		}
+	}
+	/**
+	 * Queries GET /api/v1/me to retrieve sanitized verified user profile.
+	 */
+	async fetchUserProfile(): Promise<UserProfileDTO | null> {
+		const token = (authStore.accessToken || this.apiToken).trim();
+		if (!token) return null;
+
+		try {
+			const res = await this.request(`${DEFAULT_API_URL}/api/v1/me`);
+			if (!res.ok) return null;
+			const profile = (await res.json()) as UserProfileDTO;
+			if (profile && profile.userId) {
+				authStore.setUserProfile(profile);
+			}
+			return profile;
+		} catch (err) {
+			console.warn('Gagal memuat profil pengguna dari /api/v1/me:', err);
+			return null;
 		}
 	}
 

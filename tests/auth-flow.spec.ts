@@ -94,4 +94,57 @@ test.describe('Authentication & Zero-Click Google OAuth PKCE Flow', () => {
 		const token = await page.evaluate(() => localStorage.getItem('reedrich_access_token'));
 		expect(token).toBeNull();
 	});
+
+	test('displays verified user profile and initials in Topbar dropdown and Cockpit', async ({
+		page
+	}) => {
+		// Mock /api/v1/me response
+		await page.route('**/api/v1/me', (route) => {
+			route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					userId: 'usr_mswp4uie',
+					firstName: 'Lutfi',
+					lastName: 'Zain',
+					fullName: 'Lutfi Zain',
+					email: 'lutfidmz@gmail.com',
+					whatsappNumber: '+6282216557939',
+					createdAt: '2026-08-17T03:50:49.718Z'
+				})
+			});
+		});
+
+		// Seed storage with logged-in user
+		await page.addInitScript(() => {
+			localStorage.setItem('reedrich_access_token', 'mock_token');
+			localStorage.setItem(
+				'reedrich_user',
+				JSON.stringify({
+					userId: 'usr_mswp4uie',
+					firstName: 'Lutfi',
+					lastName: 'Zain',
+					fullName: 'Lutfi Zain',
+					email: 'lutfidmz@gmail.com',
+					whatsappNumber: '+6282216557939',
+					createdAt: '2026-08-17T03:50:49.718Z'
+				})
+			);
+		});
+
+		await page.goto('/');
+
+		// Topbar avatar should show initials "LZ"
+		const avatarBtn = page.getByRole('button', { name: 'Profil Pengguna' });
+		await expect(avatarBtn).toBeVisible();
+		await expect(avatarBtn).toContainText('LZ');
+
+		// Cockpit should display editorial greeting with "Lutfi"
+		await expect(page.locator('h1')).toContainText('Ringkasan Portofolio · Lutfi');
+
+		// Open dropdown
+		await avatarBtn.click();
+		await expect(page.locator('text=Lutfi Zain')).toBeVisible();
+		await expect(page.locator('text=+6282216557939')).toBeVisible();
+	});
 });
