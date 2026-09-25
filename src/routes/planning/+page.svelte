@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
@@ -260,7 +261,11 @@
 
 							<div class="divide-y divide-[#EAEAEA]">
 								{#each linked as lw (lw.walletId)}
-									<div class="flex items-center justify-between py-2 text-[11px]">
+									<a
+										href="/ledger?walletId={lw.walletId}"
+										class="flex items-center justify-between rounded px-2 py-1.5 text-[11px] no-underline transition-colors hover:bg-white hover:shadow-2xs"
+										title="Buka mutasi {lw.walletName} di Ledger"
+									>
 										<div class="flex items-center gap-2">
 											<LockKey class="size-3 text-[#956400]" weight="bold" />
 											<span class="font-medium text-[#111111]">{lw.walletName}</span>
@@ -268,13 +273,6 @@
 												({lw.currency}
 												{lw.usedPeg ? '· Kurs Live' : '· Nilai Pasti'})
 											</span>
-											<a
-												href="/ledger?walletId={lw.walletId}"
-												class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
-												title="Lihat mutasi dompet di Ledger"
-											>
-												Mutasi →
-											</a>
 										</div>
 										<div class="text-right font-mono text-[#111111] tabular-nums">
 											{#if lw.currency !== 'IDR'}
@@ -284,7 +282,7 @@
 											{/if}
 											<strong class="font-semibold">{fmtIDR(lw.convertedAmount)}</strong>
 										</div>
-									</div>
+									</a>
 								{/each}
 							</div>
 						</div>
@@ -302,10 +300,18 @@
 					{@const p = b.percentUsed || 0}
 					{@const isOver = p > 100}
 					{@const isWarning = p >= 80 && p <= 100}
-					<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs">
+					<a
+						href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
+						class="group block space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 no-underline shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
+						title="Buka mutasi anggaran {b.budgetName} di Ledger"
+					>
 						<div class="flex items-start justify-between gap-3">
 							<div>
-								<h2 class="text-sm font-semibold text-[#111111]">{b.budgetName}</h2>
+								<h2
+									class="text-sm font-semibold text-[#111111] transition-colors group-hover:text-[#111111]"
+								>
+									{b.budgetName}
+								</h2>
 								<p class="mt-0.5 text-xs text-[#787774]">Kategori: {b.categoryName || 'General'}</p>
 							</div>
 							<span
@@ -345,16 +351,7 @@
 								{fmtIDR(b.remaining)}
 							</span>
 						</div>
-
-						<div class="border-t border-[#EAEAEA] pt-2 text-right">
-							<a
-								href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
-								class="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
-							>
-								<span>Lihat Transaksi →</span>
-							</a>
-						</div>
-					</div>
+					</a>
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
 						Belum ada pagu anggaran aktif tercatat.
@@ -380,7 +377,11 @@
 
 					<div class="space-y-2">
 						{#each debts as d (d.debtLoanId)}
-							<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs">
+							<a
+								href="/ledger?search={encodeURIComponent(d.personName)}"
+								class="block rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs no-underline transition-colors hover:border-[#111111] hover:bg-white"
+								title="Buka mutasi {d.personName} di Ledger"
+							>
 								<div class="flex items-center justify-between font-medium text-[#111111]">
 									<span>{d.personName}</span>
 									<span class="font-mono font-semibold text-[#9F2F2D] tabular-nums">
@@ -389,18 +390,9 @@
 								</div>
 								<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">
 									<span>Jatuh tempo: {dFmt(d.dueDate)}</span>
-									<div class="flex items-center gap-2">
-										<span class="font-mono uppercase">{d.status}</span>
-										<span>·</span>
-										<a
-											href="/ledger?search={encodeURIComponent(d.personName)}"
-											class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
-										>
-											Mutasi →
-										</a>
-									</div>
+									<span class="font-mono uppercase">{d.status}</span>
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -416,7 +408,11 @@
 
 					<div class="space-y-2">
 						{#each loans as l (l.debtLoanId)}
-							<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs">
+							<a
+								href="/ledger?search={encodeURIComponent(l.personName)}"
+								class="block rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs no-underline transition-colors hover:border-[#111111] hover:bg-white"
+								title="Buka mutasi {l.personName} di Ledger"
+							>
 								<div class="flex items-center justify-between font-medium text-[#111111]">
 									<span>{l.personName}</span>
 									<span class="font-mono font-semibold text-[#346538] tabular-nums">
@@ -425,18 +421,9 @@
 								</div>
 								<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">
 									<span>Jatuh tempo: {dFmt(l.dueDate)}</span>
-									<div class="flex items-center gap-2">
-										<span class="font-mono uppercase">{l.status}</span>
-										<span>·</span>
-										<a
-											href="/ledger?search={encodeURIComponent(l.personName)}"
-											class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
-										>
-											Mutasi →
-										</a>
-									</div>
+									<span class="font-mono uppercase">{l.status}</span>
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -470,19 +457,12 @@
 						<tbody class="divide-y divide-[#EAEAEA]">
 							{#each recurringTemplates as r (r.name)}
 								{@const isInc = r.type === 'income'}
-								<tr class="transition-colors hover:bg-[#FBFBFA]">
-									<td class="px-3 py-2.5 font-medium text-[#111111]">
-										<div class="flex items-center justify-between gap-2">
-											<span>{r.name}</span>
-											<a
-												href="/ledger?search={encodeURIComponent(r.name)}"
-												class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
-												title="Lihat mutasi terkait di Ledger"
-											>
-												Mutasi →
-											</a>
-										</div>
-									</td>
+								<tr
+									onclick={() => goto(`/ledger?search=${encodeURIComponent(r.name)}`)}
+									class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
+									title="Buka mutasi {r.name} di Ledger"
+								>
+									<td class="px-3 py-2.5 font-medium text-[#111111]">{r.name}</td>
 									<td class="px-3 py-2.5 text-[#787774]">{r.freq}</td>
 									<td class="px-3 py-2.5 font-mono text-[11px] text-[#787774]">{dFmt(r.next)}</td>
 									<td class="px-3 py-2.5 text-[#787774]">{r.wallet}</td>
