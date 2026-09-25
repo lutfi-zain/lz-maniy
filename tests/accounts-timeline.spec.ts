@@ -20,6 +20,36 @@ test.describe('Account Matrix Timeline & Net Worth Breakdown', () => {
 		await expect(page.locator('h1')).toContainText('Matriks Akun & Bank');
 	});
 
+	test('filtering Bulan Depan in ledger and clicking Rincian Akun preserves Bulan Depan dates in accounts', async ({
+		page
+	}) => {
+		await page.goto('/ledger');
+
+		// Switch ledger to "Bulan Depan"
+		const ledgerDatePicker = page.locator('button:has-text("Bulan Ini")').first();
+		await ledgerDatePicker.click();
+
+		const bulanDepanBtn = page.getByRole('button', { name: 'Bulan Depan' });
+		await bulanDepanBtn.click();
+
+		await expect(page.locator('button:has-text("Bulan Depan")').first()).toBeVisible();
+		await expect(page.locator('text=PROYEKSI NET WORTH').first()).toBeVisible();
+
+		// Click "Rincian Akun →"
+		const rincianLink = page.getByRole('link', { name: /Rincian Akun/ });
+		await rincianLink.click();
+
+		// Must navigate to /accounts
+		await expect(page).toHaveURL(/\/accounts\?datePreset=next_month/);
+
+		// In /accounts, DateRangePicker trigger MUST display "Bulan Depan", NOT "Bulan Ini"
+		const accountsDatePicker = page.locator('button:has-text("Bulan Depan")').first();
+		await expect(accountsDatePicker).toBeVisible();
+
+		// The top macro tile in accounts must reflect PROYEKSI NET WORTH
+		await expect(page.locator('text=PROYEKSI NET WORTH').first()).toBeVisible();
+	});
+
 	test('updates wallet balances and macro summary tiles when switching date preset in accounts', async ({
 		page
 	}) => {

@@ -84,10 +84,16 @@
 		return { year: viewYear, month: viewMonth + 1 };
 	});
 
-	// Initialize with default preset ("this_month")
+	// Reactively synchronize start/end whenever preset changes or on initialization
+	let prevPreset = $state<string | undefined>(undefined);
 	$effect(() => {
-		if (preset === 'this_month' && !start && !end) {
-			applyPreset('this_month', false);
+		if (preset && preset !== 'custom') {
+			if (preset !== prevPreset || (!start && !end && preset !== 'all')) {
+				prevPreset = preset;
+				applyPreset(preset, false);
+			}
+		} else {
+			prevPreset = preset;
 		}
 	});
 

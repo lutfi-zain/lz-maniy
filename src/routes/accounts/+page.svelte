@@ -34,6 +34,11 @@
 
 	onMount(() => {
 		const qPreset = page.url.searchParams.get('datePreset');
+		const qStart = page.url.searchParams.get('startDate');
+		const qEnd = page.url.searchParams.get('endDate');
+
+		if (qStart) filterStartDate = qStart;
+		if (qEnd) filterEndDate = qEnd;
 		if (
 			qPreset &&
 			['this_month', 'next_month', 'last_month', 'today', 'all', 'custom'].includes(qPreset)

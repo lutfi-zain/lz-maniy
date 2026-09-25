@@ -475,7 +475,9 @@
 				<span>{pointInTimeNetWorth.subtext}</span>
 				<span>·</span>
 				<a
-					href="/accounts?datePreset={encodeURIComponent(datePreset)}"
+					href="/accounts?datePreset={encodeURIComponent(datePreset)}&startDate={encodeURIComponent(
+						filterStartDate
+					)}&endDate={encodeURIComponent(filterEndDate)}"
 					class="font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
 				>
 					Rincian Akun →
