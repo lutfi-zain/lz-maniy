@@ -22,9 +22,9 @@ test.describe('Authentication & Zero-Click Google OAuth PKCE Flow', () => {
 		await expect(page.locator('h1')).toHaveClass(/font-serif/);
 		await expect(page.locator('text=Zero-Click Direct Redirect · PKCE S256 TLS 1.3')).toBeVisible();
 
-		// Check developer accordion
-		const devAccordion = page.locator('button:has-text("Mode Pengembang")');
-		await expect(devAccordion).toBeVisible();
+		// Check discreet API key link
+		const devLink = page.locator('button:has-text("masuk dengan api key")');
+		await expect(devLink).toBeVisible();
 	});
 
 	test('clicking Lanjutkan dengan Google sets PKCE and triggers Google OAuth navigation', async ({
@@ -54,13 +54,13 @@ test.describe('Authentication & Zero-Click Google OAuth PKCE Flow', () => {
 	test('developer mode allows manual API key entry and navigates to cockpit', async ({ page }) => {
 		await page.goto('/login');
 
-		// Open dev accordion
-		await page.locator('button:has-text("Mode Pengembang")').click();
+		// Open dev input
+		await page.locator('button:has-text("masuk dengan api key")').click();
 
 		// Fill manual API key
 		const keyInput = page.locator('input[placeholder*="fp_live"]');
 		await keyInput.fill('fp_live_test_sandbox_12345');
-		await page.locator('button:has-text("Gunakan Token Manual")').click();
+		await page.locator('button:has-text("Gunakan Token")').click();
 
 		// Must navigate to / and display user profile
 		await expect(page).toHaveURL('/');
@@ -72,9 +72,9 @@ test.describe('Authentication & Zero-Click Google OAuth PKCE Flow', () => {
 	}) => {
 		// Log in using developer token first
 		await page.goto('/login');
-		await page.locator('button:has-text("Mode Pengembang")').click();
+		await page.locator('button:has-text("masuk dengan api key")').click();
 		await page.locator('input[placeholder*="fp_live"]').fill('fp_live_test_logout');
-		await page.locator('button:has-text("Gunakan Token Manual")').click();
+		await page.locator('button:has-text("Gunakan Token")').click();
 		await expect(page).toHaveURL('/');
 
 		// Open Topbar user menu
