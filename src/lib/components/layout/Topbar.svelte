@@ -13,6 +13,8 @@
 	import SignOut from 'phosphor-svelte/lib/SignOut';
 	import UserCircle from 'phosphor-svelte/lib/UserCircle';
 	import DeviceMobile from 'phosphor-svelte/lib/DeviceMobile';
+	import Plus from 'phosphor-svelte/lib/Plus';
+	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { dFmt } from '$lib/utils/dates';
 	const pathname = $derived(page.url.pathname);
 	let isUserMenuOpen = $state(false);
@@ -138,6 +140,18 @@
 				/>
 				<span class="hidden sm:inline">Sync</span>
 			</button>
+
+			{#if authStore.isAuthenticated}
+				<button
+					type="button"
+					onclick={() => transactionFormStore.openCreate()}
+					class="hidden cursor-pointer items-center gap-1.5 rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs font-medium text-[#111111] transition-transform hover:bg-[#F9F9F8] active:scale-98 md:flex"
+					title="Catat transaksi baru (N)"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>Catat</span>
+				</button>
+			{/if}
 
 			<div class="flex items-center gap-1.5 border-l border-[#EAEAEA] pl-2 sm:pl-3">
 				<span

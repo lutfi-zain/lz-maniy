@@ -131,4 +131,164 @@ describe('ReedrichStore', () => {
 		expect(authStore.user?.fullName).toBe('Lutfi Zain');
 		expect(authStore.user?.whatsappNumber).toBe('+6282216557939');
 	});
+
+	describe('Transaction Mutations', () => {
+		it('createTransaction sends POST and refreshes state', async () => {
+			const mockCreated = {
+				transactionId: 'txn-new-1',
+				transactionWalletId: 'w-1',
+				transactionCategoryId: 'cat-1',
+				transactionAmount: 75000,
+				transactionType: 'expense',
+				transactionDate: '2026-09-25T00:00:00Z',
+				transactionIsPlanned: 0
+			};
+
+			const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+				if (url.endsWith('/api/v1/transactions') && init?.method === 'POST') {
+					return Promise.resolve({
+						ok: true,
+						json: async () => mockCreated
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const result = await store.createTransaction({
+				walletId: 'w-1',
+				categoryId: 'cat-1',
+				amount: 75000,
+				type: 'expense',
+				date: '2026-09-25'
+			});
+
+			expect(result.transactionId).toBe('txn-new-1');
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/transactions'),
+				expect.objectContaining({
+					method: 'POST',
+					body: expect.stringContaining('"amount":75000')
+				})
+			);
+		});
+
+		it('createTransfer sends POST to /api/v1/transfers', async () => {
+			const mockTransfer = {
+				transactionId: 'txn-transfer-1',
+				transactionWalletId: 'w-src',
+				transactionTargetWalletId: 'w-dst',
+				transactionAmount: 250000,
+				transactionType: 'transfer',
+				transactionDate: '2026-09-25T00:00:00Z',
+				transactionIsPlanned: 0
+			};
+
+			const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+				if (url.endsWith('/api/v1/transfers') && init?.method === 'POST') {
+					return Promise.resolve({
+						ok: true,
+						json: async () => mockTransfer
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const result = await store.createTransfer({
+				sourceWalletId: 'w-src',
+				targetWalletId: 'w-dst',
+				amount: 250000
+			});
+
+			expect(result.transactionType).toBe('transfer');
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/transfers'),
+				expect.objectContaining({
+					method: 'POST',
+					body: expect.stringContaining('"targetWalletId":"w-dst"')
+				})
+			);
+		});
+
+		it('updateTransaction sends PATCH and handles delta', async () => {
+			const mockUpdated = {
+				transactionId: 'txn-1',
+				transactionAmount: 80000
+			};
+
+			const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+				if (url.includes('/api/v1/transactions/txn-1') && init?.method === 'PATCH') {
+					return Promise.resolve({
+						ok: true,
+						json: async () => mockUpdated
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const result = await store.updateTransaction('txn-1', { amount: 80000 });
+			expect(result.transactionAmount).toBe(80000);
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/transactions/txn-1'),
+				expect.objectContaining({
+					method: 'PATCH',
+					body: expect.stringContaining('"amount":80000')
+				})
+			);
+		});
+
+		it('deleteTransaction sends DELETE request', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+				if (url.includes('/api/v1/transactions/txn-del') && init?.method === 'DELETE') {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({ success: true })
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			await expect(store.deleteTransaction('txn-del')).resolves.toBeUndefined();
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/transactions/txn-del'),
+				expect.objectContaining({ method: 'DELETE' })
+			);
+		});
+
+		it('propagates API error messages on failure', async () => {
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 400,
+					json: async () => ({ message: 'Amount must be positive' })
+				})
+			);
+
+			await expect(
+				store.createTransaction({
+					walletId: 'w-1',
+					categoryId: 'c-1',
+					amount: -10,
+					type: 'expense',
+					date: '2026-09-25'
+				})
+			).rejects.toThrow('Amount must be positive');
+		});
+	});
 });

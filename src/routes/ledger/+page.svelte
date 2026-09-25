@@ -10,6 +10,8 @@
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import X from 'phosphor-svelte/lib/X';
+	import Plus from 'phosphor-svelte/lib/Plus';
+	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import ComboboxMultiSelect, {
 		type ComboboxOption
@@ -273,6 +275,15 @@
 		</div>
 
 		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				onclick={() => transactionFormStore.openCreate()}
+				class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
+			>
+				<Plus class="size-3.5" weight="bold" />
+				<span>Catat Transaksi</span>
+			</button>
+
 			<button
 				type="button"
 				onclick={resetFilters}
@@ -628,7 +639,10 @@
 							{@const isPlan = t.transactionIsPlanned === 1}
 							{@const curr = getWalletCurrency(t.transactionWalletId)}
 							{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
-							<tr class="transition-colors hover:bg-[#F9F9F8]">
+							<tr
+								class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
+								onclick={() => transactionFormStore.openView(t)}
+							>
 								<td class="px-4 py-2.5 font-mono text-[11px] whitespace-nowrap text-[#787774]">
 									{dFmt(t.transactionDate)}
 								</td>
@@ -706,7 +720,12 @@
 					{@const isPlan = t.transactionIsPlanned === 1}
 					{@const curr = getWalletCurrency(t.transactionWalletId)}
 					{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
-					<div class="p-3.5 transition-colors hover:bg-[#FBFBFA]">
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="cursor-pointer p-3.5 transition-colors hover:bg-[#F9F9F8] active:bg-[#F0EFEC]"
+						onclick={() => transactionFormStore.openView(t)}
+					>
 						<!-- Line 1: Description + Amount -->
 						<div class="flex items-start justify-between gap-2.5">
 							<div

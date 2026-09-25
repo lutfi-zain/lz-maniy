@@ -5,6 +5,8 @@
 	import Table from 'phosphor-svelte/lib/Table';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import Target from 'phosphor-svelte/lib/Target';
+	import Plus from 'phosphor-svelte/lib/Plus';
+	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 
 	const pathname = $derived(page.url.pathname);
 
@@ -66,6 +68,19 @@
 			<span class="absolute bottom-1 size-1 rounded-full bg-[#111111]"></span>
 		{/if}
 	</a>
+
+	<!-- Center Action: Catat Transaksi Baru -->
+	<div class="flex items-center justify-center px-1">
+		<button
+			type="button"
+			onclick={() => transactionFormStore.openCreate()}
+			class="-mt-3.5 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-[#111111] text-white shadow-md transition-transform hover:bg-[#333333] active:scale-95"
+			title="Catat Transaksi Baru"
+			aria-label="Catat Transaksi Baru"
+		>
+			<Plus class="size-5" weight="bold" />
+		</button>
+	</div>
 
 	<!-- Akun & Bank -->
 	<a
