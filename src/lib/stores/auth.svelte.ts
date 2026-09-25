@@ -4,6 +4,11 @@ export interface UserProfile {
 	userId?: string;
 	email?: string;
 	name?: string;
+	firstName?: string;
+	lastName?: string;
+	fullName?: string;
+	whatsappNumber?: string;
+	createdAt?: string;
 	avatar?: string;
 }
 
@@ -107,6 +112,31 @@ export class AuthStore {
 				}
 			} catch (err) {
 				console.error('Failed to write auth credentials to localStorage:', err);
+			}
+		}
+	}
+	/**
+	 * Update user profile details and synchronize with localStorage.
+	 */
+	setUserProfile(profile: UserProfile) {
+		const displayName =
+			profile.fullName ||
+			profile.name ||
+			`${profile.firstName || ''} ${profile.lastName || ''}`.trim() ||
+			this.user?.name ||
+			'User';
+
+		this.user = {
+			...this.user,
+			...profile,
+			name: displayName
+		};
+
+		if (canUseStorage()) {
+			try {
+				localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(this.user));
+			} catch (err) {
+				console.error('Failed to update user profile in localStorage:', err);
 			}
 		}
 	}

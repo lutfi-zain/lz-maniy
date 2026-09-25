@@ -75,7 +75,7 @@
 			const data = (await res.json()) as TokenResponse;
 			if (data.access_token) {
 				authStore.setSession(data);
-				await reedrichStore.fetchSnapshot();
+				await Promise.all([reedrichStore.fetchSnapshot(), reedrichStore.fetchUserProfile()]);
 
 				const target = sessionStorage.getItem('reedrich_auth_target') || '/';
 				sessionStorage.removeItem('reedrich_auth_target');

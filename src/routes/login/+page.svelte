@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import {
 		generateVerifier,
 		generateChallenge,
@@ -67,6 +68,8 @@
 				userId: 'usr_dev_sandbox'
 			}
 		);
+
+		reedrichStore.fetchUserProfile().catch(() => null);
 
 		const target = sessionStorage.getItem('reedrich_auth_target') || '/';
 		sessionStorage.removeItem('reedrich_auth_target');

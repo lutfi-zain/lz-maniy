@@ -1,3 +1,13 @@
+export interface UserProfileDTO {
+	userId: string;
+	firstName: string;
+	lastName: string;
+	fullName: string;
+	email: string;
+	whatsappNumber?: string;
+	createdAt: string;
+}
+
 export type TransactionType = 'expense' | 'income' | 'transfer';
 
 export interface LastTransaction {

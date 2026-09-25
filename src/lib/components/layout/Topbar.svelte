@@ -12,7 +12,8 @@
 	import Target from 'phosphor-svelte/lib/Target';
 	import SignOut from 'phosphor-svelte/lib/SignOut';
 	import UserCircle from 'phosphor-svelte/lib/UserCircle';
-
+	import DeviceMobile from 'phosphor-svelte/lib/DeviceMobile';
+	import { dFmt } from '$lib/utils/dates';
 	const pathname = $derived(page.url.pathname);
 	let isUserMenuOpen = $state(false);
 
@@ -31,7 +32,10 @@
 
 	// Calculate user initials
 	const userInitials = $derived.by(() => {
-		const name = authStore.user?.name || authStore.user?.email || 'U';
+		if (authStore.user?.firstName && authStore.user?.lastName) {
+			return (authStore.user.firstName[0] + authStore.user.lastName[0]).toUpperCase();
+		}
+		const name = authStore.user?.fullName || authStore.user?.name || authStore.user?.email || 'U';
 		const parts = name.trim().split(/\s+/);
 		if (parts.length >= 2) {
 			return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -168,10 +172,23 @@
 							class="absolute right-0 mt-2 w-56 rounded-lg border border-[#EAEAEA] bg-white p-2 text-xs shadow-lg"
 						>
 							<div class="border-b border-[#EAEAEA] px-2.5 py-2">
-								<p class="font-semibold text-[#111111]">{authStore.user?.name || 'Pengguna'}</p>
+								<p class="font-semibold text-[#111111]">
+									{authStore.user?.fullName || authStore.user?.name || 'Pengguna'}
+								</p>
 								<p class="truncate text-[11px] text-[#787774]">
 									{authStore.user?.email || 'Akun Aktif'}
 								</p>
+								{#if authStore.user?.whatsappNumber}
+									<p class="mt-1 flex items-center gap-1 font-mono text-[10px] text-[#787774]">
+										<DeviceMobile class="size-3 text-[#346538]" weight="bold" />
+										<span>{authStore.user.whatsappNumber}</span>
+									</p>
+								{/if}
+								{#if authStore.user?.createdAt}
+									<p class="mt-1 font-mono text-[9px] text-[#A8A29E]">
+										Anggota sejak {dFmt(authStore.user.createdAt)}
+									</p>
+								{/if}
 							</div>
 							<div class="pt-1.5">
 								<button

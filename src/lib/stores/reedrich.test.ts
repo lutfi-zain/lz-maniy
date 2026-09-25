@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReedrichStore } from './reedrich.svelte';
+import { authStore } from './auth.svelte';
 
 describe('ReedrichStore', () => {
 	let store: ReedrichStore;
@@ -101,5 +102,33 @@ describe('ReedrichStore', () => {
 
 		store.drawerSearch = 'tidak ada';
 		expect(store.filteredDrawerTransactions.length).toBe(0);
+	});
+
+	it('fetches user profile from /me and hydrates authStore', async () => {
+		const mockProfile = {
+			userId: 'usr_mswp4uie',
+			firstName: 'Lutfi',
+			lastName: 'Zain',
+			fullName: 'Lutfi Zain',
+			email: 'lutfidmz@gmail.com',
+			whatsappNumber: '+6282216557939',
+			createdAt: '2026-08-17T03:50:49.718Z'
+		};
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => mockProfile
+			})
+		);
+
+		store.apiToken = 'test-token';
+		const profile = await store.fetchUserProfile();
+
+		expect(profile).not.toBeNull();
+		expect(profile?.fullName).toBe('Lutfi Zain');
+		expect(authStore.user?.fullName).toBe('Lutfi Zain');
+		expect(authStore.user?.whatsappNumber).toBe('+6282216557939');
 	});
 });
