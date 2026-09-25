@@ -3,6 +3,8 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import Topbar from '$lib/components/layout/Topbar.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
+	import TransactionFormDrawer from '$lib/components/transaction/TransactionFormDrawer.svelte';
+	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -41,11 +43,32 @@
 			goto('/', { replaceState: true });
 		}
 	});
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if (!authStore.isAuthenticated) return;
+		if (e.key === 'n' || e.key === 'N') {
+			const target = e.target as HTMLElement | null;
+			if (
+				target &&
+				(target.tagName === 'INPUT' ||
+					target.tagName === 'TEXTAREA' ||
+					target.tagName === 'SELECT' ||
+					target.isContentEditable)
+			) {
+				return;
+			}
+			if (!transactionFormStore.isOpen) {
+				e.preventDefault();
+				transactionFormStore.openCreate();
+			}
+		}
+	}
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 {#if !authStore.isInitialized}
 	<!-- Minimalist Shield Loader to prevent Flash of Unauthenticated Content (FOUC) -->
@@ -77,5 +100,6 @@
 				: 'Mock Cache'}
 		</footer>
 		<BottomNav />
+		<TransactionFormDrawer />
 	</div>
 {/if}

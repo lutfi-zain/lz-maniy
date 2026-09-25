@@ -152,6 +152,43 @@ export interface TransactionRecord {
 	transactionCreatedAt?: string;
 }
 
+export interface CreateTransactionPayload {
+	walletId: string;
+	categoryId: string;
+	amount: number;
+	type: 'expense' | 'income';
+	date: string;
+	transactionDate?: string;
+	budgetId?: string | null;
+	adminFee?: number;
+	description?: string | null;
+	isPlanned?: boolean;
+}
+
+export interface CreateTransferPayload {
+	sourceWalletId: string;
+	targetWalletId: string;
+	amount: number;
+	adminFee?: number;
+	description?: string | null;
+	categoryId?: string | null;
+	date?: string;
+	transactionDate?: string;
+}
+
+export interface UpdateTransactionPayload {
+	amount?: number;
+	adminFee?: number;
+	walletId?: string;
+	targetWalletId?: string | null;
+	categoryId?: string | null;
+	budgetId?: string | null;
+	description?: string | null;
+	date?: string;
+	transactionDate?: string;
+	isPlanned?: boolean;
+}
+
 export interface CategoryRecord {
 	categoryId: string;
 	categoryName: string;

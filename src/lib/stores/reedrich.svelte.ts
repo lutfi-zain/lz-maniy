@@ -9,8 +9,11 @@ import { authStore } from '$lib/stores/auth.svelte';
 import type {
 	AccountDetail,
 	CategoryRecord,
+	CreateTransactionPayload,
+	CreateTransferPayload,
 	DrawerState,
 	TransactionRecord,
+	UpdateTransactionPayload,
 	UserProfileDTO
 } from '$lib/types/account-detail';
 
@@ -254,6 +257,97 @@ export class ReedrichStore {
 		}
 
 		return res;
+	}
+
+	/**
+	 * Invalidate transaction caches and refresh global snapshot and transaction list.
+	 */
+	private async invalidateAndRefresh(): Promise<void> {
+		this.transactionCache.clear();
+		this.allTransactions = [];
+		await Promise.all([this.fetchSnapshot(), this.fetchAllTransactions()]);
+	}
+
+	/**
+	 * Create a new expense or income transaction.
+	 */
+	async createTransaction(payload: CreateTransactionPayload): Promise<TransactionRecord> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/transactions`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal mencatat transaksi (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as TransactionRecord;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	/**
+	 * Transfer funds between two user wallets.
+	 */
+	async createTransfer(payload: CreateTransferPayload): Promise<TransactionRecord> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/transfers`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal melakukan transfer (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as TransactionRecord;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	/**
+	 * Update an existing transaction by ID.
+	 */
+	async updateTransaction(id: string, delta: UpdateTransactionPayload): Promise<TransactionRecord> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(id)}`,
+			{
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(delta)
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui transaksi (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as TransactionRecord;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	/**
+	 * Permanently delete a transaction by ID.
+	 */
+	async deleteTransaction(id: string): Promise<void> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(id)}`,
+			{
+				method: 'DELETE'
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menghapus transaksi (HTTP ${res.status})`);
+		}
+
+		await this.invalidateAndRefresh();
 	}
 
 	reset() {
