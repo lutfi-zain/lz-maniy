@@ -17,7 +17,7 @@ The dashboard SHALL display the user's consolidated net worth in IDR, including 
 - **THEN** the wallet list highlights or filters to show only wallets associated with that institution.
 
 ### Requirement: Executive Cockpit Operational Workbench
-The dashboard SHALL provide a compact 3-column operational cockpit at `/` containing quick bank balances on the left, a date-filterable live recent transaction feed in the center using the shared DateRangePicker component, and monthly allocation pacing on the right.
+The dashboard SHALL provide a responsive operational workbench at `/` featuring desktop 3-column layout, compact mobile presentation with a 2x2 KPI grid, a Quick Cash institution liquidity bar leading directly into recent mutations, and a persistent sticky bottom navigation bar on mobile viewports (< 768px).
 
 #### Scenario: Scan Daily Financial Cockpit
 - **WHEN** user loads the home cockpit route `/`
@@ -26,6 +26,14 @@ The dashboard SHALL provide a compact 3-column operational cockpit at `/` contai
 #### Scenario: Filter Recent Mutations by Date Range on Cockpit
 - **WHEN** user changes the date range preset (e.g. to "Bulan Ini" or "Bulan Depan") in the Cockpit workbench
 - **THEN** the recent mutations feed filters dynamically to transactions within that date range.
+
+#### Scenario: Mobile Viewport 2x2 KPI Grid and Quick Cash Bar Hierarchy
+- **WHEN** user accesses `/` on a mobile viewport (< 768px)
+- **THEN** the top KPI strip renders as a compact 2x2 grid displaying all 4 core indicators above the fold, followed by a streamlined single-row Quick Cash bar with a direct link to `/accounts`, leading immediately into the Recent Mutations feed.
+
+#### Scenario: Sticky Bottom Navigation Bar on Mobile
+- **WHEN** user navigates through any studio on a mobile viewport (< 768px)
+- **THEN** a fixed bottom navigation bar is anchored in the thumb zone providing one-tap navigation between Cockpit, Ledger, Akun & Bank, and Perencanaan, while topbar navigation links remain hidden.
 
 ### Requirement: Standardized Status Indicators & Multi-Currency Aggregations
 The dashboard SHALL display account and reserve statuses using a unified visual language (amber lock icon for Cadangan, green dot for Operasional) and compute all total asset values by converting foreign currency balances (USDT/USD) into IDR using live exchange rates/pegs.
