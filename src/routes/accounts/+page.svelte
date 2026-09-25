@@ -6,7 +6,6 @@
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmtTime } from '$lib/utils/dates';
 	import Bank from 'phosphor-svelte/lib/Bank';
-	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import Wallet from 'phosphor-svelte/lib/Wallet';
 	import CurrencyBtc from 'phosphor-svelte/lib/CurrencyBtc';
 	import DeviceMobile from 'phosphor-svelte/lib/DeviceMobile';
@@ -408,11 +407,15 @@
 					<!-- Wallets List inside this bank -->
 					<div class="divide-y divide-[#EAEAEA]">
 						{#each group.wallets as w (w.walletId)}
-							<div
-								class="flex flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
+							<a
+								href="/ledger?walletId={encodeURIComponent(w.walletId)}"
+								class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
+								title="Buka mutasi {w.walletName} di Ledger"
 							>
 								<div class="flex items-center gap-3">
-									<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2 text-[#787774]">
+									<div
+										class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2 text-[#787774] transition-colors group-hover:border-[#111111] group-hover:text-[#111111]"
+									>
 										{#if w.type === 'crypto'}
 											<CurrencyBtc class="size-4" weight="bold" />
 										{:else if w.type === 'e-wallet'}
@@ -426,7 +429,9 @@
 
 									<div>
 										<div class="flex items-center gap-2 text-xs font-semibold text-[#111111]">
-											<span>{w.walletName}</span>
+											<span class="transition-colors group-hover:text-[#111111]"
+												>{w.walletName}</span
+											>
 											<StatusBadge status={w.isLocked} />
 											<span
 												class="py-0.2 rounded bg-[#F0EFEC] px-1.5 font-mono text-[10px] font-medium text-[#787774]"
@@ -448,22 +453,10 @@
 									</div>
 								</div>
 
-								<div class="flex items-center gap-4">
-									<div
-										class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums"
-									>
-										{fmtCurrency(getWalletBalance(w), w.currency)}
-									</div>
-
-									<a
-										href="/ledger?walletId={encodeURIComponent(w.walletId)}"
-										class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#111111] no-underline transition-colors hover:border-[#C8C6BF] hover:bg-[#F9F9F8]"
-									>
-										<span>Lihat Mutasi</span>
-										<ArrowRight class="size-3" weight="bold" />
-									</a>
+								<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
+									{fmtCurrency(getWalletBalance(w), w.currency)}
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -479,11 +472,15 @@
 			class="divide-y divide-[#EAEAEA] overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs"
 		>
 			{#each sortedWallets as w (w.walletId)}
-				<div
-					class="flex flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
+				<a
+					href="/ledger?walletId={encodeURIComponent(w.walletId)}"
+					class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
+					title="Buka mutasi {w.walletName} di Ledger"
 				>
 					<div class="flex items-center gap-3">
-						<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2 text-[#787774]">
+						<div
+							class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2 text-[#787774] transition-colors group-hover:border-[#111111] group-hover:text-[#111111]"
+						>
 							{#if w.type === 'crypto'}
 								<CurrencyBtc class="size-4" weight="bold" />
 							{:else if w.type === 'e-wallet'}
@@ -497,7 +494,7 @@
 
 						<div>
 							<div class="flex items-center gap-2 text-xs font-semibold text-[#111111]">
-								<span>{w.walletName}</span>
+								<span class="transition-colors group-hover:text-[#111111]">{w.walletName}</span>
 								<span
 									class="py-0.2 rounded bg-[#EFEFED] px-1.5 text-[10px] font-medium text-[#787774]"
 								>
@@ -523,20 +520,10 @@
 						</div>
 					</div>
 
-					<div class="flex items-center gap-4">
-						<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
-							{fmtCurrency(getWalletBalance(w), w.currency)}
-						</div>
-
-						<a
-							href="/ledger?walletId={encodeURIComponent(w.walletId)}"
-							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#111111] no-underline transition-colors hover:border-[#C8C6BF] hover:bg-[#F9F9F8]"
-						>
-							<span>Lihat Mutasi</span>
-							<ArrowRight class="size-3" weight="bold" />
-						</a>
+					<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
+						{fmtCurrency(getWalletBalance(w), w.currency)}
 					</div>
-				</div>
+				</a>
 			{:else}
 				<div class="py-12 text-center font-mono text-xs text-[#787774]">
 					Tidak ada akun yang sesuai dengan filter "{searchQuery}".
