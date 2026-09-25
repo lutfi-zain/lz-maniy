@@ -2,7 +2,6 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
-	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import type { BudgetSnapshot } from '$lib/types/account-detail';
 
 	let { budget }: { budget: BudgetSnapshot } = $props();
@@ -57,21 +56,5 @@
 			<span class="text-[#787774]">Terpakai {p}% ({fmtIDR(budget.spent)})</span>
 			<span class="font-mono font-semibold text-[#111111]">Pagu {fmtIDR(budget.amount)}</span>
 		</div>
-	</div>
-
-	<div
-		class="mt-3 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-[11px] text-[#787774]"
-	>
-		<span class="flex items-center gap-1 transition-colors group-hover:text-[#111111]">
-			<ArrowRight class="size-3" weight="bold" />
-			<span>Klik kartu untuk drawer</span>
-		</span>
-		<a
-			href="/ledger?budgetId={budget.budgetId}&budget={encodeURIComponent(budget.budgetName)}"
-			onclick={(e) => e.stopPropagation()}
-			class="font-mono font-medium text-[#111111] underline hover:text-[#787774]"
-		>
-			Lihat di Ledger →
-		</a>
 	</div>
 </div>

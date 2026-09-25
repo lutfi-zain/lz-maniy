@@ -11,10 +11,10 @@ test.describe('Planning Studio to Filtered Ledger Drilldowns', () => {
 		await expect(budgetTabBtn).toBeVisible();
 		await budgetTabBtn.click();
 
-		// Find first budget card with "Lihat Transaksi →"
-		const lihatTransaksiLink = page.locator('a:has-text("Lihat Transaksi →")').first();
-		await expect(lihatTransaksiLink).toBeVisible();
-		await lihatTransaksiLink.click();
+		// Click first budget card directly
+		const budgetCard = page.locator('a[href*="/ledger?budgetId="]').first();
+		await expect(budgetCard).toBeVisible();
+		await budgetCard.click();
 
 		// Should navigate to /ledger with budgetId in URL
 		await expect(page).toHaveURL(/\/ledger\?budgetId=/);
@@ -56,10 +56,10 @@ test.describe('Planning Studio to Filtered Ledger Drilldowns', () => {
 		// Switch to Kewajiban & Rutin tab
 		await page.getByRole('button', { name: /Kewajiban & Rutin/ }).click();
 
-		// Find first "Mutasi →" in recurring templates table
-		const mutasiRecurringLink = page.locator('a[href*="/ledger?search="]').first();
-		await expect(mutasiRecurringLink).toBeVisible();
-		await mutasiRecurringLink.click();
+		// Click recurring template row directly
+		const recurringRow = page.locator('tr:has-text("Gaji Siloam")').first();
+		await expect(recurringRow).toBeVisible();
+		await recurringRow.click();
 
 		// Should navigate to /ledger with search parameter
 		await expect(page).toHaveURL(/\/ledger\?search=/);
