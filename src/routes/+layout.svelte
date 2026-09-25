@@ -4,13 +4,41 @@
 	import Topbar from '$lib/components/layout/Topbar.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 
 	let { children } = $props();
 
+	// Public routes that do not require an active session
+	const isPublicRoute = $derived<boolean>(
+		page.url.pathname === '/login' || page.url.pathname.startsWith('/auth/callback')
+	);
+
 	onMount(() => {
-		// Sync live snapshot on mount
-		reedrichStore.fetchSnapshot();
+		// Sync live snapshot on mount if authenticated
+		if (authStore.isAuthenticated) {
+			reedrichStore.fetchSnapshot();
+		}
+	});
+
+	$effect(() => {
+		// Wait until authStore has hydrated from localStorage
+		if (!authStore.isInitialized) return;
+
+		// If unauthenticated and trying to access a protected route
+		if (!authStore.isAuthenticated && !isPublicRoute) {
+			const target = page.url.pathname + page.url.search;
+			if (typeof sessionStorage !== 'undefined') {
+				sessionStorage.setItem('reedrich_auth_target', target);
+			}
+			goto('/login', { replaceState: true });
+		}
+		// If authenticated and visiting /login, redirect to cockpit
+		else if (authStore.isAuthenticated && page.url.pathname === '/login') {
+			goto('/', { replaceState: true });
+		}
 	});
 </script>
 
@@ -18,19 +46,35 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div
-	class="flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#F7F6F3] font-sans text-[#111111]"
->
-	<Topbar />
-	<main class="mx-auto w-full max-w-[1400px] flex-1 px-3.5 py-4 pb-20 sm:px-6 sm:py-5 sm:pb-6">
+{#if !authStore.isInitialized}
+	<!-- Minimalist Shield Loader to prevent Flash of Unauthenticated Content (FOUC) -->
+	<div class="flex min-h-screen w-full items-center justify-center bg-[#F7F6F3]">
+		<div class="flex items-center gap-2 font-mono text-xs text-[#787774]">
+			<span class="size-1.5 animate-pulse rounded-full bg-[#111111]"></span>
+			<span>Memverifikasi sesi...</span>
+		</div>
+	</div>
+{:else if isPublicRoute}
+	<!-- Standalone shell for Login and OAuth Callback (Clean, distraction-free) -->
+	<main class="min-h-screen w-full bg-[#F7F6F3]">
 		{@render children()}
 	</main>
-	<footer
-		class="mb-14 border-t border-[#EAEAEA] bg-white py-3 text-center font-mono text-[10px] text-[#787774] sm:text-[11px] md:mb-0 md:py-4"
+{:else}
+	<!-- Full Protected App Shell -->
+	<div
+		class="flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#F7F6F3] font-sans text-[#111111]"
 	>
-		Maniyy Cockpit · Svelte 5 + Tailwind · Status: {reedrichStore.isLive
-			? 'Live Edge'
-			: 'Mock Cache'}
-	</footer>
-	<BottomNav />
-</div>
+		<Topbar />
+		<main class="mx-auto w-full max-w-[1400px] flex-1 px-3.5 py-4 pb-20 sm:px-6 sm:py-5 sm:pb-6">
+			{@render children()}
+		</main>
+		<footer
+			class="mb-14 border-t border-[#EAEAEA] bg-white py-3 text-center font-mono text-[10px] text-[#787774] sm:text-[11px] md:mb-0 md:py-4"
+		>
+			Maniyy Cockpit · Svelte 5 + Tailwind · Status: {reedrichStore.isLive
+				? 'Live Edge'
+				: 'Mock Cache'}
+		</footer>
+		<BottomNav />
+	</div>
+{/if}

@@ -5,6 +5,7 @@ import {
 	MOCK_CATEGORIES,
 	MOCK_SNAPSHOT
 } from '$lib/stores/mock-data';
+import { authStore } from '$lib/stores/auth.svelte';
 import type {
 	AccountDetail,
 	CategoryRecord,
@@ -113,16 +114,10 @@ export class ReedrichStore {
 
 		this.isLoading = true;
 		this.statusMessage = 'Menghubungi API Reedrich account-detail...';
-
-		const headers: Record<string, string> = {
-			'X-API-Key': this.apiToken,
-			Authorization: 'Bearer ' + this.apiToken
-		};
-
 		try {
 			const [accRes, catRes] = await Promise.all([
-				fetch(`${DEFAULT_API_URL}/api/v1/account-detail`, { headers }),
-				fetch(`${DEFAULT_API_URL}/api/v1/categories`, { headers }).catch(() => null)
+				this.request(`${DEFAULT_API_URL}/api/v1/account-detail`),
+				this.request(`${DEFAULT_API_URL}/api/v1/categories`).catch(() => null)
 			]);
 
 			if (!accRes.ok) throw new Error(`HTTP ${accRes.status}`);
@@ -133,7 +128,6 @@ export class ReedrichStore {
 			if (catRes && catRes.ok) {
 				this.categories = (await catRes.json()) as CategoryRecord[];
 			}
-
 			this.isLive = true;
 			this.statusMessage = 'Snapshot mutakhir berhasil dimuat dari API.';
 		} catch (err: unknown) {
@@ -149,17 +143,12 @@ export class ReedrichStore {
 	async fetchAllTransactions() {
 		if (this.allTransactions.length > 0) return;
 		this.isLedgerLoading = true;
-		const headers: Record<string, string> = {
-			'X-API-Key': this.apiToken,
-			Authorization: 'Bearer ' + this.apiToken
-		};
 		try {
 			let offset = 0;
 			const accumulated: TransactionRecord[] = [];
 			while (true) {
-				const res = await fetch(
-					`${DEFAULT_API_URL}/api/v1/transactions?limit=200&offset=${offset}`,
-					{ headers }
+				const res = await this.request(
+					`${DEFAULT_API_URL}/api/v1/transactions?limit=200&offset=${offset}`
 				);
 				if (!res.ok) break;
 				const data = await res.json();
@@ -198,14 +187,9 @@ export class ReedrichStore {
 			return;
 		}
 
-		const headers: Record<string, string> = {
-			'X-API-Key': this.apiToken,
-			Authorization: 'Bearer ' + this.apiToken
-		};
-
 		try {
 			const url = `${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`;
-			const res = await fetch(url, { headers });
+			const res = await this.request(url);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
 			const json = await res.json();
@@ -221,6 +205,43 @@ export class ReedrichStore {
 		} finally {
 			this.isDrawerLoading = false;
 		}
+	}
+	private async request(url: string, init: RequestInit = {}): Promise<Response> {
+		// Proactively refresh if near expiration
+		if (authStore.accessToken && authStore.isExpiringSoon && authStore.refreshToken) {
+			await authStore.refreshSession(DEFAULT_API_URL);
+		}
+
+		const currentToken = (authStore.accessToken || this.apiToken).trim();
+		const headers = new Headers(init.headers || {});
+		if (currentToken) {
+			headers.set('X-API-Key', currentToken);
+			headers.set('Authorization', `Bearer ${currentToken}`);
+		}
+
+		let res = await fetch(url, { ...init, headers });
+
+		// On 401, attempt one refresh and retry
+		if (res.status === 401 && authStore.refreshToken) {
+			const refreshed = await authStore.refreshSession(DEFAULT_API_URL);
+			if (refreshed && authStore.accessToken) {
+				headers.set('X-API-Key', authStore.accessToken);
+				headers.set('Authorization', `Bearer ${authStore.accessToken}`);
+				res = await fetch(url, { ...init, headers });
+			}
+		}
+
+		return res;
+	}
+
+	reset() {
+		this.snapshot = null;
+		this.categories = [];
+		this.allTransactions = [];
+		this.transactionCache.clear();
+		this.loadMock();
+		this.isLive = false;
+		this.statusMessage = 'Sesi di-reset. Menggunakan data cache mock.';
 	}
 }
 

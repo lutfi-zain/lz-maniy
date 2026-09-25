@@ -16,8 +16,9 @@ test.describe('Category Filtering & Resolution in Ledger', () => {
 		await expect(page.locator('h1')).toContainText('Ledger Studio');
 
 		// Wait for ledger table to render
+		// Wait for ledger table to render after transactions load
 		const table = page.locator('table');
-		await expect(table).toBeVisible();
+		await expect(table).toBeVisible({ timeout: 15000 });
 
 		// Verify that at least one row exists and has Kategori "Makan & Minum"
 		const catCell = table.locator('td:has-text("Makan & Minum")').first();

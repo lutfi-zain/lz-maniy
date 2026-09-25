@@ -1,20 +1,43 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import ShieldCheck from 'phosphor-svelte/lib/ShieldCheck';
 	import ArrowsClockwise from 'phosphor-svelte/lib/ArrowsClockwise';
 	import Table from 'phosphor-svelte/lib/Table';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import Compass from 'phosphor-svelte/lib/Compass';
 	import Target from 'phosphor-svelte/lib/Target';
-	import Key from 'phosphor-svelte/lib/Key';
+	import SignOut from 'phosphor-svelte/lib/SignOut';
+	import UserCircle from 'phosphor-svelte/lib/UserCircle';
 
 	const pathname = $derived(page.url.pathname);
+	let isUserMenuOpen = $state(false);
 
 	function isActive(path: string): boolean {
 		if (path === '/') return pathname === '/';
 		return pathname.startsWith(path);
 	}
+
+	function handleLogout() {
+		isUserMenuOpen = false;
+		authStore.logout();
+		dateFilterStore.reset();
+		reedrichStore.reset();
+		goto('/login');
+	}
+
+	// Calculate user initials
+	const userInitials = $derived.by(() => {
+		const name = authStore.user?.name || authStore.user?.email || 'U';
+		const parts = name.trim().split(/\s+/);
+		if (parts.length >= 2) {
+			return (parts[0][0] + parts[1][0]).toUpperCase();
+		}
+		return name.slice(0, 2).toUpperCase();
+	});
 </script>
 
 <header class="sticky top-0 z-30 border-b border-[#EAEAEA] bg-white">
@@ -96,44 +119,23 @@
 			</nav>
 		</div>
 
-		<!-- Right Connection & Live Sync Bar -->
-		<div class="flex items-center gap-3">
-			<div class="hidden items-center gap-2 lg:flex">
-				<Key class="size-3.5 text-[#787774]" weight="bold" />
-				<input
-					type="text"
-					bind:value={reedrichStore.apiToken}
-					placeholder="API Key..."
-					class="w-48 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 font-mono text-[11px] text-[#111111] focus:border-[#111111] focus:outline-hidden"
-				/>
-				<button
-					type="button"
-					onclick={() => reedrichStore.fetchSnapshot()}
-					disabled={reedrichStore.isLoading}
-					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1 text-xs font-medium text-white transition-transform hover:bg-[#333333] active:scale-98 disabled:opacity-50"
-				>
-					<ArrowsClockwise
-						class="size-3 {reedrichStore.isLoading ? 'animate-spin' : ''}"
-						weight="bold"
-					/>
-					<span>Sync</span>
-				</button>
-			</div>
+		<!-- Right Connection & User Profile Bar -->
+		<div class="flex items-center gap-2.5 sm:gap-3">
 			<button
 				type="button"
 				onclick={() => reedrichStore.fetchSnapshot()}
 				disabled={reedrichStore.isLoading}
-				class="flex cursor-pointer items-center justify-center rounded p-1 text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111] disabled:opacity-50 lg:hidden"
+				class="flex cursor-pointer items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs font-medium text-[#111111] transition-transform hover:bg-[#EFEFED] active:scale-98 disabled:opacity-50"
 				title="Sinkronkan data live"
-				aria-label="Sync"
 			>
 				<ArrowsClockwise
-					class="size-3.5 {reedrichStore.isLoading ? 'animate-spin' : ''}"
+					class="size-3 {reedrichStore.isLoading ? 'animate-spin' : ''}"
 					weight="bold"
 				/>
+				<span class="hidden sm:inline">Sync</span>
 			</button>
 
-			<div class="flex items-center gap-2 border-l border-[#EAEAEA] pl-2 sm:pl-3">
+			<div class="flex items-center gap-1.5 border-l border-[#EAEAEA] pl-2 sm:pl-3">
 				<span
 					class="size-2 rounded-full {reedrichStore.isLive ? 'bg-[#346538]' : 'bg-[#C9C4B8]'}"
 					title={reedrichStore.isLive ? 'Live API Connected' : 'Offline / Mock Cache'}
@@ -141,7 +143,57 @@
 				<span class="font-mono text-[11px] text-[#787774]">
 					{reedrichStore.isLive ? 'LIVE' : 'MOCK'}
 				</span>
-				<kbd class="ml-1 text-[10px]">IDR</kbd>
+			</div>
+
+			<!-- User Profile & Dropdown -->
+			<div class="relative">
+				{#if authStore.isAuthenticated}
+					<button
+						type="button"
+						onclick={() => (isUserMenuOpen = !isUserMenuOpen)}
+						class="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs font-medium text-[#111111] transition-colors hover:border-[#111111]"
+						title={authStore.user?.email || 'Profil Pengguna'}
+						aria-label="Profil Pengguna"
+					>
+						<span
+							class="flex size-6 items-center justify-center rounded-full bg-[#111111] font-mono text-[10px] font-semibold text-white"
+						>
+							{userInitials}
+						</span>
+					</button>
+
+					{#if isUserMenuOpen}
+						<!-- Dropdown Menu -->
+						<div
+							class="absolute right-0 mt-2 w-56 rounded-lg border border-[#EAEAEA] bg-white p-2 text-xs shadow-lg"
+						>
+							<div class="border-b border-[#EAEAEA] px-2.5 py-2">
+								<p class="font-semibold text-[#111111]">{authStore.user?.name || 'Pengguna'}</p>
+								<p class="truncate text-[11px] text-[#787774]">
+									{authStore.user?.email || 'Akun Aktif'}
+								</p>
+							</div>
+							<div class="pt-1.5">
+								<button
+									type="button"
+									onclick={handleLogout}
+									class="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDEBEC]"
+								>
+									<SignOut class="size-3.5" weight="bold" />
+									<span>Keluar (Logout)</span>
+								</button>
+							</div>
+						</div>
+					{/if}
+				{:else}
+					<a
+						href="/login"
+						class="flex items-center gap-1 rounded bg-[#111111] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#333333]"
+					>
+						<UserCircle class="size-3.5" weight="bold" />
+						<span>Masuk</span>
+					</a>
+				{/if}
 			</div>
 		</div>
 	</div>

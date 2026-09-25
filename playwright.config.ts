@@ -10,7 +10,29 @@ export default defineConfig({
 	},
 	use: {
 		baseURL: 'http://localhost:4173',
-		trace: 'on-first-retry'
+		trace: 'on-first-retry',
+		storageState: {
+			cookies: [],
+			origins: [
+				{
+					origin: 'http://localhost:4173',
+					localStorage: [
+						{
+							name: 'reedrich_access_token',
+							value: '$REEDRICH_API_TOKEN'
+						},
+						{
+							name: 'reedrich_expires_at',
+							value: '2524608000000'
+						},
+						{
+							name: 'reedrich_user',
+							value: '{"name":"Lutfi Zain","email":"lutfi@reedrich.dev"}'
+						}
+					]
+				}
+			]
+		}
 	},
 	projects: [
 		{
