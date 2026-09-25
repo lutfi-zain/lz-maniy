@@ -1,5 +1,6 @@
 import type { TransactionRecord } from '$lib/types/account-detail';
 import { dFmt } from '$lib/utils/dates';
+import { getConvertedBalanceInIDR } from '$lib/utils/currency';
 
 export interface PointInTimeNetWorthResult {
 	label: 'PROYEKSI NET WORTH' | 'NET WORTH SAAT INI' | 'NET WORTH PENUTUPAN';
@@ -14,19 +15,37 @@ export interface PointInTimeNetWorthResult {
  *
  * Mathematical rules:
  * 1. Future Horizon (T_akhir > current calendar month):
- *    Projected Net Worth = Current Net Worth + Planned Net Flow from today up to T_akhir.
+ *    Projected Net Worth = Current Net Worth + Planned Net Flow from today up to T_akhir (converted to IDR).
  * 2. Present Horizon (T_akhir in current calendar month, today, or unbounded):
- *    Current Net Worth = Live consolidated portfolio Net Worth.
+ *    Current Net Worth = Live consolidated portfolio Net Worth in IDR.
  * 3. Past Horizon (T_akhir < current calendar month):
- *    Historical Closing Net Worth = Current Net Worth - Settled Net Flow from T_akhir to today.
+ *    Historical Closing Net Worth = Current Net Worth - Settled Net Flow from T_akhir to today (converted to IDR).
  */
 export function calculatePointInTimeNetWorth(params: {
 	currentNetWorth: number;
 	allTransactions: TransactionRecord[];
 	endDate?: string | null;
 	referenceDate?: string;
+	walletCurrencyMap?: Map<string, string> | Record<string, string>;
+	customRates?: Record<string, number>;
 }): PointInTimeNetWorthResult {
-	const { currentNetWorth, allTransactions, endDate, referenceDate } = params;
+	const {
+		currentNetWorth,
+		allTransactions,
+		endDate,
+		referenceDate,
+		walletCurrencyMap,
+		customRates
+	} = params;
+
+	// Resolve currency for a given wallet ID
+	function getCurrency(walletId: string): string {
+		if (!walletCurrencyMap) return 'IDR';
+		if (walletCurrencyMap instanceof Map) {
+			return walletCurrencyMap.get(walletId) || 'IDR';
+		}
+		return (walletCurrencyMap as Record<string, string>)[walletId] || 'IDR';
+	}
 
 	// Use provided reference date or fallback to current date in YYYY-MM-DD
 	const todayStr =
@@ -63,10 +82,12 @@ export function calculatePointInTimeNetWorth(params: {
 			const tDate = t.transactionDate.slice(0, 10);
 			// Include transactions between today and T_akhir
 			if (tDate > todayStr && tDate <= endClean) {
+				const curr = getCurrency(t.transactionWalletId);
+				const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr, customRates);
 				if (t.transactionType === 'income') {
-					futureDelta += t.transactionAmount;
+					futureDelta += amtIDR;
 				} else if (t.transactionType === 'expense') {
-					futureDelta -= t.transactionAmount;
+					futureDelta -= amtIDR;
 				}
 			}
 		}
@@ -88,10 +109,12 @@ export function calculatePointInTimeNetWorth(params: {
 			const tDate = t.transactionDate.slice(0, 10);
 			// Only sum transactions that occurred between T_akhir and today
 			if (tDate > endClean && tDate <= todayStr && t.transactionIsPlanned !== 1) {
+				const curr = getCurrency(t.transactionWalletId);
+				const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr, customRates);
 				if (t.transactionType === 'income') {
-					settledSinceCutoff += t.transactionAmount;
+					settledSinceCutoff += amtIDR;
 				} else if (t.transactionType === 'expense') {
-					settledSinceCutoff -= t.transactionAmount;
+					settledSinceCutoff -= amtIDR;
 				}
 			}
 		}

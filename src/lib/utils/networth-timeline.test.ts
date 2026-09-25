@@ -146,4 +146,71 @@ describe('calculatePointInTimeNetWorth', () => {
 
 		expect(resGlobal.amount).toBe(21_261_999);
 	});
+
+	it('converts foreign currency (USDT) transactions to IDR accurately in future projection', () => {
+		const walletCurrencyMap = new Map<string, string>([
+			['w-idr', 'IDR'],
+			['w-crypto', 'USDT']
+		]);
+
+		const txsWithCrypto: TransactionRecord[] = [
+			// 100 USDT planned expense (~Rp 1.783.582,58 @ DEFAULT_USDT_TO_IDR_RATE)
+			{
+				transactionId: 'tx-usdt-1',
+				transactionWalletId: 'w-crypto',
+				transactionAmount: 100,
+				transactionType: 'expense',
+				transactionDescription: 'Crypto Cloud Server Renewal',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-10T12:00:00+07:00'
+			}
+		];
+
+		const res = calculatePointInTimeNetWorth({
+			currentNetWorth: 20_000_000,
+			allTransactions: txsWithCrypto,
+			endDate: '2026-10-31',
+			referenceDate,
+			walletCurrencyMap
+		});
+
+		// 100 * 17835.8258 = 1,783,582.58
+		// Expected netWorth: 20,000,000 - 1,783,582.58 = 18,216,417.42
+		expect(res.horizon).toBe('future');
+		expect(res.label).toBe('PROYEKSI NET WORTH');
+		expect(Math.round(res.amount)).toBe(Math.round(20_000_000 - 1_783_582.58));
+		expect(Math.round(res.netDelta)).toBe(Math.round(-1_783_582.58));
+	});
+
+	it('converts foreign currency (USDT) transactions to IDR accurately in historical closing balance', () => {
+		const walletCurrencyMap = new Map<string, string>([['w-crypto', 'USDT']]);
+
+		const pastTxsWithCrypto: TransactionRecord[] = [
+			// 50 USDT realized income between August 31 and September 24
+			// 50 * 17835.8258 = 891,791.29
+			{
+				transactionId: 'tx-usdt-past',
+				transactionWalletId: 'w-crypto',
+				transactionAmount: 50,
+				transactionType: 'income',
+				transactionDescription: 'Crypto Staking Payout',
+				transactionIsPlanned: 0,
+				transactionDate: '2026-09-05T10:00:00+07:00'
+			}
+		];
+
+		const res = calculatePointInTimeNetWorth({
+			currentNetWorth: 20_000_000,
+			allTransactions: pastTxsWithCrypto,
+			endDate: '2026-08-31',
+			referenceDate,
+			walletCurrencyMap
+		});
+
+		// Net Flow since August 31 = +891,791.29
+		// Closing Net Worth on August 31 = 20,000,000 - 891,791.29 = 19,108,208.71
+		expect(res.horizon).toBe('past');
+		expect(res.label).toBe('NET WORTH PENUTUPAN');
+		expect(Math.round(res.amount)).toBe(Math.round(20_000_000 - 891_791.29));
+	});
 });

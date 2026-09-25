@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
-	import { fmtIDR } from '$lib/utils/currency';
+	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
@@ -48,6 +48,11 @@
 	function getWalletName(walletId: string): string {
 		const w = reedrichStore.allWallets.find((x) => x.walletId === walletId);
 		return w?.walletName ?? 'Akun';
+	}
+
+	function getWalletCurrency(walletId: string): string {
+		const w = reedrichStore.allWallets.find((x) => x.walletId === walletId);
+		return w?.currency ?? 'IDR';
 	}
 </script>
 
@@ -106,6 +111,8 @@
 						{#each recentTransactions as tx (tx.transactionId)}
 							{@const isInc = tx.transactionType === 'income'}
 							{@const isPlan = tx.transactionIsPlanned === 1}
+							{@const curr = getWalletCurrency(tx.transactionWalletId)}
+							{@const amtIDR = getConvertedBalanceInIDR(tx.transactionAmount, curr)}
 							<tr class="transition-colors hover:bg-[#F9F9F8]">
 								<td class="py-2 font-mono text-[11px] whitespace-nowrap text-[#787774]">
 									{dFmt(tx.transactionDate)}
@@ -131,7 +138,12 @@
 										? 'text-[#346538]'
 										: 'text-[#111111]'}"
 								>
-									{isInc ? '+' : '−'}{fmtIDR(tx.transactionAmount)}
+									<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
+									{#if curr !== 'IDR'}
+										<div class="font-mono text-[9px] font-normal text-[#787774]">
+											({fmtCurrency(tx.transactionAmount, curr)})
+										</div>
+									{/if}
 								</td>
 							</tr>
 						{/each}
@@ -144,6 +156,8 @@
 				{#each recentTransactions as tx (tx.transactionId)}
 					{@const isInc = tx.transactionType === 'income'}
 					{@const isPlan = tx.transactionIsPlanned === 1}
+					{@const curr = getWalletCurrency(tx.transactionWalletId)}
+					{@const amtIDR = getConvertedBalanceInIDR(tx.transactionAmount, curr)}
 					<div class="py-2.5 transition-colors hover:bg-[#FBFBFA]">
 						<div class="flex items-start justify-between gap-2">
 							<div
@@ -157,7 +171,12 @@
 									? 'text-[#346538]'
 									: 'text-[#111111]'}"
 							>
-								{isInc ? '+' : '−'}{fmtIDR(tx.transactionAmount)}
+								<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
+								{#if curr !== 'IDR'}
+									<div class="font-mono text-[9px] font-normal text-[#787774]">
+										({fmtCurrency(tx.transactionAmount, curr)})
+									</div>
+								{/if}
 							</div>
 						</div>
 						<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">

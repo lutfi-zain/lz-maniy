@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
-	import { fmtIDR } from '$lib/utils/currency';
+	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
@@ -131,14 +132,33 @@
 	});
 
 	// Aggregates computed from filtered transactions
+	// Helper to resolve currency of any wallet
+	function getWalletCurrency(id?: string | null): string {
+		if (!id) return 'IDR';
+		const w = allWallets.find((x) => x.walletId === id);
+		return w?.currency ?? 'IDR';
+	}
+
+	// Wallet currency lookup map for fast O(1) resolution
+	const walletCurrencyMap = $derived.by(() => {
+		const map = new SvelteMap<string, string>();
+		for (const w of allWallets) {
+			map.set(w.walletId, w.currency || 'IDR');
+		}
+		return map;
+	});
+
+	// Aggregates computed from filtered transactions (converted to IDR)
 	const aggregateStats = $derived.by(() => {
 		let inSum = 0;
 		let outSum = 0;
 		for (const t of filteredTransactions) {
+			const curr = getWalletCurrency(t.transactionWalletId);
+			const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr);
 			if (t.transactionType === 'income') {
-				inSum += t.transactionAmount;
+				inSum += amtIDR;
 			} else if (t.transactionType === 'expense') {
-				outSum += t.transactionAmount;
+				outSum += amtIDR;
 			}
 		}
 		return {
@@ -149,13 +169,14 @@
 		};
 	});
 
-	// Point-in-time portfolio Net Worth anchor based on T_akhir
+	// Point-in-time portfolio Net Worth anchor based on T_akhir (converted to IDR)
 	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
 	const pointInTimeNetWorth = $derived(
 		calculatePointInTimeNetWorth({
 			currentNetWorth,
 			allTransactions: allTxs,
-			endDate: filterEndDate
+			endDate: filterEndDate,
+			walletCurrencyMap
 		})
 	);
 
@@ -466,6 +487,8 @@
 						{#each pagedTransactions as t (t.transactionId)}
 							{@const isInc = t.transactionType === 'income'}
 							{@const isPlan = t.transactionIsPlanned === 1}
+							{@const curr = getWalletCurrency(t.transactionWalletId)}
+							{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
 							<tr class="transition-colors hover:bg-[#F9F9F8]">
 								<td class="px-4 py-2.5 font-mono text-[11px] whitespace-nowrap text-[#787774]">
 									{dFmt(t.transactionDate)}
@@ -513,7 +536,12 @@
 										? 'text-[#346538]'
 										: 'text-[#111111]'}"
 								>
-									{isInc ? '+' : '−'}{fmtIDR(t.transactionAmount)}
+									<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
+									{#if curr !== 'IDR'}
+										<div class="font-mono text-[9px] font-normal text-[#787774]">
+											({fmtCurrency(t.transactionAmount, curr)})
+										</div>
+									{/if}
 								</td>
 							</tr>
 						{/each}
@@ -526,6 +554,8 @@
 				{#each pagedTransactions as t (t.transactionId)}
 					{@const isInc = t.transactionType === 'income'}
 					{@const isPlan = t.transactionIsPlanned === 1}
+					{@const curr = getWalletCurrency(t.transactionWalletId)}
+					{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
 					<div class="p-3.5 transition-colors hover:bg-[#FBFBFA]">
 						<!-- Line 1: Description + Amount -->
 						<div class="flex items-start justify-between gap-2.5">
@@ -540,7 +570,12 @@
 									? 'text-[#346538]'
 									: 'text-[#111111]'}"
 							>
-								{isInc ? '+' : '−'}{fmtIDR(t.transactionAmount)}
+								<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
+								{#if curr !== 'IDR'}
+									<div class="font-mono text-[9px] font-normal text-[#787774]">
+										({fmtCurrency(t.transactionAmount, curr)})
+									</div>
+								{/if}
 							</div>
 						</div>
 
