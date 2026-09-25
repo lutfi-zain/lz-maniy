@@ -9,15 +9,19 @@
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
+	import X from 'phosphor-svelte/lib/X';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import ComboboxMultiSelect, {
 		type ComboboxOption
 	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
 	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
+	import { matchesBudgetFilter } from '$lib/utils/budget-filter';
 	// Filters
 	let selectedWalletIds = $state<string[]>([]);
 	let selectedCategoryIds = $state<string[]>([]);
+	let selectedBudgetIds = $state<string[]>([]);
+	let budgetFilterName = $state<string>('');
 	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>('all');
 	let selectedStatus = $state<'all' | 'realized' | 'planned'>('all');
 	let searchKeyword = $state<string>('');
@@ -39,6 +43,10 @@
 			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
 		}
 
+		const qBudget = page.url.searchParams.get('budgetId');
+		const qBudgetName = page.url.searchParams.get('budget');
+		if (qBudget) selectedBudgetIds = [qBudget];
+		if (qBudgetName) budgetFilterName = qBudgetName;
 		if (qWallet) selectedWalletIds = [qWallet];
 		if (qType && ['expense', 'income', 'transfer'].includes(qType)) {
 			selectedType = qType as typeof selectedType;
@@ -87,6 +95,32 @@
 			subtext: c.categoryType
 		}))
 	);
+	const activeBudgets = $derived(reedrichStore.activeBudgets);
+
+	// Combobox options for Budgets
+	const budgetOptions = $derived<ComboboxOption[]>(
+		activeBudgets.map((b) => ({
+			value: b.budgetId,
+			label: b.budgetName,
+			group: b.categoryName,
+			subtext: `${b.percentUsed}%`
+		}))
+	);
+
+	// Budget lookup map for fast O(1) resolution in table rows
+	const budgetMap = $derived.by(() => {
+		const map = new SvelteMap<string, (typeof activeBudgets)[number]>();
+		for (const b of activeBudgets) {
+			map.set(b.budgetId, b);
+		}
+		return map;
+	});
+
+	function getBudgetName(budgetId?: string | null): string | null {
+		if (!budgetId) return null;
+		const b = budgetMap.get(budgetId);
+		return b?.budgetName ?? null;
+	}
 
 	// Filtered transactions
 	const filteredTransactions = $derived.by(() => {
@@ -121,6 +155,11 @@
 			// Date range filter
 			if (start && t.transactionDate.slice(0, 10) < start) return false;
 			if (end && t.transactionDate.slice(0, 10) > end) return false;
+
+			// Budget filter
+			if (!matchesBudgetFilter(t, selectedBudgetIds, budgetMap, getCategoryName)) {
+				return false;
+			}
 
 			// Search keyword filter
 			if (q) {
@@ -197,7 +236,8 @@
 		dateFilterStore.reset();
 		selectedWalletIds = [];
 		selectedCategoryIds = [];
-		selectedType = 'all';
+		selectedBudgetIds = [];
+		budgetFilterName = '';
 		selectedStatus = 'all';
 		searchKeyword = '';
 		currentPage = 1;
@@ -307,6 +347,15 @@
 				bind:selected={selectedCategoryIds}
 				placeholder="Semua Kategori"
 				searchPlaceholder="Ketik nama kategori..."
+				onchange={() => (currentPage = 1)}
+			/>
+
+			<!-- Searchable Multi-Select Budget Combobox -->
+			<ComboboxMultiSelect
+				options={budgetOptions}
+				bind:selected={selectedBudgetIds}
+				placeholder="Semua Anggaran"
+				searchPlaceholder="Ketik nama anggaran..."
 				onchange={() => (currentPage = 1)}
 			/>
 
@@ -423,6 +472,45 @@
 				</select>
 			</div>
 		</div>
+
+		<!-- Active Budget Filter Chip -->
+		{#if selectedBudgetIds.length > 0}
+			<div class="flex flex-wrap items-center gap-2 border-t border-[#EAEAEA] pt-2 text-xs">
+				<span class="text-[11px] text-[#787774]">Pagu Anggaran Aktif:</span>
+				{#each selectedBudgetIds as bId (bId)}
+					{@const bName = getBudgetName(bId) || budgetFilterName || 'Anggaran'}
+					<span
+						class="inline-flex items-center gap-1.5 rounded-full border border-[#956400]/20 bg-[#FBF3DB] px-2.5 py-0.5 text-[11px] font-medium text-[#956400]"
+					>
+						<span>{bName}</span>
+						<button
+							type="button"
+							onclick={() => {
+								selectedBudgetIds = selectedBudgetIds.filter((id) => id !== bId);
+								budgetFilterName = '';
+								currentPage = 1;
+							}}
+							class="cursor-pointer transition-opacity hover:opacity-75"
+							title="Hapus filter anggaran"
+							aria-label="Hapus filter anggaran"
+						>
+							<X class="size-3" weight="bold" />
+						</button>
+					</span>
+				{/each}
+				<button
+					type="button"
+					onclick={() => {
+						selectedBudgetIds = [];
+						budgetFilterName = '';
+						currentPage = 1;
+					}}
+					class="cursor-pointer text-[10px] text-[#787774] underline hover:text-[#111111]"
+				>
+					Hapus Filter Anggaran
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Dual-Layer Live Summary Strip -->
@@ -552,8 +640,19 @@
 										{t.transactionDescription || '(tanpa deskripsi)'}
 									</div>
 								</td>
-								<td class="max-w-[130px] truncate px-4 py-2.5 font-medium text-[#111111]">
-									{getCategoryName(t.transactionCategoryId)}
+								<td class="max-w-[140px] px-4 py-2.5 font-medium text-[#111111]">
+									<div class="truncate">
+										{getCategoryName(t.transactionCategoryId)}
+									</div>
+									{#if getBudgetName(t.transactionBudgetId)}
+										<div class="mt-0.5">
+											<span
+												class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
+											>
+												{getBudgetName(t.transactionBudgetId)}
+											</span>
+										</div>
+									{/if}
 								</td>
 								<td class="px-4 py-2.5 whitespace-nowrap">
 									<span
@@ -642,7 +741,13 @@
 								>
 									{getCategoryName(t.transactionCategoryId)}
 								</span>
-								<span>·</span>
+								{#if getBudgetName(t.transactionBudgetId)}
+									<span
+										class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
+									>
+										{getBudgetName(t.transactionBudgetId)}
+									</span>
+								{/if}
 								<span class="truncate">
 									{getWalletName(t.transactionWalletId)}{t.transactionTargetWalletId
 										? ` → ${getWalletName(t.transactionTargetWalletId)}`

@@ -60,9 +60,18 @@
 	</div>
 
 	<div
-		class="mt-3 flex items-center gap-1 text-[11px] text-[#787774] transition-colors group-hover:text-[#111111]"
+		class="mt-3 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-[11px] text-[#787774]"
 	>
-		<ArrowRight class="size-3" weight="bold" />
-		<span>Klik untuk melihat transaksi budget ini</span>
+		<span class="flex items-center gap-1 transition-colors group-hover:text-[#111111]">
+			<ArrowRight class="size-3" weight="bold" />
+			<span>Klik kartu untuk drawer</span>
+		</span>
+		<a
+			href="/ledger?budgetId={budget.budgetId}&budget={encodeURIComponent(budget.budgetName)}"
+			onclick={(e) => e.stopPropagation()}
+			class="font-mono font-medium text-[#111111] underline hover:text-[#787774]"
+		>
+			Lihat di Ledger →
+		</a>
 	</div>
 </div>
