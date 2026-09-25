@@ -9,8 +9,6 @@
 		buildGoogleAuthorizeUrl
 	} from '$lib/utils/pkce';
 	import ShieldCheck from 'phosphor-svelte/lib/ShieldCheck';
-	import CaretDown from 'phosphor-svelte/lib/CaretDown';
-	import CaretUp from 'phosphor-svelte/lib/CaretUp';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
 
@@ -152,39 +150,39 @@
 			</div>
 		</div>
 
-		<!-- Divider -->
-		<div class="relative my-6 flex items-center justify-center border-t border-[#EAEAEA]">
-			<span class="bg-white px-2 font-mono text-[10px] text-[#787774] uppercase">atau</span>
-		</div>
-
-		<!-- Developer Sandbox Accordion -->
-		<div>
-			<button
-				type="button"
-				onclick={() => (showDevToken = !showDevToken)}
-				class="flex w-full cursor-pointer items-center justify-between text-[11px] font-medium text-[#787774] transition-colors hover:text-[#111111]"
-			>
-				<span>Mode Pengembang / API Key Manual</span>
-				{#if showDevToken}
-					<CaretUp class="size-3" weight="bold" />
-				{:else}
-					<CaretDown class="size-3" weight="bold" />
-				{/if}
-			</button>
-
-			{#if showDevToken}
-				<form onsubmit={handleManualApiKeyLogin} class="mt-3 space-y-2.5">
+		<!-- Discrete, un-obvious API Key Access -->
+		<div class="mt-8 text-center">
+			{#if !showDevToken}
+				<button
+					type="button"
+					onclick={() => (showDevToken = true)}
+					class="cursor-pointer font-mono text-[10px] text-[#A8A29E] transition-colors hover:text-[#787774] hover:underline"
+				>
+					masuk dengan api key
+				</button>
+			{:else}
+				<form onsubmit={handleManualApiKeyLogin} class="space-y-2 text-left">
+					<div class="flex items-center justify-between text-[10px] text-[#787774]">
+						<span class="font-mono">API Key (Sandbox / Dev)</span>
+						<button
+							type="button"
+							onclick={() => (showDevToken = false)}
+							class="cursor-pointer text-[#A8A29E] hover:text-[#787774]"
+						>
+							Tutup
+						</button>
+					</div>
 					<input
 						type="password"
 						bind:value={manualApiKey}
 						placeholder="fp_live_... atau rd_live_..."
-						class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-3 py-2 font-mono text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden"
+						class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1.5 font-mono text-[11px] text-[#111111] placeholder:text-[#A8A29E] focus:border-[#111111] focus:outline-hidden"
 					/>
 					<button
 						type="submit"
-						class="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
+						class="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 					>
-						<span>Gunakan Token Manual</span>
+						<span>Gunakan Token</span>
 						<ArrowRight class="size-3" weight="bold" />
 					</button>
 				</form>
