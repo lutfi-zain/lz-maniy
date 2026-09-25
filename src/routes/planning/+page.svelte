@@ -7,7 +7,8 @@
 	import Handshake from 'phosphor-svelte/lib/Handshake';
 	import CalendarCheck from 'phosphor-svelte/lib/CalendarCheck';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
-
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations'>('goals');
 
 	const budgets = $derived(reedrichStore.activeBudgets);
@@ -139,43 +140,67 @@
 			</p>
 		</div>
 
-		<!-- Workspace Sub-tabs -->
-		<div class="flex items-center rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs">
-			<button
-				type="button"
-				onclick={() => (activeSubTab = 'goals')}
-				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-				'goals'
-					? 'bg-white font-semibold text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				<Target class="size-3.5" weight="bold" />
-				<span>Target Tabungan ({goals.length})</span>
-			</button>
+		<div class="flex flex-wrap items-center gap-2">
+			<!-- Workspace Sub-tabs -->
+			<div class="flex items-center rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs">
+				<button
+					type="button"
+					onclick={() => (activeSubTab = 'goals')}
+					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+					'goals'
+						? 'bg-white font-semibold text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					<Target class="size-3.5" weight="bold" />
+					<span>Target Tabungan ({goals.length})</span>
+				</button>
 
-			<button
-				type="button"
-				onclick={() => (activeSubTab = 'budgets')}
-				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-				'budgets'
-					? 'bg-white font-semibold text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				<ChartPieSlice class="size-3.5" weight="bold" />
-				<span>Pagu Anggaran ({budgets.length})</span>
-			</button>
+				<button
+					type="button"
+					onclick={() => (activeSubTab = 'budgets')}
+					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+					'budgets'
+						? 'bg-white font-semibold text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					<ChartPieSlice class="size-3.5" weight="bold" />
+					<span>Pagu Anggaran ({budgets.length})</span>
+				</button>
 
-			<button
-				type="button"
-				onclick={() => (activeSubTab = 'obligations')}
-				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-				'obligations'
-					? 'bg-white font-semibold text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				<Handshake class="size-3.5" weight="bold" />
-				<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
-			</button>
+				<button
+					type="button"
+					onclick={() => (activeSubTab = 'obligations')}
+					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+					'obligations'
+						? 'bg-white font-semibold text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					<Handshake class="size-3.5" weight="bold" />
+					<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
+				</button>
+			</div>
+
+			<!-- Synchronized Global Date Filter -->
+			<div class="flex items-center gap-1.5">
+				<DateRangePicker
+					bind:start={dateFilterStore.startDate}
+					bind:end={dateFilterStore.endDate}
+					bind:preset={dateFilterStore.preset}
+					onchange={({ preset, start, end }) => {
+						dateFilterStore.setFilter(preset as DatePreset, start, end);
+					}}
+				/>
+				{#if dateFilterStore.preset !== 'this_month'}
+					<button
+						type="button"
+						onclick={() => dateFilterStore.reset()}
+						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+						title="Reset ke Bulan Ini"
+					>
+						Reset
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 

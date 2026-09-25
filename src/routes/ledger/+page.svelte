@@ -14,12 +14,8 @@
 		type ComboboxOption
 	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
 	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
+	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	// Filters
-	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
-		'this_month'
-	);
-	let filterStartDate = $state<string>('');
-	let filterEndDate = $state<string>('');
 	let selectedWalletIds = $state<string[]>([]);
 	let selectedCategoryIds = $state<string[]>([]);
 	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>('all');
@@ -35,12 +31,18 @@
 		const qWallet = page.url.searchParams.get('walletId');
 		const qCat = page.url.searchParams.get('category');
 		const qType = page.url.searchParams.get('type');
+		const qPreset = page.url.searchParams.get('datePreset');
+		const qStart = page.url.searchParams.get('startDate');
+		const qEnd = page.url.searchParams.get('endDate');
+
+		if (qPreset && qStart && qEnd) {
+			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
+		}
 
 		if (qWallet) selectedWalletIds = [qWallet];
 		if (qType && ['expense', 'income', 'transfer'].includes(qType)) {
 			selectedType = qType as typeof selectedType;
 		}
-
 		// Ensure all transactions and categories are loaded
 		reedrichStore.fetchAllTransactions().then(() => {
 			if (qCat) {
@@ -89,8 +91,8 @@
 	// Filtered transactions
 	const filteredTransactions = $derived.by(() => {
 		const q = searchKeyword.trim().toLowerCase();
-		const start = filterStartDate;
-		const end = filterEndDate;
+		const start = dateFilterStore.startDate;
+		const end = dateFilterStore.endDate;
 
 		return allTxs.filter((t) => {
 			// Type filter
@@ -177,7 +179,7 @@
 		calculatePointInTimeNetWorth({
 			currentNetWorth,
 			allTransactions: allTxs,
-			endDate: filterEndDate,
+			endDate: dateFilterStore.endDate,
 			wallets: allWallets,
 			walletCurrencyMap,
 			currentSpendable,
@@ -192,9 +194,7 @@
 	);
 
 	function resetFilters() {
-		datePreset = 'all';
-		filterStartDate = '';
-		filterEndDate = '';
+		dateFilterStore.reset();
 		selectedWalletIds = [];
 		selectedCategoryIds = [];
 		selectedType = 'all';
@@ -264,12 +264,30 @@
 			</div>
 
 			<!-- Custom 2-Click Date Range Picker with Presets -->
-			<DateRangePicker
-				bind:start={filterStartDate}
-				bind:end={filterEndDate}
-				bind:preset={datePreset}
-				onchange={() => (currentPage = 1)}
-			/>
+			<div class="flex items-center gap-1.5">
+				<DateRangePicker
+					bind:start={dateFilterStore.startDate}
+					bind:end={dateFilterStore.endDate}
+					bind:preset={dateFilterStore.preset}
+					onchange={({ preset, start, end }) => {
+						dateFilterStore.setFilter(preset as DatePreset, start, end);
+						currentPage = 1;
+					}}
+				/>
+				{#if dateFilterStore.preset !== 'this_month'}
+					<button
+						type="button"
+						onclick={() => {
+							dateFilterStore.reset();
+							currentPage = 1;
+						}}
+						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+						title="Reset ke Bulan Ini"
+					>
+						Reset
+					</button>
+				{/if}
+			</div>
 		</div>
 
 		<!-- Row 2: Multi-select Comboboxes + Type & Status Buttons -->
@@ -475,9 +493,11 @@
 				<span>{pointInTimeNetWorth.subtext}</span>
 				<span>·</span>
 				<a
-					href="/accounts?datePreset={encodeURIComponent(datePreset)}&startDate={encodeURIComponent(
-						filterStartDate
-					)}&endDate={encodeURIComponent(filterEndDate)}"
+					href="/accounts?datePreset={encodeURIComponent(
+						dateFilterStore.preset
+					)}&startDate={encodeURIComponent(dateFilterStore.startDate)}&endDate={encodeURIComponent(
+						dateFilterStore.endDate
+					)}"
 					class="font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
 				>
 					Rincian Akun →

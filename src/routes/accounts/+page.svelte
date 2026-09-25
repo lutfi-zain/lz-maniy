@@ -20,13 +20,9 @@
 		calculatePointInTimeWalletBalances
 	} from '$lib/utils/networth-timeline';
 	import type { WalletItem } from '$lib/types/account-detail';
+	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 
-	// Filters, Date Range & Sorting state
-	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
-		'this_month'
-	);
-	let filterStartDate = $state<string>('');
-	let filterEndDate = $state<string>('');
+	// Filters & Sorting state
 	let searchQuery = $state('');
 	let statusFilter = $state<'all' | 'spendable' | 'locked'>('all');
 	let sortBy = $state<'balance_desc' | 'balance_asc' | 'name' | 'last_tx'>('balance_desc');
@@ -37,13 +33,8 @@
 		const qStart = page.url.searchParams.get('startDate');
 		const qEnd = page.url.searchParams.get('endDate');
 
-		if (qStart) filterStartDate = qStart;
-		if (qEnd) filterEndDate = qEnd;
-		if (
-			qPreset &&
-			['this_month', 'next_month', 'last_month', 'today', 'all', 'custom'].includes(qPreset)
-		) {
-			datePreset = qPreset as typeof datePreset;
+		if (qPreset && qStart && qEnd) {
+			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
 		}
 		reedrichStore.fetchAllTransactions();
 	});
@@ -67,7 +58,7 @@
 		calculatePointInTimeWalletBalances({
 			wallets: allWallets,
 			allTransactions: allTxs,
-			endDate: filterEndDate
+			endDate: dateFilterStore.endDate
 		})
 	);
 
@@ -83,7 +74,7 @@
 		calculatePointInTimeNetWorth({
 			currentNetWorth,
 			allTransactions: allTxs,
-			endDate: filterEndDate,
+			endDate: dateFilterStore.endDate,
 			wallets: allWallets,
 			walletCurrencyMap,
 			currentSpendable,
@@ -278,11 +269,26 @@
 				/>
 			</div>
 
-			<DateRangePicker
-				bind:start={filterStartDate}
-				bind:end={filterEndDate}
-				bind:preset={datePreset}
-			/>
+			<div class="flex items-center gap-1.5">
+				<DateRangePicker
+					bind:start={dateFilterStore.startDate}
+					bind:end={dateFilterStore.endDate}
+					bind:preset={dateFilterStore.preset}
+					onchange={({ preset, start, end }) => {
+						dateFilterStore.setFilter(preset as DatePreset, start, end);
+					}}
+				/>
+				{#if dateFilterStore.preset !== 'this_month'}
+					<button
+						type="button"
+						onclick={() => dateFilterStore.reset()}
+						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+						title="Reset ke Bulan Ini"
+					>
+						Reset
+					</button>
+				{/if}
+			</div>
 		</div>
 
 		<!-- Row 2: Status Filter + Sort + View Toggle -->
