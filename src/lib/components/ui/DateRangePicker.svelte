@@ -260,13 +260,13 @@
 </script>
 
 <!-- Outer Container with stable, non-resizing trigger -->
-<div class="relative inline-block text-xs">
+<div class="relative inline-block w-full text-xs sm:w-auto">
 	<!-- Trigger Button (Fixed width w-[240px] to prevent shifting/resizing) -->
 	<button
 		bind:this={triggerBtn}
 		type="button"
 		onclick={toggleOpen}
-		class="flex w-[240px] shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-1.5 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF]"
+		class="flex w-full shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-2 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF] sm:w-[240px] sm:py-1.5"
 		aria-haspopup="dialog"
 		aria-expanded={isOpen}
 	>

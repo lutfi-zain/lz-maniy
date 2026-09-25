@@ -28,15 +28,12 @@
 		if (filterEndDate) queryParts.push(`endDate=${filterEndDate}`);
 
 		try {
-			const res = await fetch(
-				`${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`,
-				{
-					headers: {
-						'X-API-Key': reedrichStore.apiToken,
-						Authorization: 'Bearer ' + reedrichStore.apiToken
-					}
+			const res = await fetch(`${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`, {
+				headers: {
+					'X-API-Key': reedrichStore.apiToken,
+					Authorization: 'Bearer ' + reedrichStore.apiToken
 				}
-			);
+			});
 			if (res.ok) {
 				const data = await res.json();
 				recentTransactions = Array.isArray(data) ? data : (data.items ?? []);
@@ -87,59 +84,97 @@
 			Memuat riwayat mutasi terkini...
 		</div>
 	{:else}
-		<div class="overflow-x-auto">
-			<table class="w-full border-collapse text-left text-xs">
-				<thead
-					class="border-b border-[#EAEAEA] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
-				>
-					<tr>
-						<th class="pb-2 font-medium">Tanggal</th>
-						<th class="pb-2 font-medium">Deskripsi</th>
-						<th class="pb-2 font-medium">Akun</th>
-						<th class="pb-2 text-right font-medium">Nominal</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-[#EAEAEA]">
-					{#each recentTransactions as tx (tx.transactionId)}
-						{@const isInc = tx.transactionType === 'income'}
-						{@const isPlan = tx.transactionIsPlanned === 1}
-						<tr class="transition-colors hover:bg-[#F9F9F8]">
-							<td class="py-2 font-mono text-[11px] whitespace-nowrap text-[#787774]">
-								{dFmt(tx.transactionDate)}
-							</td>
-							<td class="max-w-[220px] py-2 pr-2">
-								<div
-									class="truncate font-medium text-[#111111]"
-									title={tx.transactionDescription || ''}
+		{#if recentTransactions.length === 0}
+			<div class="py-8 text-center font-mono text-xs text-[#787774]">
+				Tidak ada transaksi pada rentang tanggal ini.
+			</div>
+		{:else}
+			<!-- Desktop: Tabular Grid (>= 768px) -->
+			<div class="hidden overflow-x-auto md:block">
+				<table class="w-full border-collapse text-left text-xs">
+					<thead
+						class="border-b border-[#EAEAEA] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
+					>
+						<tr>
+							<th class="pb-2 font-medium">Tanggal</th>
+							<th class="pb-2 font-medium">Deskripsi</th>
+							<th class="pb-2 font-medium">Akun</th>
+							<th class="pb-2 text-right font-medium">Nominal</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-[#EAEAEA]">
+						{#each recentTransactions as tx (tx.transactionId)}
+							{@const isInc = tx.transactionType === 'income'}
+							{@const isPlan = tx.transactionIsPlanned === 1}
+							<tr class="transition-colors hover:bg-[#F9F9F8]">
+								<td class="py-2 font-mono text-[11px] whitespace-nowrap text-[#787774]">
+									{dFmt(tx.transactionDate)}
+								</td>
+								<td class="max-w-[220px] py-2 pr-2">
+									<div
+										class="truncate font-medium text-[#111111]"
+										title={tx.transactionDescription || ''}
+									>
+										{tx.transactionDescription || '(tanpa deskripsi)'}
+									</div>
+									{#if isPlan}
+										<span class="inline-block font-mono text-[9px] text-[#956400] uppercase">
+											Planned
+										</span>
+									{/if}
+								</td>
+								<td class="max-w-[110px] truncate py-2 text-[11px] text-[#787774]">
+									{getWalletName(tx.transactionWalletId)}
+								</td>
+								<td
+									class="py-2 text-right font-mono font-semibold whitespace-nowrap tabular-nums {isInc
+										? 'text-[#346538]'
+										: 'text-[#111111]'}"
 								>
-									{tx.transactionDescription || '(tanpa deskripsi)'}
-								</div>
-								{#if isPlan}
-									<span class="inline-block font-mono text-[9px] text-[#956400] uppercase">
-										Planned
-									</span>
-								{/if}
-							</td>
-							<td class="max-w-[110px] truncate py-2 text-[11px] text-[#787774]">
-								{getWalletName(tx.transactionWalletId)}
-							</td>
-							<td
-								class="py-2 text-right font-mono font-semibold whitespace-nowrap tabular-nums {isInc
+									{isInc ? '+' : '−'}{fmtIDR(tx.transactionAmount)}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Mobile: Dense Document Feed (< 768px, Zero Horizontal Scroll) -->
+			<div class="divide-y divide-[#EAEAEA] md:hidden">
+				{#each recentTransactions as tx (tx.transactionId)}
+					{@const isInc = tx.transactionType === 'income'}
+					{@const isPlan = tx.transactionIsPlanned === 1}
+					<div class="py-2.5 transition-colors hover:bg-[#FBFBFA]">
+						<div class="flex items-start justify-between gap-2">
+							<div
+								class="line-clamp-1 text-xs font-medium text-[#111111]"
+								title={tx.transactionDescription || ''}
+							>
+								{tx.transactionDescription || '(tanpa deskripsi)'}
+							</div>
+							<div
+								class="text-right font-mono text-xs font-bold whitespace-nowrap tabular-nums {isInc
 									? 'text-[#346538]'
 									: 'text-[#111111]'}"
 							>
 								{isInc ? '+' : '−'}{fmtIDR(tx.transactionAmount)}
-							</td>
-						</tr>
-					{:else}
-						<tr>
-							<td colspan="4" class="py-8 text-center font-mono text-xs text-[#787774]">
-								Tidak ada transaksi pada rentang tanggal ini.
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+							</div>
+						</div>
+						<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">
+							<div class="flex items-center gap-1.5 truncate">
+								<span class="font-mono text-[10px]">{dFmt(tx.transactionDate)}</span>
+								<span>·</span>
+								<span class="truncate">{getWalletName(tx.transactionWalletId)}</span>
+							</div>
+							{#if isPlan}
+								<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
+									Planned
+								</span>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>

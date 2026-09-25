@@ -10,7 +10,7 @@ test.describe('Ledger Studio Dynamic Filtering Engine', () => {
 
 		// Search for Point Coffee
 		await searchInput.fill('point coffee');
-		await expect(page.getByText('Point Coffee untuk suami')).toBeVisible();
+		await expect(page.getByText('Point Coffee untuk suami').first()).toBeVisible();
 
 		// Clear search
 		await searchInput.fill('');

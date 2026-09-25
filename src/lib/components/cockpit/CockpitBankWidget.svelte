@@ -33,7 +33,8 @@
 	});
 </script>
 
-<div class="rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
+<!-- Desktop: Detailed Institution & Sub-Wallets Sidebar (>= md) -->
+<div class="hidden rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs md:block">
 	<div class="mb-3 flex items-center justify-between border-b border-[#EAEAEA] pb-2.5">
 		<div class="flex items-center gap-1.5">
 			<Bank class="size-4 text-[#111111]" weight="bold" />
@@ -90,4 +91,36 @@
 		<span>Kelola Akun & Bank</span>
 		<ArrowRight class="size-3" weight="bold" />
 	</a>
+</div>
+
+<!-- Mobile Quick Cash Bar (< md) -->
+<div class="rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-2xs md:hidden">
+	<div class="mb-2 flex items-center justify-between">
+		<div class="flex items-center gap-1.5">
+			<Bank class="size-3.5 text-[#111111]" weight="bold" />
+			<h3 class="text-xs font-semibold text-[#111111]">Likuiditas Akun</h3>
+		</div>
+		<a
+			href="/accounts"
+			class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
+		>
+			<span>Semua Akun</span>
+			<ArrowRight class="size-3" weight="bold" />
+		</a>
+	</div>
+
+	<!-- Horizontal rail of institutions -->
+	<div class="flex items-center gap-2 overflow-x-auto pb-0.5 text-xs">
+		{#each groupedBanks as [inst, data] (inst)}
+			<a
+				href="/accounts"
+				class="flex shrink-0 items-center gap-2 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1.5 no-underline transition-colors hover:border-[#111111]"
+			>
+				<span class="font-medium text-[#111111]">{inst}</span>
+				<span class="font-mono font-semibold text-[#111111] tabular-nums">
+					{fmtCurrency(data.total, inst === 'Bitget' ? 'USDT' : 'IDR')}
+				</span>
+			</a>
+		{/each}
+	</div>
 </div>

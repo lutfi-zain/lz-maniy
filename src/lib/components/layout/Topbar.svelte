@@ -22,7 +22,7 @@
 	<div
 		class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2.5 px-3 py-2 sm:px-6"
 	>
-		<div class="flex max-w-full items-center gap-3 overflow-x-auto sm:gap-6">
+		<div class="flex items-center gap-3 sm:gap-6">
 			<a
 				href="/"
 				class="flex shrink-0 items-center gap-1.5 font-semibold text-[#111111] no-underline"
@@ -31,7 +31,7 @@
 				<span class="text-sm font-semibold tracking-tight">Maniyy</span>
 			</a>
 
-			<nav class="flex shrink-0 items-center gap-1 overflow-x-auto">
+			<nav class="hidden shrink-0 items-center gap-1 md:flex">
 				<a
 					href="/"
 					class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium no-underline transition-colors {isActive(
@@ -119,8 +119,21 @@
 					<span>Sync</span>
 				</button>
 			</div>
+			<button
+				type="button"
+				onclick={() => reedrichStore.fetchSnapshot()}
+				disabled={reedrichStore.isLoading}
+				class="flex cursor-pointer items-center justify-center rounded p-1 text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111] disabled:opacity-50 lg:hidden"
+				title="Sinkronkan data live"
+				aria-label="Sync"
+			>
+				<ArrowsClockwise
+					class="size-3.5 {reedrichStore.isLoading ? 'animate-spin' : ''}"
+					weight="bold"
+				/>
+			</button>
 
-			<div class="flex items-center gap-2 border-l border-[#EAEAEA] pl-3">
+			<div class="flex items-center gap-2 border-l border-[#EAEAEA] pl-2 sm:pl-3">
 				<span
 					class="size-2 rounded-full {reedrichStore.isLive ? 'bg-[#346538]' : 'bg-[#C9C4B8]'}"
 					title={reedrichStore.isLive ? 'Live API Connected' : 'Offline / Mock Cache'}

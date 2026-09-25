@@ -182,7 +182,7 @@
 		class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3 text-xs shadow-2xs"
 	>
 		<!-- Search input -->
-		<div class="relative min-w-[200px] flex-1">
+		<div class="relative w-full flex-1 sm:min-w-[200px]">
 			<MagnifyingGlass
 				class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
 				weight="bold"
@@ -191,7 +191,7 @@
 				type="search"
 				bind:value={searchQuery}
 				placeholder="Cari nama akun atau bank..."
-				class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 pr-3 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden"
+				class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-3 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
 			/>
 		</div>
 

@@ -222,7 +222,7 @@
 		<!-- Row 1: Search + Date Range Picker -->
 		<div class="flex flex-wrap items-center gap-3">
 			<!-- Instant Search with Keyboard Shortcut -->
-			<div class="relative min-w-[240px] flex-1">
+			<div class="relative w-full flex-1 sm:min-w-[240px]">
 				<MagnifyingGlass
 					class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
 					weight="bold"
@@ -232,7 +232,7 @@
 					type="search"
 					bind:value={searchKeyword}
 					placeholder="Cari transaksi... (tekan '/' untuk fokus)"
-					class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 pr-12 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden"
+					class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-12 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
 				/>
 				<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
 			</div>
@@ -445,7 +445,8 @@
 				Tidak ada transaksi yang cocok dengan kriteria filter Anda.
 			</div>
 		{:else}
-			<div class="overflow-x-auto">
+			<!-- Desktop: Full Tabular Grid (>= 768px) -->
+			<div class="hidden overflow-x-auto md:block">
 				<table class="w-full border-collapse text-left text-xs">
 					<thead
 						class="border-b border-[#EAEAEA] bg-[#F9F9F8] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
@@ -518,6 +519,58 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+
+			<!-- Mobile: Dense Document Feed (< 768px, Zero Horizontal Scroll) -->
+			<div class="divide-y divide-[#EAEAEA] md:hidden">
+				{#each pagedTransactions as t (t.transactionId)}
+					{@const isInc = t.transactionType === 'income'}
+					{@const isPlan = t.transactionIsPlanned === 1}
+					<div class="p-3.5 transition-colors hover:bg-[#FBFBFA]">
+						<!-- Line 1: Description + Amount -->
+						<div class="flex items-start justify-between gap-2.5">
+							<div
+								class="line-clamp-1 text-xs font-medium text-[#111111]"
+								title={t.transactionDescription || ''}
+							>
+								{t.transactionDescription || '(tanpa deskripsi)'}
+							</div>
+							<div
+								class="text-right font-mono text-xs font-bold whitespace-nowrap tabular-nums {isInc
+									? 'text-[#346538]'
+									: 'text-[#111111]'}"
+							>
+								{isInc ? '+' : '−'}{fmtIDR(t.transactionAmount)}
+							</div>
+						</div>
+
+						<!-- Line 2: Date · Category · Routing · Status -->
+						<div
+							class="mt-1.5 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#787774]"
+						>
+							<div class="flex items-center gap-1.5 truncate">
+								<span class="font-mono text-[10px]">{dFmt(t.transactionDate)}</span>
+								<span>·</span>
+								<span
+									class="py-0.2 rounded bg-[#F0EFEC] px-1.5 text-[10px] font-medium text-[#111111]"
+								>
+									{getCategoryName(t.transactionCategoryId)}
+								</span>
+								<span>·</span>
+								<span class="truncate">
+									{getWalletName(t.transactionWalletId)}{t.transactionTargetWalletId
+										? ` → ${getWalletName(t.transactionTargetWalletId)}`
+										: ''}
+								</span>
+							</div>
+							{#if isPlan}
+								<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
+									Planned
+								</span>
+							{/if}
+						</div>
+					</div>
+				{/each}
 			</div>
 
 			<!-- Pagination Footer with Page Size & Stepper -->
