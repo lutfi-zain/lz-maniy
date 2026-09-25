@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Full-Width Tabular Transaction Ledger
-The ledger studio SHALL render user transactions using a responsive dual-presentation model: a full-width multi-column tabular grid on desktop viewports (>= 768px) and a flat, dense document-style feed with zero horizontal scrolling on mobile viewports (< 768px). Both presentations display Date, Description, Kategori, Dari Akun, Ke Akun, Status, and Amount with tabular numeric alignment, and support configurable pagination bounds. All transaction amounts SHALL display their primary monetary value in IDR (converting foreign currencies via live exchange rates) with native currency amounts displayed as secondary notation.
+The ledger studio SHALL render user transactions using a responsive dual-presentation model: a full-width tabular grid on desktop (>= 768px) and a flat dense feed with zero horizontal scrolling on mobile (< 768px), displaying all primary amounts in IDR with secondary native currency notation.
 
 #### Scenario: View Transaction Rows with Category Column
 - **WHEN** user navigates to `/ledger` on a desktop viewport
