@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { calculatePointInTimeNetWorth } from './networth-timeline';
-import type { TransactionRecord } from '$lib/types/account-detail';
+import {
+	calculatePointInTimeNetWorth,
+	calculatePointInTimeWalletBalances
+} from './networth-timeline';
+import type { TransactionRecord, WalletItem } from '$lib/types/account-detail';
 
 describe('calculatePointInTimeNetWorth', () => {
 	const baselineNetWorth = 25_461_999;
@@ -212,5 +215,148 @@ describe('calculatePointInTimeNetWorth', () => {
 		expect(res.horizon).toBe('past');
 		expect(res.label).toBe('NET WORTH PENUTUPAN');
 		expect(Math.round(res.amount)).toBe(Math.round(20_000_000 - 891_791.29));
+	});
+
+	it('calculates spendable and locked breakdown accurately including intra-wallet transfers', () => {
+		const testWallets: WalletItem[] = [
+			{
+				walletId: 'w-main',
+				walletName: 'BCA Main',
+				institution: 'BCA',
+				type: 'bank',
+				currency: 'IDR',
+				balance: 10_000_000,
+				isLocked: 0,
+				lastTransaction: null
+			},
+			{
+				walletId: 'w-sewa',
+				walletName: 'BCA Pocket Sewa',
+				institution: 'BCA',
+				type: 'bank',
+				currency: 'IDR',
+				balance: 5_000_000,
+				isLocked: 1,
+				lastTransaction: null
+			}
+		];
+
+		const transferTxs: TransactionRecord[] = [
+			// Transfer 2,000,000 IDR from w-main (spendable) to w-sewa (locked) in October
+			{
+				transactionId: 'tx-trf-1',
+				transactionWalletId: 'w-main',
+				transactionTargetWalletId: 'w-sewa',
+				transactionAmount: 2_000_000,
+				transactionType: 'transfer',
+				transactionDescription: 'Setor Sewa Rumah',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-10T10:00:00+07:00'
+			},
+			// Expense 500,000 IDR from w-main (spendable)
+			{
+				transactionId: 'tx-exp-1',
+				transactionWalletId: 'w-main',
+				transactionAmount: 500_000,
+				transactionType: 'expense',
+				transactionDescription: 'Makan',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-12T12:00:00+07:00'
+			}
+		];
+
+		const res = calculatePointInTimeNetWorth({
+			currentNetWorth: 15_000_000,
+			allTransactions: transferTxs,
+			endDate: '2026-10-31',
+			referenceDate,
+			wallets: testWallets
+		});
+
+		// Total net worth: 15,000,000 - 500,000 = 14,500,000
+		expect(res.amount).toBe(14_500_000);
+		// Spendable: 10,000,000 - 2,000,000 (trf) - 500,000 (exp) = 7,500,000
+		expect(res.spendableAmount).toBe(7_500_000);
+		// Locked: 5,000,000 + 2,000,000 (trf) = 7,000,000
+		expect(res.lockedAmount).toBe(7_000_000);
+		// Sum of spendable + locked must equal total net worth!
+		expect(res.spendableAmount + res.lockedAmount).toBe(res.amount);
+	});
+});
+
+describe('calculatePointInTimeWalletBalances', () => {
+	const referenceDate = '2026-09-24';
+
+	const testWallets: WalletItem[] = [
+		{
+			walletId: 'w1',
+			walletName: 'BCA Main',
+			institution: 'BCA',
+			type: 'bank',
+			currency: 'IDR',
+			balance: 10_000_000,
+			isLocked: 0,
+			lastTransaction: null
+		},
+		{
+			walletId: 'w2',
+			walletName: 'BCA Pocket Sewa',
+			institution: 'BCA',
+			type: 'bank',
+			currency: 'IDR',
+			balance: 5_000_000,
+			isLocked: 1,
+			lastTransaction: null
+		}
+	];
+
+	it('calculates future wallet balances including intra-wallet transfers', () => {
+		const txs: TransactionRecord[] = [
+			// 2,000,000 transferred from w1 to w2
+			{
+				transactionId: 't1',
+				transactionWalletId: 'w1',
+				transactionTargetWalletId: 'w2',
+				transactionAmount: 2_000_000,
+				transactionType: 'transfer',
+				transactionDescription: 'Tabungan sewa',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-05T10:00:00+07:00'
+			},
+			// 1,000,000 income to w1
+			{
+				transactionId: 't2',
+				transactionWalletId: 'w1',
+				transactionAmount: 1_000_000,
+				transactionType: 'income',
+				transactionDescription: 'Bonus',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-15T10:00:00+07:00'
+			}
+		];
+
+		const balances = calculatePointInTimeWalletBalances({
+			wallets: testWallets,
+			allTransactions: txs,
+			endDate: '2026-10-31',
+			referenceDate
+		});
+
+		// w1: 10,000,000 - 2,000,000 + 1,000,000 = 9,000,000
+		expect(balances.get('w1')).toBe(9_000_000);
+		// w2: 5,000,000 + 2,000,000 = 7,000,000
+		expect(balances.get('w2')).toBe(7_000_000);
+	});
+
+	it('returns current balances when endDate is empty or within present month', () => {
+		const balances = calculatePointInTimeWalletBalances({
+			wallets: testWallets,
+			allTransactions: [],
+			endDate: '2026-09-30',
+			referenceDate
+		});
+
+		expect(balances.get('w1')).toBe(10_000_000);
+		expect(balances.get('w2')).toBe(5_000_000);
 	});
 });

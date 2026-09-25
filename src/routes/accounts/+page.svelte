@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
@@ -12,18 +14,77 @@
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import SortAscending from 'phosphor-svelte/lib/SortAscending';
 	import StatusBadge from '$lib/components/ui/StatusBadge.svelte';
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import {
+		calculatePointInTimeNetWorth,
+		calculatePointInTimeWalletBalances
+	} from '$lib/utils/networth-timeline';
 	import type { WalletItem } from '$lib/types/account-detail';
 
-	// Filters & Sorting state
+	// Filters, Date Range & Sorting state
+	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
+		'this_month'
+	);
+	let filterStartDate = $state<string>('');
+	let filterEndDate = $state<string>('');
 	let searchQuery = $state('');
 	let statusFilter = $state<'all' | 'spendable' | 'locked'>('all');
 	let sortBy = $state<'balance_desc' | 'balance_asc' | 'name' | 'last_tx'>('balance_desc');
 	let viewMode = $state<'grouped' | 'flat'>('grouped');
 
+	onMount(() => {
+		const qPreset = page.url.searchParams.get('datePreset');
+		if (
+			qPreset &&
+			['this_month', 'next_month', 'last_month', 'today', 'all', 'custom'].includes(qPreset)
+		) {
+			datePreset = qPreset as typeof datePreset;
+		}
+		reedrichStore.fetchAllTransactions();
+	});
+
 	const nw = $derived(reedrichStore.snapshot?.netWorth);
 	const wl = $derived(reedrichStore.snapshot?.wallets);
 	const allWallets = $derived(reedrichStore.allWallets);
+	const allTxs = $derived(reedrichStore.allTransactions);
 
+	// Wallet currency lookup map for fast O(1) resolution
+	const walletCurrencyMap = $derived.by(() => {
+		const map = new SvelteMap<string, string>();
+		for (const w of allWallets) {
+			map.set(w.walletId, w.currency || 'IDR');
+		}
+		return map;
+	});
+
+	// Dynamic point-in-time balances for every wallet at horizon T_akhir
+	const pointInTimeBalances = $derived(
+		calculatePointInTimeWalletBalances({
+			wallets: allWallets,
+			allTransactions: allTxs,
+			endDate: filterEndDate
+		})
+	);
+
+	function getWalletBalance(w: WalletItem): number {
+		return pointInTimeBalances.get(w.walletId) ?? w.balance;
+	}
+
+	// Point-in-time portfolio summary tiles
+	const currentNetWorth = $derived(nw?.consolidated.total ?? 0);
+	const currentSpendable = $derived(wl?.spendable.total);
+	const currentLocked = $derived(wl?.locked.total);
+	const timelineNetWorth = $derived(
+		calculatePointInTimeNetWorth({
+			currentNetWorth,
+			allTransactions: allTxs,
+			endDate: filterEndDate,
+			wallets: allWallets,
+			walletCurrencyMap,
+			currentSpendable,
+			currentLocked
+		})
+	);
 	// Filtered wallets
 	const filteredWallets = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();
@@ -44,14 +105,14 @@
 		const list = [...filteredWallets];
 		if (sortBy === 'balance_desc') {
 			list.sort((a, b) => {
-				const aIDR = getConvertedBalanceInIDR(a.balance, a.currency);
-				const bIDR = getConvertedBalanceInIDR(b.balance, b.currency);
+				const aIDR = getConvertedBalanceInIDR(getWalletBalance(a), a.currency);
+				const bIDR = getConvertedBalanceInIDR(getWalletBalance(b), b.currency);
 				return bIDR - aIDR;
 			});
 		} else if (sortBy === 'balance_asc') {
 			list.sort((a, b) => {
-				const aIDR = getConvertedBalanceInIDR(a.balance, a.currency);
-				const bIDR = getConvertedBalanceInIDR(b.balance, b.currency);
+				const aIDR = getConvertedBalanceInIDR(getWalletBalance(a), a.currency);
+				const bIDR = getConvertedBalanceInIDR(getWalletBalance(b), b.currency);
 				return aIDR - bIDR;
 			});
 		} else if (sortBy === 'name') {
@@ -99,19 +160,22 @@
 			const group = map.get(inst)!;
 			group.wallets.push(w);
 
+			const wBal = getWalletBalance(w);
+			const convertedIDR = getConvertedBalanceInIDR(wBal, w.currency);
+
 			if (w.isLocked === 1) {
-				group.lockedTotal += w.balance;
+				group.lockedTotal += convertedIDR;
 				group.lockedCount++;
 			} else {
-				group.spendableTotal += w.balance;
+				group.spendableTotal += convertedIDR;
 				group.spendableCount++;
 			}
 
 			// Subtotal in native currency or live peg
 			if (inst === 'Bitget') {
-				group.total += w.balance;
+				group.total += wBal;
 			} else {
-				group.total += getConvertedBalanceInIDR(w.balance, w.currency);
+				group.total += convertedIDR;
 			}
 		}
 
@@ -141,11 +205,18 @@
 	<!-- Macro Summary Tiles -->
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-				Total Seluruh Aset (Terkonsolidasi)
-			</span>
+			<div class="flex items-center justify-between">
+				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+					Total Seluruh Aset
+				</span>
+				<span
+					class="py-0.2 rounded bg-[#F0EFEC] px-1.5 font-mono text-[9px] text-[#787774] uppercase"
+				>
+					{timelineNetWorth.label}
+				</span>
+			</div>
 			<span class="mt-0.5 block font-mono text-xl font-semibold text-[#111111] tabular-nums">
-				{fmtIDR(nw?.consolidated.total)}
+				{fmtIDR(timelineNetWorth.amount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
 				{allWallets.length} akun terdaftar di 6 institusi
@@ -153,11 +224,14 @@
 		</div>
 
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-				Kas Siap Pakai (Operasional)
-			</span>
+			<div class="flex items-center justify-between">
+				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+					Kas Siap Pakai (Operasional)
+				</span>
+				<span class="size-1.5 rounded-full bg-[#346538]"></span>
+			</div>
 			<span class="mt-0.5 block font-mono text-xl font-semibold text-[#346538] tabular-nums">
-				{fmtIDR(wl?.spendable.total)}
+				{fmtIDR(timelineNetWorth.spendableAmount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
 				{wl?.spendable.items.length ?? 0} akun tanpa gembok
@@ -165,11 +239,14 @@
 		</div>
 
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-				Dana Cadangan & Sewa (Locked)
-			</span>
+			<div class="flex items-center justify-between">
+				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+					Dana Cadangan & Sewa (Locked)
+				</span>
+				<span class="size-1.5 rounded-full bg-[#956400]"></span>
+			</div>
 			<span class="mt-0.5 block font-mono text-xl font-semibold text-[#111111] tabular-nums">
-				{fmtIDR(wl?.locked.total)}
+				{fmtIDR(timelineNetWorth.lockedAmount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
 				{wl?.locked.items.length ?? 0} akun alokasi khusus
@@ -181,90 +258,103 @@
 	<div
 		class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3 text-xs shadow-2xs"
 	>
-		<!-- Search input -->
-		<div class="relative w-full flex-1 sm:min-w-[200px]">
-			<MagnifyingGlass
-				class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
-				weight="bold"
+		<!-- Row 1: Search input + DateRangePicker -->
+		<div class="flex w-full flex-wrap items-center gap-2.5">
+			<div class="relative w-full flex-1 sm:min-w-[200px]">
+				<MagnifyingGlass
+					class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
+					weight="bold"
+				/>
+				<input
+					type="search"
+					bind:value={searchQuery}
+					placeholder="Cari nama akun atau bank..."
+					class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-3 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
+				/>
+			</div>
+
+			<DateRangePicker
+				bind:start={filterStartDate}
+				bind:end={filterEndDate}
+				bind:preset={datePreset}
 			/>
-			<input
-				type="search"
-				bind:value={searchQuery}
-				placeholder="Cari nama akun atau bank..."
-				class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-3 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
-			/>
 		</div>
 
-		<!-- Status Filter Toggle -->
-		<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
-			<button
-				type="button"
-				onclick={() => (statusFilter = 'all')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
-				'all'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Semua
-			</button>
-			<button
-				type="button"
-				onclick={() => (statusFilter = 'spendable')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
-				'spendable'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Operasional
-			</button>
-			<button
-				type="button"
-				onclick={() => (statusFilter = 'locked')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
-				'locked'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Cadangan
-			</button>
-		</div>
+		<!-- Row 2: Status Filter + Sort + View Toggle -->
+		<div
+			class="flex w-full flex-wrap items-center justify-between gap-2.5 border-t border-[#EAEAEA] pt-2 sm:border-t-0 sm:pt-0"
+		>
+			<!-- Status Filter Toggle -->
+			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
+				<button
+					type="button"
+					onclick={() => (statusFilter = 'all')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
+					'all'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Semua
+				</button>
+				<button
+					type="button"
+					onclick={() => (statusFilter = 'spendable')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
+					'spendable'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Operasional
+				</button>
+				<button
+					type="button"
+					onclick={() => (statusFilter = 'locked')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {statusFilter ===
+					'locked'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Cadangan
+				</button>
+			</div>
 
-		<!-- Sort dropdown -->
-		<div class="flex items-center gap-1.5">
-			<SortAscending class="size-3.5 text-[#787774]" weight="bold" />
-			<select
-				bind:value={sortBy}
-				class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-			>
-				<option value="balance_desc">Saldo Terbesar</option>
-				<option value="balance_asc">Saldo Terkecil</option>
-				<option value="name">Nama A-Z</option>
-				<option value="last_tx">Mutasi Terkini</option>
-			</select>
-		</div>
+			<!-- Sort dropdown -->
+			<div class="flex items-center gap-1.5">
+				<SortAscending class="size-3.5 text-[#787774]" weight="bold" />
+				<select
+					bind:value={sortBy}
+					class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
+				>
+					<option value="balance_desc">Saldo Terbesar</option>
+					<option value="balance_asc">Saldo Terkecil</option>
+					<option value="name">Nama A-Z</option>
+					<option value="last_tx">Mutasi Terkini</option>
+				</select>
+			</div>
 
-		<!-- View mode toggle -->
-		<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
-			<button
-				type="button"
-				onclick={() => (viewMode = 'grouped')}
-				class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-				'grouped'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Grup Bank
-			</button>
-			<button
-				type="button"
-				onclick={() => (viewMode = 'flat')}
-				class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-				'flat'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Tabel Rata
-			</button>
+			<!-- View mode toggle -->
+			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
+				<button
+					type="button"
+					onclick={() => (viewMode = 'grouped')}
+					class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
+					'grouped'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Grup Bank
+				</button>
+				<button
+					type="button"
+					onclick={() => (viewMode = 'flat')}
+					class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
+					'flat'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Tabel Rata
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -351,7 +441,7 @@
 									<div
 										class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums"
 									>
-										{fmtCurrency(w.balance, w.currency)}
+										{fmtCurrency(getWalletBalance(w), w.currency)}
 									</div>
 
 									<a
@@ -424,7 +514,7 @@
 
 					<div class="flex items-center gap-4">
 						<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
-							{fmtCurrency(w.balance, w.currency)}
+							{fmtCurrency(getWalletBalance(w), w.currency)}
 						</div>
 
 						<a

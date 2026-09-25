@@ -171,12 +171,17 @@
 
 	// Point-in-time portfolio Net Worth anchor based on T_akhir (converted to IDR)
 	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
+	const currentSpendable = $derived(reedrichStore.snapshot?.wallets.spendable.total);
+	const currentLocked = $derived(reedrichStore.snapshot?.wallets.locked.total);
 	const pointInTimeNetWorth = $derived(
 		calculatePointInTimeNetWorth({
 			currentNetWorth,
 			allTransactions: allTxs,
 			endDate: filterEndDate,
-			walletCurrencyMap
+			wallets: allWallets,
+			walletCurrencyMap,
+			currentSpendable,
+			currentLocked
 		})
 	);
 
@@ -441,17 +446,41 @@
 
 		<!-- Layer 2: Global Balance Sheet Anchor (Right Zone) -->
 		<div
-			class="flex shrink-0 flex-col border-t border-[#EAEAEA] pt-2.5 text-left lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:text-right"
+			class="flex shrink-0 flex-col gap-1 border-t border-[#EAEAEA] pt-2.5 text-left lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:text-right"
 		>
 			<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 				{pointInTimeNetWorth.label}
 			</span>
-			<span class="font-mono text-sm font-bold text-[#111111] tabular-nums">
+			<span class="font-mono text-base font-bold text-[#111111] tabular-nums">
 				{fmtIDR(pointInTimeNetWorth.amount)}
 			</span>
-			<span class="text-[10px] text-[#787774]">
-				{pointInTimeNetWorth.subtext}
-			</span>
+
+			<!-- Spendable vs Locked Breakdown -->
+			<div
+				class="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px] lg:justify-end"
+			>
+				<span class="flex items-center gap-1 text-[#346538]">
+					<span class="size-1.5 rounded-full bg-[#346538]"></span>
+					<span>Bebas: {fmtIDR(pointInTimeNetWorth.spendableAmount)}</span>
+				</span>
+				<span class="text-[#C9C4B8]">·</span>
+				<span class="flex items-center gap-1 text-[#956400]">
+					<span class="size-1.5 rounded-full bg-[#956400]"></span>
+					<span>Cadangan: {fmtIDR(pointInTimeNetWorth.lockedAmount)}</span>
+				</span>
+			</div>
+
+			<!-- Subtext and Link to Accounts Timeline -->
+			<div class="flex items-center gap-1 text-[10px] text-[#787774] lg:justify-end">
+				<span>{pointInTimeNetWorth.subtext}</span>
+				<span>·</span>
+				<a
+					href="/accounts?datePreset={encodeURIComponent(datePreset)}"
+					class="font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
+				>
+					Rincian Akun →
+				</a>
+			</div>
 		</div>
 	</div>
 
