@@ -268,6 +268,13 @@
 												({lw.currency}
 												{lw.usedPeg ? '· Kurs Live' : '· Nilai Pasti'})
 											</span>
+											<a
+												href="/ledger?walletId={lw.walletId}"
+												class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
+												title="Lihat mutasi dompet di Ledger"
+											>
+												Mutasi →
+											</a>
 										</div>
 										<div class="text-right font-mono text-[#111111] tabular-nums">
 											{#if lw.currency !== 'IDR'}
@@ -338,6 +345,15 @@
 								{fmtIDR(b.remaining)}
 							</span>
 						</div>
+
+						<div class="border-t border-[#EAEAEA] pt-2 text-right">
+							<a
+								href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
+								class="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
+							>
+								<span>Lihat Transaksi →</span>
+							</a>
+						</div>
 					</div>
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
@@ -373,7 +389,16 @@
 								</div>
 								<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">
 									<span>Jatuh tempo: {dFmt(d.dueDate)}</span>
-									<span class="font-mono uppercase">{d.status}</span>
+									<div class="flex items-center gap-2">
+										<span class="font-mono uppercase">{d.status}</span>
+										<span>·</span>
+										<a
+											href="/ledger?search={encodeURIComponent(d.personName)}"
+											class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
+										>
+											Mutasi →
+										</a>
+									</div>
 								</div>
 							</div>
 						{/each}
@@ -400,7 +425,16 @@
 								</div>
 								<div class="mt-1 flex items-center justify-between text-[11px] text-[#787774]">
 									<span>Jatuh tempo: {dFmt(l.dueDate)}</span>
-									<span class="font-mono uppercase">{l.status}</span>
+									<div class="flex items-center gap-2">
+										<span class="font-mono uppercase">{l.status}</span>
+										<span>·</span>
+										<a
+											href="/ledger?search={encodeURIComponent(l.personName)}"
+											class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
+										>
+											Mutasi →
+										</a>
+									</div>
 								</div>
 							</div>
 						{/each}
@@ -437,7 +471,18 @@
 							{#each recurringTemplates as r (r.name)}
 								{@const isInc = r.type === 'income'}
 								<tr class="transition-colors hover:bg-[#FBFBFA]">
-									<td class="px-3 py-2.5 font-medium text-[#111111]">{r.name}</td>
+									<td class="px-3 py-2.5 font-medium text-[#111111]">
+										<div class="flex items-center justify-between gap-2">
+											<span>{r.name}</span>
+											<a
+												href="/ledger?search={encodeURIComponent(r.name)}"
+												class="font-mono text-[10px] text-[#787774] underline hover:text-[#111111]"
+												title="Lihat mutasi terkait di Ledger"
+											>
+												Mutasi →
+											</a>
+										</div>
+									</td>
 									<td class="px-3 py-2.5 text-[#787774]">{r.freq}</td>
 									<td class="px-3 py-2.5 font-mono text-[11px] text-[#787774]">{dFmt(r.next)}</td>
 									<td class="px-3 py-2.5 text-[#787774]">{r.wallet}</td>
