@@ -12,7 +12,7 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 	const toolDeclarations: FunctionDeclaration[] = [
 		{
 			name: 'get_snapshot',
-			description: 'Ambil ringkasan portofolio: total net worth dan ringkasan kas saat ini.',
+			description: 'Ambil ringkasan portofolio: total net worth, rincian saldo wallet (termasuk mata uang asing), dan top kategori pengeluaran.',
 			parameters: {
 				type: Type.OBJECT,
 				properties: {}
@@ -26,13 +26,15 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 				properties: {
 					startDate: { type: Type.STRING, description: 'Tanggal mulai (YYYY-MM-DD)' },
 					endDate: { type: Type.STRING, description: 'Tanggal akhir (YYYY-MM-DD)' },
+					walletId: { type: Type.STRING, description: 'Filter ID wallet' },
+					categoryId: { type: Type.STRING, description: 'Filter ID kategori' },
 					limit: { type: Type.NUMBER, description: 'Batas jumlah' }
 				}
 			}
 		},
 		{
 			name: 'get_categories',
-			description: 'Ambil kategori transaksi.',
+			description: 'Ambil daftar kategori transaksi.',
 			parameters: {
 				type: Type.OBJECT,
 				properties: {}
@@ -73,6 +75,8 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 					{
 						startDate: typeof args.startDate === 'string' ? args.startDate : undefined,
 						endDate: typeof args.endDate === 'string' ? args.endDate : undefined,
+						walletId: typeof args.walletId === 'string' ? args.walletId : undefined,
+						categoryId: typeof args.categoryId === 'string' ? args.categoryId : undefined,
 						limit: typeof args.limit === 'number' ? args.limit : 30
 					},
 					{ toolCallId, messages: [] }
@@ -120,16 +124,17 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			const parts = [];
 
 			for (const fc of fCalls) {
+				const toolName = fc.name || '';
 				const toolCallId = fc.id || `call_${crypto.randomUUID().slice(0, 8)}`;
-				yield `9:${JSON.stringify({ toolCallId, toolName: fc.name, args: fc.args || {} })}\n`;
+				yield `9:${JSON.stringify({ toolCallId, toolName, args: fc.args || {} })}\n`;
 
-				const toolResult = await executeTool(fc.name, fc.args || {}, toolCallId);
+				const toolResult = await executeTool(toolName, fc.args || {}, toolCallId);
 
-				yield `a:${JSON.stringify({ toolCallId, toolName: fc.name, result: toolResult })}\n`;
+				yield `a:${JSON.stringify({ toolCallId, toolName, result: toolResult })}\n`;
 
 				parts.push({
 					functionResponse: {
-						name: fc.name,
+						name: toolName,
 						response: { output: toolResult }
 					}
 				});
