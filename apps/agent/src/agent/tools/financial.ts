@@ -16,7 +16,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 
 	return {
 		get_snapshot: tool({
-			description: 'Ambil ringkasan akun: total net worth, daftar wallet beserta saldo, dan ringkasan anggaran bulanan.',
+			description: 'Ambil ringkasan portofolio saat ini: total net worth (kekayaan bersih), rincian wallet beserta saldo, dan ringkasan arus kas bulanan.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/account-detail`);
@@ -41,7 +41,8 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 						currency: w.currency
 					})),
 					totalLocked: data.wallets.locked.total,
-					monthlySummary: {
+					monthlyCashFlow: {
+						period: data.monthlyCashFlow.period,
 						totalIncome: data.monthlyCashFlow.totalIncome,
 						totalExpense: data.monthlyCashFlow.totalExpense,
 						netSavings: data.monthlyCashFlow.netSavings
@@ -51,40 +52,37 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		}),
 
 		list_transactions: tool({
-			description: 'Ambil daftar transaksi dengan filter opsional (wallet, kategori, rentang tanggal, limit).',
+			description: 'Ambil daftar mutasi/transaksi dengan filter tanggal spesifik (misal rentang bulan tertentu), status planned, dsb. WAJIB sertakan startDate dan endDate bila mencari transaksi bulan tertentu.',
 			parameters: z.object({
-				walletId: z.string().optional().describe('Filter by wallet ID'),
-				categoryId: z.string().optional().describe('Filter by category ID'),
-				budgetId: z.string().optional().describe('Filter by budget ID'),
-				startDate: z.string().optional().describe('Filter tanggal mulai format YYYY-MM-DD'),
-				endDate: z.string().optional().describe('Filter tanggal akhir format YYYY-MM-DD'),
-				limit: z.number().int().min(1).max(50).default(20).describe('Max results'),
-				offset: z.number().int().min(0).default(0).describe('Pagination offset')
+				startDate: z.string().optional().describe('Tanggal mulai (YYYY-MM-DD), misal: 2026-10-01'),
+				endDate: z.string().optional().describe('Tanggal akhir (YYYY-MM-DD), misal: 2026-10-31'),
+				walletId: z.string().optional().describe('Filter ID wallet'),
+				categoryId: z.string().optional().describe('Filter ID kategori'),
+				limit: z.number().int().min(1).max(100).default(50).describe('Batas jumlah data')
 			}),
 			execute: async (params) => {
 				const qs = new URLSearchParams();
 				if (params.walletId) qs.set('walletId', params.walletId);
 				if (params.categoryId) qs.set('categoryId', params.categoryId);
-				if (params.budgetId) qs.set('budgetId', params.budgetId);
 				if (params.startDate) qs.set('startDate', params.startDate);
 				if (params.endDate) qs.set('endDate', params.endDate);
 				qs.set('limit', String(params.limit));
-				qs.set('offset', String(params.offset));
 				const res = await doFetch(`${reedrichUrl}/api/v1/transactions?${qs}`);
 				if (!res.ok) throw new Error(`list_transactions failed: ${res.status}`);
-				const data = (await res.json()) as TransactionRecord[];
-				return data.map((t) => ({
-					date: t.transactionDate,
+				const raw = (await res.json()) as TransactionRecord[];
+				const items = Array.isArray(raw) ? raw : (raw as unknown as { items: TransactionRecord[] }).items ?? [];
+				return items.map((t) => ({
+					date: t.transactionDate ? t.transactionDate.slice(0, 10) : '',
 					amount: t.transactionAmount,
 					type: t.transactionType,
 					isPlanned: t.transactionIsPlanned === 1,
-					description: t.transactionDescription
+					description: t.transactionDescription ?? ''
 				}));
 			}
 		}),
 
 		get_categories: tool({
-			description: 'Ambil semua kategori transaksi milik pengguna.',
+			description: 'Ambil semua kategori transaksi.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/categories`);
@@ -99,7 +97,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		}),
 
 		get_user_profile: tool({
-			description: 'Ambil profil pengguna yang sedang login.',
+			description: 'Ambil profil pengguna.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/me`);
