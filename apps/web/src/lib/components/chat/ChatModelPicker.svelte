@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import { onMount } from 'svelte';
+	import { CaretDown, Check, Sparkle, Lightning } from 'phosphor-svelte';
 
 	let open = $state(false);
 
@@ -14,36 +15,80 @@
 	function toggle() {
 		open = !open;
 	}
+
+	const geminiModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'gemini'));
+	const groqModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'groq'));
 </script>
 
 <div class="relative">
 	<button
+		type="button"
 		onclick={toggle}
-		class="text-[11px] text-[#787774] px-2 py-0.5 rounded border border-[#eaeaea] hover:bg-[#f7f6f3] transition-colors whitespace-nowrap"
+		class="flex items-center gap-1.5 whitespace-nowrap rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111]"
 		aria-label="Pilih model AI"
 	>
-		{chatStore.selectedModel.displayName}
+		{#if chatStore.selectedModel.provider === 'gemini'}
+			<Sparkle size={12} weight="fill" class="text-[#1F6C9F]" />
+		{:else}
+			<Lightning size={12} weight="fill" class="text-[#956400]" />
+		{/if}
+		<span class="max-w-[130px] truncate">{chatStore.selectedModel.displayName}</span>
+		<CaretDown size={10} weight="bold" class="text-[#787774]" />
 	</button>
 
 	{#if open}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- Dropdown Menu -->
 		<div
-			class="absolute right-0 top-full mt-1 z-50 bg-white border border-[#eaeaea] rounded shadow-sm min-w-[180px] py-1"
+			class="absolute right-0 top-full mt-1.5 z-50 flex w-64 flex-col rounded-lg border border-[#EAEAEA] bg-white p-1.5 shadow-lg max-h-80 overflow-y-auto"
 			role="menu"
 		>
-			{#each chatStore.availableModels as model (model.model)}
-				<button
-					role="menuitem"
-					class="w-full text-left px-3 py-1.5 text-[12px] hover:bg-[#f7f6f3] transition-colors
-						{chatStore.selectedModel.model === model.model ? 'text-[#111111] font-medium' : 'text-[#787774]'}"
-					onclick={() => selectModel(model)}
-				>
-					{model.displayName}
-					{#if model.capabilities.vision}
-						<span class="ml-1 text-[10px] text-[#1f6c9f]">Vision</span>
-					{/if}
-				</button>
-			{/each}
+			<!-- Gemini Section -->
+			{#if geminiModels.length > 0}
+				<div class="px-2 py-1 text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase">
+					Google Gemini
+				</div>
+				{#each geminiModels as model (model.model)}
+					<button
+						type="button"
+						role="menuitem"
+						class="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-[#F9F9F8]
+							{chatStore.selectedModel.model === model.model ? 'bg-[#F0EFEC] font-semibold text-[#111111]' : 'text-[#787774]'}"
+						onclick={() => selectModel(model)}
+					>
+						<div class="flex items-center gap-1.5 truncate">
+							<span class="truncate">{model.displayName}</span>
+							{#if model.capabilities.vision}
+								<span class="rounded bg-[#E1F3FE] px-1 py-0.2 font-mono text-[9px] text-[#1F6C9F]">Vision</span>
+							{/if}
+						</div>
+						{#if chatStore.selectedModel.model === model.model}
+							<Check size={12} weight="bold" class="text-[#111111] shrink-0" />
+						{/if}
+					</button>
+				{/each}
+			{/if}
+
+			<!-- Divider -->
+			{#if groqModels.length > 0}
+				<div class="my-1 border-t border-[#EAEAEA]"></div>
+				<div class="px-2 py-1 text-[10px] font-semibold tracking-wider text-[#956400] uppercase">
+					Groq LPU (Ultra Fast)
+				</div>
+				{#each groqModels as model (model.model)}
+					<button
+						type="button"
+						role="menuitem"
+						class="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-[#F9F9F8]
+							{chatStore.selectedModel.model === model.model ? 'bg-[#F0EFEC] font-semibold text-[#111111]' : 'text-[#787774]'}"
+						onclick={() => selectModel(model)}
+					>
+						<span class="truncate">{model.displayName}</span>
+						{#if chatStore.selectedModel.model === model.model}
+							<Check size={12} weight="bold" class="text-[#111111] shrink-0" />
+						{/if}
+					</button>
+				{/each}
+			{/if}
 		</div>
 
 		<!-- Backdrop to close -->
