@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ChatMessage } from '@maniyy/shared';
 	import ChatUICommandCard from './ChatUICommandCard.svelte';
+	import ChatToolInvocation from './ChatToolInvocation.svelte';
 
 	let { message }: { message: ChatMessage } = $props();
 
@@ -11,7 +12,9 @@
 		try {
 			const parsed = JSON.parse(message.content);
 			if (parsed?.type === 'ui_command') return parsed;
-		} catch { /* not JSON */ }
+		} catch {
+			/* not JSON */
+		}
 		return null;
 	});
 </script>
@@ -23,10 +26,21 @@
 				? 'bg-[#111111] text-white'
 				: 'bg-white border border-[#eaeaea] text-[#111111]'}"
 	>
+		<!-- Tool Invocations (Collapsible Cards) -->
+		{#if message.toolInvocations && message.toolInvocations.length > 0}
+			<div class="mb-2 flex flex-col gap-1">
+				{#each message.toolInvocations as invocation (invocation.toolCallId)}
+					<ChatToolInvocation {invocation} />
+				{/each}
+			</div>
+		{/if}
+
 		{#if uiCommand}
 			<ChatUICommandCard command={uiCommand} />
-		{:else}
+		{:else if message.content}
 			{message.content}
+		{:else if message.role === 'assistant' && (!message.toolInvocations || message.toolInvocations.length === 0)}
+			<span class="inline-block size-2 animate-pulse rounded-full bg-[#787774]"></span>
 		{/if}
 	</div>
 </div>

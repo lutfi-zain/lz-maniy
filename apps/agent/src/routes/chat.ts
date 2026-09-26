@@ -29,8 +29,8 @@ chatRouter.post('/', async (c) => {
 	}
 
 	// Resolve model
-	const requestedProvider = body.model?.provider ?? 'gemini';
-	const requestedModel = body.model?.model ?? 'gemini-3.8-flash';
+	const requestedProvider = body.model?.provider ?? 'groq';
+	const requestedModel = body.model?.model ?? 'qwen/qwen3.8-27b';
 	const modelConfig = AVAILABLE_MODELS.find(
 		(m) => m.provider === requestedProvider && m.model === requestedModel
 	) ?? AVAILABLE_MODELS[0];
@@ -90,7 +90,7 @@ chatRouter.post('/', async (c) => {
 
 	const tools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
-		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken),
+		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createUICommandTools()
 	};
 

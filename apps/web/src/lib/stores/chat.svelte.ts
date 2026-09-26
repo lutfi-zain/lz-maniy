@@ -1,7 +1,14 @@
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { PUBLIC_AGENT_URL } from '$env/static/public';
-import type { ChatMessage, ConversationMeta, DrawerType, ModelConfig, PageContext, UICommand } from '@maniyy/shared';
+import type {
+	ChatMessage,
+	ConversationMeta,
+	ModelConfig,
+	PageContext,
+	ToolInvocationItem,
+	UICommand
+} from '@maniyy/shared';
 import { authStore } from './auth.svelte.js';
 import { reedrichStore } from './reedrich.svelte.js';
 import { transactionFormStore } from './transaction-form.svelte.js';
@@ -18,10 +25,10 @@ export class ChatStore {
 	availableModels = $state<ModelConfig[]>([]);
 	showConversationList = $state<boolean>(false);
 	selectedModel = $state<ModelConfig>({
-		provider: 'gemini',
-		model: 'gemini-3.8-flash',
-		displayName: 'Gemini 3.8 Flash',
-		capabilities: { vision: true, tool_calling: true }
+		provider: 'groq',
+		model: 'qwen/qwen3.8-27b',
+		displayName: 'Qwen 3.8 27B (Groq)',
+		capabilities: { vision: false, tool_calling: true }
 	});
 
 	private abortController: AbortController | null = null;
@@ -90,7 +97,7 @@ export class ChatStore {
 				break;
 			case 'drawer':
 				reedrichStore.openDrawer({
-					type: cmd.payload.type as DrawerType,
+					type: cmd.payload.type as import('@maniyy/shared').DrawerType,
 					title: cmd.payload.title,
 					subtitle: cmd.payload.subtitle,
 					badge: cmd.payload.badge,
@@ -124,7 +131,9 @@ export class ChatStore {
 				headers: { Authorization: `Bearer ${authStore.accessToken}` }
 			});
 			if (res.ok) this.conversations = await res.json();
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	};
 
 	loadConversation = async (id: string) => {
@@ -135,7 +144,7 @@ export class ChatStore {
 				headers: { Authorization: `Bearer ${authStore.accessToken}` }
 			});
 			if (res.ok) {
-				const data = await res.json() as { messages: ChatMessage[] };
+				const data = (await res.json()) as { messages: ChatMessage[] };
 				this.messages = data.messages;
 				this.activeConversationId = id;
 			}
@@ -158,7 +167,10 @@ export class ChatStore {
 		if (!authStore.accessToken) return;
 		const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/export`, {
 			method: 'POST',
-			headers: { Authorization: `Bearer ${authStore.accessToken}`, 'Content-Type': 'application/json' },
+			headers: {
+				Authorization: `Bearer ${authStore.accessToken}`,
+				'Content-Type': 'application/json'
+			},
 			body: JSON.stringify(ids ? { conversationIds: ids } : {})
 		});
 		const data = await res.json();
@@ -177,10 +189,13 @@ export class ChatStore {
 		const data = JSON.parse(text);
 		const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/import`, {
 			method: 'POST',
-			headers: { Authorization: `Bearer ${authStore.accessToken}`, 'Content-Type': 'application/json' },
+			headers: {
+				Authorization: `Bearer ${authStore.accessToken}`,
+				'Content-Type': 'application/json'
+			},
 			body: JSON.stringify(data)
 		});
-		const result = await res.json() as { imported: number; skipped: number };
+		const result = (await res.json()) as { imported: number; skipped: number };
 		await this.loadConversations();
 		return result;
 	};
@@ -188,8 +203,21 @@ export class ChatStore {
 	loadModels = async () => {
 		try {
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/models`);
-			if (res.ok) this.availableModels = await res.json();
-		} catch { /* ignore */ }
+			if (res.ok) {
+				const models = (await res.json()) as ModelConfig[];
+				this.availableModels = models;
+				// Match current selection or default to first
+				const match = models.find(
+					(m) =>
+						m.provider === this.selectedModel.provider && m.model === this.selectedModel.model
+				);
+				if (!match && models.length > 0) {
+					this.selectedModel = models[0];
+				}
+			}
+		} catch {
+			/* ignore */
+		}
 	};
 
 	sendMessage = async (text: string, image?: { data: string; mimeType: string }) => {
@@ -213,6 +241,7 @@ export class ChatStore {
 			conversationId: this.activeConversationId ?? '',
 			role: 'assistant',
 			content: '',
+			toolInvocations: [],
 			timestamp: Date.now()
 		};
 		this.messages = [...this.messages, assistantMsg];
@@ -243,7 +272,6 @@ export class ChatStore {
 			const newConvId = res.headers.get('X-Conversation-Id');
 			if (newConvId) {
 				this.activeConversationId = newConvId;
-				// Update placeholder messages with correct conversationId
 				this.messages = this.messages.map((m) =>
 					m.conversationId === '' ? { ...m, conversationId: newConvId } : m
 				);
@@ -264,35 +292,102 @@ export class ChatStore {
 				const lines = buffer.split('\n');
 				buffer = lines.pop() ?? '';
 				for (const line of lines) {
-					if (!line.startsWith('data: ')) continue;
-					const data = line.slice(6);
-					if (!data || data === '[DONE]') continue;
-					const [prefix, ...rest] = data.split(':');
-					const payload = rest.join(':');
+					if (!line.trim()) continue;
+					// Standard format: <prefix>:<json> or data: <prefix>:<json>
+					const raw = line.startsWith('data: ') ? line.slice(6) : line;
+					if (!raw || raw === '[DONE]') continue;
+
+					const colonIndex = raw.indexOf(':');
+					if (colonIndex === -1) continue;
+					const prefix = raw.slice(0, colonIndex);
+					const payloadStr = raw.slice(colonIndex + 1);
+
 					if (prefix === '0') {
 						// Text delta
-						const delta = JSON.parse(payload) as string;
-						this.messages = this.messages.map((m) =>
-							m.id === assistantId ? { ...m, content: m.content + delta } : m
-						);
-					} else if (prefix === '9') {
-						// Tool call result — check for ui_command
 						try {
-							const toolResult = JSON.parse(payload);
-							if (toolResult?.result?.type === 'ui_command') {
-								this.executeUICommand(toolResult.result as UICommand);
+							const delta = JSON.parse(payloadStr) as string;
+							this.messages = this.messages.map((m) =>
+								m.id === assistantId ? { ...m, content: m.content + delta } : m
+							);
+						} catch {
+							/* ignore */
+						}
+					} else if (prefix === '9') {
+						// Tool call: { toolCallId, toolName, args }
+						try {
+							const toolCall = JSON.parse(payloadStr) as {
+								toolCallId: string;
+								toolName: string;
+								args: Record<string, unknown>;
+							};
+							this.messages = this.messages.map((m) => {
+								if (m.id !== assistantId) return m;
+								const current = m.toolInvocations ?? [];
+								const exists = current.find((t) => t.toolCallId === toolCall.toolCallId);
+								if (exists) return m;
+								return {
+									...m,
+									toolInvocations: [
+										...current,
+										{ ...toolCall, state: 'call' as const }
+									]
+								};
+							});
+						} catch {
+							/* ignore */
+						}
+					} else if (prefix === 'a') {
+						// Tool result: { toolCallId, toolName, result }
+						try {
+							const toolRes = JSON.parse(payloadStr) as {
+								toolCallId: string;
+								toolName?: string;
+								result: unknown;
+							};
+							this.messages = this.messages.map((m) => {
+								if (m.id !== assistantId) return m;
+								const current = m.toolInvocations ?? [];
+								return {
+									...m,
+									toolInvocations: current.map((t) =>
+										t.toolCallId === toolRes.toolCallId
+											? { ...t, result: toolRes.result, state: 'result' as const }
+											: t
+									)
+								};
+							});
+							// Check if result is a UI command
+							if ((toolRes.result as { type?: string })?.type === 'ui_command') {
+								this.executeUICommand(toolRes.result as UICommand);
 							}
-						} catch { /* ignore */ }
+						} catch {
+							/* ignore */
+						}
+					} else if (prefix === '3') {
+						// Error message from server
+						try {
+							const errMsg = JSON.parse(payloadStr) as string;
+							this.messages = this.messages.map((m) =>
+								m.id === assistantId ? { ...m, content: m.content ? `${m.content}\n\n⚠️ ${errMsg}` : `⚠️ ${errMsg}` } : m
+							);
+						} catch {
+							/* ignore */
+						}
 					}
 				}
 			}
 		} catch (err) {
 			if ((err as Error)?.name === 'AbortError') {
-				// User aborted — leave partial message as-is
+				// User aborted
 			} else {
 				this.messages = this.messages.map((m) =>
 					m.id === assistantId
-						? { ...m, content: m.content || 'Koneksi terputus saat menerima jawaban. Silakan coba lagi.' }
+						? {
+								...m,
+								content:
+									m.content ||
+									'Koneksi terputus saat menerima jawaban. Silakan coba lagi.'
+							}
 						: m
 				);
 			}

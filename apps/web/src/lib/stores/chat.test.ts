@@ -13,7 +13,7 @@ describe('ChatStore', () => {
 		expect(store.panelWidth).toBe(360);
 		expect(store.isStreaming).toBe(false);
 		expect(store.messages).toEqual([]);
-		expect(store.selectedModel.model).toBe('gemini-3.8-flash');
+		expect(store.selectedModel.model).toBe('qwen/qwen3.8-27b');
 	});
 
 	it('toggles panel visibility', () => {

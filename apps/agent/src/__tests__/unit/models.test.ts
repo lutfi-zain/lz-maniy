@@ -10,7 +10,7 @@ describe('AVAILABLE_MODELS', () => {
 
 	it('has vision capability flagged correctly', () => {
 		const geminiFlash = AVAILABLE_MODELS.find((m) => m.model === 'gemini-3.8-flash');
-		const groqModel = AVAILABLE_MODELS.find((m) => m.model === 'openai/gpt-oss-120b');
+		const groqModel = AVAILABLE_MODELS.find((m) => m.model === 'qwen/qwen3.8-27b');
 		expect(geminiFlash?.capabilities.vision).toBe(true);
 		expect(groqModel?.capabilities.vision).toBe(false);
 	});
