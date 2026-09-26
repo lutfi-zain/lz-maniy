@@ -30,7 +30,7 @@ chatRouter.post('/', async (c) => {
 
 	// Resolve model
 	const requestedProvider = body.model?.provider ?? 'groq';
-	const requestedModel = body.model?.model ?? 'qwen/qwen3.8-27b';
+	const requestedModel = body.model?.model ?? 'openai/gpt-oss-20b';
 	const modelConfig = AVAILABLE_MODELS.find(
 		(m) => m.provider === requestedProvider && m.model === requestedModel
 	) ?? AVAILABLE_MODELS[0];

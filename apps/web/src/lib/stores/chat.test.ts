@@ -13,7 +13,7 @@ describe('ChatStore', () => {
 		expect(store.panelWidth).toBe(360);
 		expect(store.isStreaming).toBe(false);
 		expect(store.messages).toEqual([]);
-		expect(store.selectedModel.model).toBe('qwen/qwen3.8-27b');
+		expect(store.selectedModel.model).toBe('openai/gpt-oss-20b');
 	});
 
 	it('toggles panel visibility', () => {

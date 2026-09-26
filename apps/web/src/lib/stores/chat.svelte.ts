@@ -25,8 +25,8 @@ export class ChatStore {
 	showConversationList = $state<boolean>(false);
 	selectedModel = $state<ModelConfig>({
 		provider: 'groq',
-		model: 'qwen/qwen3.8-27b',
-		displayName: 'Qwen 3.8 27B (Groq)',
+		model: 'openai/gpt-oss-20b',
+		displayName: 'GPT-OSS 20B (Groq Fast)',
 		capabilities: { vision: false, tool_calling: true }
 	});
 
@@ -205,7 +205,6 @@ export class ChatStore {
 			if (res.ok) {
 				const models = (await res.json()) as ModelConfig[];
 				this.availableModels = models;
-				// Auto-pick Groq Qwen as default
 				const qwen = models.find((m) => m.model === 'qwen/qwen3.8-27b');
 				if (qwen) {
 					this.selectedModel = qwen;
@@ -365,12 +364,36 @@ export class ChatStore {
 						try {
 							const errMsg = JSON.parse(payloadStr) as string;
 							this.messages = this.messages.map((m) =>
-								m.id === assistantId ? { ...m, content: m.content ? `${m.content}\n\n⚠️ ${errMsg}` : `⚠️ ${errMsg}` } : m
+								m.id === assistantId
+									? { ...m, content: m.content ? `${m.content}\n\n⚠️ ${errMsg}` : `⚠️ ${errMsg}` }
+									: m
 							);
 						} catch {
 							/* ignore */
 						}
 					}
+				}
+			}
+
+			// If after stream finishes the assistant content is still empty (e.g. stream buffering),
+			// fetch the saved message from D1 to ensure complete display
+			const currentAssistant = this.messages.find((m) => m.id === assistantId);
+			if (currentAssistant && !currentAssistant.content && this.activeConversationId) {
+				try {
+					const convRes = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/${this.activeConversationId}`, {
+						headers: { Authorization: `Bearer ${authStore.accessToken}` }
+					});
+					if (convRes.ok) {
+						const convData = (await convRes.json()) as { messages: ChatMessage[] };
+						const lastDbAssistant = convData.messages.filter((m) => m.role === 'assistant').at(-1);
+						if (lastDbAssistant?.content) {
+							this.messages = this.messages.map((m) =>
+								m.id === assistantId ? { ...m, content: lastDbAssistant.content } : m
+							);
+						}
+					}
+				} catch {
+					/* ignore */
 				}
 			}
 		} catch (err) {
