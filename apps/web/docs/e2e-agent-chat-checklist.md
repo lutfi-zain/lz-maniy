@@ -1,0 +1,13 @@
+# E2E Manual Test Checklist: Agent Chat
+
+| ID | Skenario | Langkah Pengujian | Hasil yang Diharapkan | Status |
+|---|---|---|---|---|
+| E2E-01 | Toggle Panel Desktop | 1. Klik ikon Chat di Topbar<br>2. Tekan `Ctrl+K`<br>3. Drag resize handle | 1. Panel terbuka di sisi kanan<br>2. Panel tertutup/terbuka<br>3. Lebar panel berubah (min 280px, max 50vw) | Ready |
+| E2E-02 | Toggle Panel Mobile | 1. Buka di viewport < 1024px<br>2. Klik Chat<br>3. Klik ikon X | 1. Panel fullscreen overlay<br>2. BottomNav tertutup<br>3. Panel tertutup, kembali ke halaman | Ready |
+| E2E-03 | Kirim Pesan & Streaming | 1. Ketik "Saldo saya berapa?"<br>2. Tekan Enter<br>3. Amati respon | 1. Pesan user muncul di kanan (hitam)<br>2. Indikator streaming muncul<br>3. Jawaban ter-stream dari backend | Ready |
+| E2E-04 | Ganti Model | 1. Klik dropdown model di header<br>2. Pilih "Llama 3.3 70B"<br>3. Kirim pesan | 1. Label model berubah<br>2. Request dikirim dengan provider=groq | Ready |
+| E2E-05 | Riwayat Percakapan | 1. Klik tombol List di header<br>2. Lihat daftar percakapan<br>3. Klik satu percakapan<br>4. Klik tombol Delete | 1. Drawer riwayat terbuka<br>2. Percakapan terurut terbaru<br>3. Pesan percakapan dimuat<br>4. Percakapan terhapus | Ready |
+| E2E-06 | Kontrol UI oleh Agent | 1. Ketik "Buka halaman planning"<br>2. Amati browser | 1. Browser otomatis navigate ke `/planning`<br>2. Badge "Membuka halaman planning" muncul di chat | Ready |
+| E2E-07 | Lampiran Gambar | 1. Klik ikon klip, pilih gambar<br>2. Kirim pesan<br>3. Refresh halaman | 1. Pratinjau gambar muncul<br>2. Terkirim ke vision model<br>3. Jika cache miss: teks "Gambar tidak tersedia" (bukan error) | Ready |
+| E2E-08 | Export/Import | 1. Buka riwayat, klik ikon Download<br>2. Pilih "Export semua"<br>3. Hapus percakapan<br>4. Pilih "Import JSON" | 1. File JSON terunduh<br>2. Percakapan kembali muncul | Ready |
+| E2E-09 | Shortcut Keyboard Tidak Konflik | 1. Buka chat, ketik huruf 'n'<br>2. Tutup chat, tekan 'n' | 1. Huruf 'n' masuk ke textarea (form tidak terbuka)<br>2. Drawer transaksi baru terbuka | Ready |

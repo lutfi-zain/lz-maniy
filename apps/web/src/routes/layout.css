@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/geist';
+
+@theme {
+	--font-mono: 'JetBrains Mono', 'Geist Mono', 'SF Mono', monospace;
+	--font-sans:
+		'Geist Sans', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		Helvetica, Arial, sans-serif;
+
+	--color-canvas: #f7f6f3;
+	--color-surface: #ffffff;
+	--color-surface-subtle: #f9f9f8;
+	--color-border: #eaeaea;
+	--color-border-soft: rgba(0, 0, 0, 0.06);
+
+	--color-ink: #111111;
+	--color-ink-secondary: #2f3437;
+	--color-muted: #787774;
+
+	--color-pastel-red-bg: #fdebec;
+	--color-pastel-red-text: #9f2f2d;
+	--color-pastel-blue-bg: #e1f3fe;
+	--color-pastel-blue-text: #1f6c9f;
+	--color-pastel-green-bg: #edf3ec;
+	--color-pastel-green-text: #346538;
+	--color-pastel-yellow-bg: #fbf3db;
+	--color-pastel-yellow-text: #956400;
+}
+
+html,
+body {
+	overflow-x: hidden;
+	max-width: 100vw;
+}
+
+body {
+	background-color: var(--color-canvas);
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+	line-height: 1.5;
+	font-size: 13px;
+	-webkit-font-smoothing: antialiased;
+}
+
+.mono,
+.font-mono,
+table td.tabular-nums {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums lining-nums;
+}
+
+kbd {
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: #f7f6f3;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	padding: 1px 5px;
+	color: var(--color-ink-secondary);
+}

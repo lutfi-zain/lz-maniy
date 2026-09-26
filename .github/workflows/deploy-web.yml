@@ -1,0 +1,37 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build web
+        run: bun run --cwd apps/web build
+        env:
+          PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL || 'https://reedrich-mcp.lutfidmz.workers.dev' }}
+          PUBLIC_API_TOKEN: ${{ secrets.PUBLIC_API_TOKEN || '' }}
+          PUBLIC_AGENT_URL: ${{ secrets.PUBLIC_AGENT_URL || 'https://maniyy-agent.lutfidmz.workers.dev' }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/web/build --project-name=maniyy2 --branch=main
