@@ -205,9 +205,10 @@ export class ChatStore {
 			if (res.ok) {
 				const models = (await res.json()) as ModelConfig[];
 				this.availableModels = models;
-				const qwen = models.find((m) => m.model === 'qwen/qwen3.8-27b');
-				if (qwen) {
-					this.selectedModel = qwen;
+				// Maintain selectedModel if it exists in models, otherwise pick first (gpt-oss-20b)
+				const current = models.find((m) => m.model === this.selectedModel.model);
+				if (current) {
+					this.selectedModel = current;
 				} else if (models.length > 0) {
 					this.selectedModel = models[0];
 				}
@@ -375,7 +376,7 @@ export class ChatStore {
 				}
 			}
 
-			// If after stream finishes the assistant content is still empty (e.g. stream buffering),
+			// If after stream finishes the assistant content is still empty,
 			// fetch the saved message from D1 to ensure complete display
 			const currentAssistant = this.messages.find((m) => m.id === assistantId);
 			if (currentAssistant && !currentAssistant.content && this.activeConversationId) {

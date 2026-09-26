@@ -16,13 +16,12 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 
 	return {
 		get_snapshot: tool({
-			description: 'Ambil ringkasan akun: total net worth, daftar wallet beserta saldo, dan ringkasan anggaran.',
+			description: 'Ambil ringkasan akun: total net worth, daftar wallet beserta saldo, dan ringkasan anggaran bulanan.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/account-detail`);
 				if (!res.ok) throw new Error(`get_snapshot failed: ${res.status}`);
 				const data = (await res.json()) as AccountDetail;
-				// Return a lean, token-efficient payload to prevent TPM/ITPM rate limits
 				return {
 					netWorth: {
 						total: data.netWorth.consolidated.total,
@@ -52,12 +51,14 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		}),
 
 		list_transactions: tool({
-			description: 'Ambil daftar transaksi dengan filter opsional.',
+			description: 'Ambil daftar transaksi dengan filter opsional (wallet, kategori, rentang tanggal, limit).',
 			parameters: z.object({
 				walletId: z.string().optional().describe('Filter by wallet ID'),
 				categoryId: z.string().optional().describe('Filter by category ID'),
 				budgetId: z.string().optional().describe('Filter by budget ID'),
-				limit: z.number().int().min(1).max(20).default(10).describe('Max results (max 20)'),
+				startDate: z.string().optional().describe('Filter tanggal mulai format YYYY-MM-DD'),
+				endDate: z.string().optional().describe('Filter tanggal akhir format YYYY-MM-DD'),
+				limit: z.number().int().min(1).max(50).default(20).describe('Max results'),
 				offset: z.number().int().min(0).default(0).describe('Pagination offset')
 			}),
 			execute: async (params) => {
@@ -65,15 +66,18 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				if (params.walletId) qs.set('walletId', params.walletId);
 				if (params.categoryId) qs.set('categoryId', params.categoryId);
 				if (params.budgetId) qs.set('budgetId', params.budgetId);
+				if (params.startDate) qs.set('startDate', params.startDate);
+				if (params.endDate) qs.set('endDate', params.endDate);
 				qs.set('limit', String(params.limit));
 				qs.set('offset', String(params.offset));
 				const res = await doFetch(`${reedrichUrl}/api/v1/transactions?${qs}`);
 				if (!res.ok) throw new Error(`list_transactions failed: ${res.status}`);
 				const data = (await res.json()) as TransactionRecord[];
-				return data.slice(0, 15).map((t) => ({
+				return data.map((t) => ({
 					date: t.transactionDate,
 					amount: t.transactionAmount,
 					type: t.transactionType,
+					isPlanned: t.transactionIsPlanned === 1,
 					description: t.transactionDescription
 				}));
 			}
