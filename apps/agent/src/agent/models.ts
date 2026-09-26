@@ -1,4 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
 import type { ModelConfig } from '@maniyy/shared';
@@ -10,12 +9,6 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 		model: 'qwen/qwen3.8-27b',
 		displayName: 'Qwen 3.8 27B (Groq)',
 		capabilities: { vision: false, tool_calling: true }
-	},
-	{
-		provider: 'gemini',
-		model: 'gemini-3.8-flash',
-		displayName: 'Gemini 3.8 Flash',
-		capabilities: { vision: true, tool_calling: true }
 	}
 ];
 

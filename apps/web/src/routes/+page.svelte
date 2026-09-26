@@ -14,7 +14,7 @@
 	);
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4 max-w-full overflow-hidden">
 	<!-- Editorial Workspace Greeting -->
 	<div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#EAEAEA] pb-2.5">
 		<div>
@@ -38,15 +38,21 @@
 	<!-- Critical Pacing / Runway Alert -->
 	<CockpitAlertBanner />
 
-	<!-- 3-Column Operational Workbench -->
-	<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_1.8fr_1fr]">
+	<!-- 3-Column Operational Workbench with min-w-0 on each child to prevent grid blowout -->
+	<div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_1.8fr_1fr] lg:grid-cols-[1fr_1.5fr] min-w-0">
 		<!-- Left: Bank Accounts & Subtotals -->
-		<CockpitBankWidget />
+		<div class="min-w-0">
+			<CockpitBankWidget />
+		</div>
 
 		<!-- Center: Live Recent Transaction Feed -->
-		<CockpitRecentLedger />
+		<div class="min-w-0">
+			<CockpitRecentLedger />
+		</div>
 
 		<!-- Right: Monthly Expense Breakdown & Active Budgets -->
-		<CockpitAllocationWidget />
+		<div class="min-w-0 lg:col-span-2 xl:col-span-1">
+			<CockpitAllocationWidget />
+		</div>
 	</div>
 </div>
