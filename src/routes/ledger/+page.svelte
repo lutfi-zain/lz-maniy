@@ -19,6 +19,7 @@
 	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import { matchesBudgetFilter } from '$lib/utils/budget-filter';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	// Filters
 	let selectedWalletIds = $state<string[]>([]);
 	let selectedCategoryIds = $state<string[]>([]);
@@ -608,8 +609,16 @@
 	<!-- Full-Width Tabular Transaction Grid -->
 	<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
 		{#if reedrichStore.isLedgerLoading}
-			<div class="animate-pulse py-16 text-center font-mono text-xs text-[#787774]">
-				Mengunduh 359+ riwayat transaksi...
+			<div class="divide-y divide-[#EAEAEA] p-4">
+				{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
+					<div class="flex items-center justify-between gap-4 py-2.5">
+						<Skeleton class="h-3.5 w-20 shrink-0" />
+						<Skeleton class="h-3.5 w-48 flex-1" />
+						<Skeleton class="hidden h-3.5 w-24 sm:block" />
+						<Skeleton class="hidden h-3.5 w-16 md:block" />
+						<Skeleton class="h-3.5 w-24 shrink-0 text-right" />
+					</div>
+				{/each}
 			</div>
 		{:else if pagedTransactions.length === 0}
 			<div class="py-16 text-center font-mono text-xs text-[#787774]">

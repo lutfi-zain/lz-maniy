@@ -1,38 +1,43 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import Table from 'phosphor-svelte/lib/Table';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import type { TransactionRecord } from '$lib/types/account-detail';
-
 	let recentTransactions = $state<TransactionRecord[]>([]);
 	let isLoading = $state(false);
-	let filterStartDate = $state<string>('');
-	let filterEndDate = $state<string>('');
-	let datePreset = $state<'this_month' | 'next_month' | 'last_month' | 'today' | 'all' | 'custom'>(
-		'this_month'
-	);
-
+	// Reactive synchronization with dateFilterStore
 	$effect(() => {
-		// Load transactions when dates or preset change
-		loadRecent();
+		// Track reactive dependencies
+		const _s = dateFilterStore.startDate;
+		const _e = dateFilterStore.endDate;
+		const _p = dateFilterStore.preset;
+		if (_p || _s || _e) {
+			loadRecent();
+		}
 	});
 
 	async function loadRecent() {
 		isLoading = true;
 		const queryParts = ['limit=30'];
-		if (filterStartDate) queryParts.push(`startDate=${filterStartDate}`);
-		if (filterEndDate) queryParts.push(`endDate=${filterEndDate}`);
+		if (dateFilterStore.startDate) queryParts.push(`startDate=${dateFilterStore.startDate}`);
+		if (dateFilterStore.endDate) queryParts.push(`endDate=${dateFilterStore.endDate}`);
 
 		try {
+			const token = (authStore.accessToken || reedrichStore.apiToken).trim();
+			const headers: Record<string, string> = {};
+			if (token) {
+				headers['X-API-Key'] = token;
+				headers['Authorization'] = 'Bearer ' + token;
+			}
 			const res = await fetch(`${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`, {
-				headers: {
-					'X-API-Key': reedrichStore.apiToken,
-					Authorization: 'Bearer ' + reedrichStore.apiToken
-				}
+				headers
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -67,12 +72,30 @@
 		</div>
 
 		<div class="flex items-center gap-2">
-			<DateRangePicker
-				bind:start={filterStartDate}
-				bind:end={filterEndDate}
-				bind:preset={datePreset}
-				onchange={loadRecent}
-			/>
+			<div class="flex items-center gap-1.5">
+				<DateRangePicker
+					bind:start={dateFilterStore.startDate}
+					bind:end={dateFilterStore.endDate}
+					bind:preset={dateFilterStore.preset}
+					onchange={({ preset, start, end }) => {
+						dateFilterStore.setFilter(preset as DatePreset, start, end);
+						loadRecent();
+					}}
+				/>
+				{#if dateFilterStore.preset !== 'this_month'}
+					<button
+						type="button"
+						onclick={() => {
+							dateFilterStore.reset();
+							loadRecent();
+						}}
+						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+						title="Reset ke Bulan Ini"
+					>
+						Reset
+					</button>
+				{/if}
+			</div>
 
 			<a
 				href="/ledger"
@@ -85,8 +108,17 @@
 	</div>
 
 	{#if isLoading && recentTransactions.length === 0}
-		<div class="animate-pulse py-12 text-center font-mono text-xs text-[#787774]">
-			Memuat riwayat mutasi terkini...
+		<!-- Structured Skeleton Table Feed -->
+		<div class="space-y-3 py-2">
+			{#each [0, 1, 2, 3, 4] as i (i)}
+				<div class="flex items-center justify-between py-1.5">
+					<div class="space-y-1.5">
+						<Skeleton class="h-3 w-36 sm:w-48" />
+						<Skeleton class="h-2.5 w-20" />
+					</div>
+					<Skeleton class="h-3.5 w-24" />
+				</div>
+			{/each}
 		</div>
 	{:else}
 		{#if recentTransactions.length === 0}
