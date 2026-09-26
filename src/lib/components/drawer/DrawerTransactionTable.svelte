@@ -3,7 +3,7 @@
 	import { fmtCurrency } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
-
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	let { currency = 'IDR' }: { currency?: string } = $props();
 
 	const txs = $derived(reedrichStore.filteredDrawerTransactions);
@@ -30,8 +30,15 @@
 	</div>
 
 	{#if isLoading}
-		<div class="animate-pulse py-12 text-center font-mono text-xs text-[#787774]">
-			Memuat riwayat transaksi...
+		<div class="space-y-3 py-3">
+			{#each [0, 1, 2, 3] as i (i)}
+				<div class="flex items-center justify-between gap-4 border-b border-[#EAEAEA] py-2">
+					<Skeleton class="h-3 w-16 shrink-0" />
+					<Skeleton class="h-3 w-40 flex-1" />
+					<Skeleton class="h-3 w-14 shrink-0" />
+					<Skeleton class="h-3 w-20 shrink-0 text-right" />
+				</div>
+			{/each}
 		</div>
 	{:else if txs.length === 0}
 		<div

@@ -10,6 +10,7 @@
 	import LockKey from 'phosphor-svelte/lib/LockKey';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations'>('goals');
 
 	const budgets = $derived(reedrichStore.activeBudgets);
@@ -206,7 +207,20 @@
 	</div>
 
 	<!-- SUB-WORKSPACE 1: GOALS & DERIVED PACING -->
-	{#if activeSubTab === 'goals'}
+	{#if reedrichStore.isLoading && goals.length === 0}
+		<div class="space-y-4">
+			{#each [0, 1] as i (i)}
+				<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs">
+					<div class="flex items-center justify-between">
+						<Skeleton class="h-4 w-40" />
+						<Skeleton class="h-5 w-28" />
+					</div>
+					<Skeleton class="h-2 w-full rounded-full" />
+					<Skeleton class="h-3 w-56" />
+				</div>
+			{/each}
+		</div>
+	{:else if activeSubTab === 'goals'}
 		<div class="space-y-4">
 			{#each goals as g (g.goalId)}
 				{@const liveCurrent =

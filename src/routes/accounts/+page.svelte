@@ -20,7 +20,7 @@
 	} from '$lib/utils/networth-timeline';
 	import type { WalletItem } from '$lib/types/account-detail';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
-
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	// Filters & Sorting state
 	let searchQuery = $state('');
 	let statusFilter = $state<'all' | 'spendable' | 'locked'>('all');
@@ -369,7 +369,22 @@
 	</div>
 
 	<!-- Accounts List / Tree -->
-	{#if viewMode === 'grouped'}
+	{#if reedrichStore.isLoading && allWallets.length === 0}
+		<div class="space-y-4">
+			{#each [0, 1, 2] as i (i)}
+				<div class="space-y-3 overflow-hidden rounded-lg border border-[#EAEAEA] bg-white p-4">
+					<div class="flex items-center justify-between">
+						<Skeleton class="h-4 w-32" />
+						<Skeleton class="h-4 w-24" />
+					</div>
+					<div class="space-y-2 border-t border-[#EAEAEA] pt-2">
+						<Skeleton class="h-3 w-48" />
+						<Skeleton class="h-3 w-36" />
+					</div>
+				</div>
+			{/each}
+		</div>
+	{:else if viewMode === 'grouped'}
 		<div class="space-y-4">
 			{#each groupedInstitutions as group (group.institution)}
 				<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
