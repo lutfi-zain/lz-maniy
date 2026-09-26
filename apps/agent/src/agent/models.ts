@@ -5,16 +5,73 @@ import type { ModelConfig } from '@maniyy/shared';
 import type { Env } from '../types.js';
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
+	// Google Gemini Family
+	{
+		provider: 'gemini',
+		model: 'gemini-3.7-flash',
+		displayName: 'Gemini 3.7 Flash',
+		capabilities: { vision: true, tool_calling: true }
+	},
+	{
+		provider: 'gemini',
+		model: 'gemini-3.6-flash',
+		displayName: 'Gemini 3.6 Flash',
+		capabilities: { vision: true, tool_calling: true }
+	},
+	{
+		provider: 'gemini',
+		model: 'gemini-3.5-flash',
+		displayName: 'Gemini 3.5 Flash',
+		capabilities: { vision: true, tool_calling: true }
+	},
 	{
 		provider: 'gemini',
 		model: 'gemini-3.1-flash-lite',
-		displayName: 'Gemini 3.1 Flash Lite (Google)',
+		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true }
 	},
+	{
+		provider: 'gemini',
+		model: 'gemini-3.5-flash-lite',
+		displayName: 'Gemini 3.5 Flash Lite',
+		capabilities: { vision: true, tool_calling: true }
+	},
+	{
+		provider: 'gemini',
+		model: 'gemini-flash-lite-latest',
+		displayName: 'Gemini Flash Lite (Latest)',
+		capabilities: { vision: true, tool_calling: true }
+	},
+	{
+		provider: 'gemini',
+		model: 'gemini-3.8-flash',
+		displayName: 'Gemini 3.8 Flash (High Tier)',
+		capabilities: { vision: true, tool_calling: true }
+	},
+	{
+		provider: 'gemini',
+		model: 'gemini-3.1-pro-preview',
+		displayName: 'Gemini 3.1 Pro (Preview)',
+		capabilities: { vision: true, tool_calling: true }
+	},
+
+	// Groq Family
 	{
 		provider: 'groq',
 		model: 'openai/gpt-oss-20b',
 		displayName: 'GPT-OSS 20B (Groq Fast)',
+		capabilities: { vision: false, tool_calling: true }
+	},
+	{
+		provider: 'groq',
+		model: 'qwen/qwen3.8-27b',
+		displayName: 'Qwen 3.8 27B (Groq)',
+		capabilities: { vision: false, tool_calling: true }
+	},
+	{
+		provider: 'groq',
+		model: 'openai/gpt-oss-120b',
+		displayName: 'GPT-OSS 120B (Groq Large)',
 		capabilities: { vision: false, tool_calling: true }
 	}
 ];
