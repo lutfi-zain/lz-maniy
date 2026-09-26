@@ -6,6 +6,7 @@ import { buildSystemPrompt } from '../agent/system-prompt.js';
 import { createFinancialTools } from '../agent/tools/financial.js';
 import { createMutationTools } from '../agent/tools/mutations.js';
 import { createUICommandTools } from '../agent/tools/ui-commands.js';
+import { createGeminiRunner } from '../agent/gemini-native.js';
 import {
 	createConversation,
 	getConversation,
@@ -29,13 +30,11 @@ chatRouter.post('/', async (c) => {
 	}
 
 	// Resolve model
-	const requestedProvider = body.model?.provider ?? 'groq';
-	const requestedModel = body.model?.model ?? 'openai/gpt-oss-20b';
+	const requestedProvider = body.model?.provider ?? 'gemini';
+	const requestedModel = body.model?.model ?? 'gemini-3.1-flash-lite';
 	const modelConfig = AVAILABLE_MODELS.find(
 		(m) => m.provider === requestedProvider && m.model === requestedModel
 	) ?? AVAILABLE_MODELS[0];
-
-	const aiModel = getModel(c.env, modelConfig.provider, modelConfig.model);
 
 	// Resolve or create conversation
 	let conversationId = body.conversationId;
@@ -69,22 +68,79 @@ chatRouter.post('/', async (c) => {
 		imageRef: body.image ? 'ephemeral-image' : undefined
 	});
 
-	// Load conversation history for context
+	const activeConvId = conversationId!;
+
+	// Route to native Gemini Runner if Gemini provider is selected
+	if (modelConfig.provider === 'gemini') {
+		const runner = createGeminiRunner(
+			c.env.GEMINI_API_KEY,
+			c.env.REEDRICH_API_URL,
+			user.accessToken,
+			c.env.REEDRICH
+		);
+
+		const stream = runner.runGeminiStream(
+			modelConfig.model,
+			body.message,
+			body.pageContext,
+			user.fullName
+		);
+
+		let fullAssistantText = '';
+
+		const readable = new ReadableStream({
+			async start(controller) {
+				const encoder = new TextEncoder();
+				try {
+					for await (const chunk of stream) {
+						if (chunk.startsWith('0:')) {
+							try {
+								const textDelta = JSON.parse(chunk.slice(2).trim());
+								fullAssistantText += textDelta;
+							} catch {
+								/* ignore */
+							}
+						}
+						controller.enqueue(encoder.encode(chunk));
+					}
+				} catch (err) {
+					controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error).message)}\n`));
+				} finally {
+					controller.close();
+					if (fullAssistantText) {
+						c.executionCtx.waitUntil((async () => {
+							await insertMessage(c.env.DB, {
+								id: crypto.randomUUID(),
+								conversationId: activeConvId,
+								role: 'assistant',
+								content: fullAssistantText
+							});
+							await touchConversation(c.env.DB, activeConvId);
+						})());
+					}
+				}
+			}
+		});
+
+		return new Response(readable, {
+			headers: {
+				'Content-Type': 'text/plain; charset=utf-8',
+				'X-Conversation-Id': activeConvId,
+				'X-Is-New-Conversation': isNewConversation ? '1' : '0',
+				'Access-Control-Expose-Headers': 'X-Conversation-Id, X-Is-New-Conversation'
+			}
+		});
+	}
+
+	// Fallback to AI SDK for Groq / other providers
+	const aiModel = getModel(c.env, modelConfig.provider, modelConfig.model);
+
 	const history = await listMessages(c.env.DB, conversationId);
 	const prior = history.filter((m) => m.id !== userMsgId);
 	type CoreMsg = { role: 'user' | 'assistant'; content: string };
 	const priorMessages: CoreMsg[] = prior
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-
-	// Build current user message content
-	type ContentPart =
-		| { type: 'text'; text: string }
-		| { type: 'image'; image: string; mimeType: string };
-	const userContent: ContentPart[] = [{ type: 'text', text: body.message }];
-	if (body.image && modelConfig.capabilities.vision) {
-		userContent.push({ type: 'image', image: body.image.data, mimeType: body.image.mimeType });
-	}
 
 	const tools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
@@ -93,19 +149,18 @@ chatRouter.post('/', async (c) => {
 	};
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName);
-	const activeConvId = conversationId!;
 
 	const result = streamText({
 		model: aiModel,
 		system: systemPrompt,
 		messages: [
 			...priorMessages,
-			{ role: 'user', content: userContent }
+			{ role: 'user', content: [{ type: 'text', text: body.message }] }
 		],
 		tools,
 		maxSteps: 8,
 		onFinish: (ev) => {
-			const finishTask = async () => {
+			c.executionCtx.waitUntil((async () => {
 				const finalContent = ev.text || '';
 				if (finalContent) {
 					await insertMessage(c.env.DB, {
@@ -116,8 +171,7 @@ chatRouter.post('/', async (c) => {
 					});
 					await touchConversation(c.env.DB, activeConvId);
 				}
-			};
-			c.executionCtx.waitUntil(finishTask());
+			})());
 		}
 	});
 

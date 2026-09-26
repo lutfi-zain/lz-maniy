@@ -30,10 +30,10 @@ export class ChatStore {
 	availableModels = $state<ModelConfig[]>([]);
 	showConversationList = $state<boolean>(false);
 	selectedModel = $state<ModelConfig>({
-		provider: 'groq',
-		model: 'openai/gpt-oss-20b',
-		displayName: 'GPT-OSS 20B (Groq Fast)',
-		capabilities: { vision: false, tool_calling: true }
+		provider: 'gemini',
+		model: 'gemini-3.1-flash-lite',
+		displayName: 'Gemini 3.1 Flash Lite (Google)',
+		capabilities: { vision: true, tool_calling: true }
 	});
 
 	private abortController: AbortController | null = null;

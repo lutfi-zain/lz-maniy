@@ -6,15 +6,15 @@ import type { Env } from '../types.js';
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
 	{
-		provider: 'groq',
-		model: 'openai/gpt-oss-20b',
-		displayName: 'GPT-OSS 20B (Groq Fast)',
-		capabilities: { vision: false, tool_calling: true }
+		provider: 'gemini',
+		model: 'gemini-3.1-flash-lite',
+		displayName: 'Gemini 3.1 Flash Lite (Google)',
+		capabilities: { vision: true, tool_calling: true }
 	},
 	{
 		provider: 'groq',
-		model: 'qwen/qwen3.8-27b',
-		displayName: 'Qwen 3.8 27B (Groq)',
+		model: 'openai/gpt-oss-20b',
+		displayName: 'GPT-OSS 20B (Groq Fast)',
 		capabilities: { vision: false, tool_calling: true }
 	}
 ];

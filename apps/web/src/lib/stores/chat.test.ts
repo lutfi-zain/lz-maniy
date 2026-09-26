@@ -13,7 +13,7 @@ describe('ChatStore', () => {
 		expect(store.panelWidth).toBe(360);
 		expect(store.isStreaming).toBe(false);
 		expect(store.messages).toEqual([]);
-		expect(store.selectedModel.model).toBe('openai/gpt-oss-20b');
+		expect(store.selectedModel.model).toBe('gemini-3.1-flash-lite');
 	});
 
 	it('toggles panel visibility', () => {
@@ -41,11 +41,11 @@ describe('ChatStore', () => {
 	it('switches model', () => {
 		store.setModel({
 			provider: 'groq',
-			model: 'llama-3.3-70b-versatile',
-			displayName: 'Llama 3.3 70B',
+			model: 'openai/gpt-oss-20b',
+			displayName: 'GPT-OSS 20B (Groq Fast)',
 			capabilities: { vision: false, tool_calling: true }
 		});
 		expect(store.selectedModel.provider).toBe('groq');
-		expect(store.selectedModel.model).toBe('llama-3.3-70b-versatile');
+		expect(store.selectedModel.model).toBe('openai/gpt-oss-20b');
 	});
 });
