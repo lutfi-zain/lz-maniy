@@ -6,7 +6,6 @@ import type {
 	ConversationMeta,
 	ModelConfig,
 	PageContext,
-	ToolInvocationItem,
 	UICommand
 } from '@maniyy/shared';
 import { authStore } from './auth.svelte.js';
@@ -206,12 +205,11 @@ export class ChatStore {
 			if (res.ok) {
 				const models = (await res.json()) as ModelConfig[];
 				this.availableModels = models;
-				// Match current selection or default to first
-				const match = models.find(
-					(m) =>
-						m.provider === this.selectedModel.provider && m.model === this.selectedModel.model
-				);
-				if (!match && models.length > 0) {
+				// Auto-pick Groq Qwen as default
+				const qwen = models.find((m) => m.model === 'qwen/qwen3.8-27b');
+				if (qwen) {
+					this.selectedModel = qwen;
+				} else if (models.length > 0) {
 					this.selectedModel = models[0];
 				}
 			}
@@ -293,7 +291,6 @@ export class ChatStore {
 				buffer = lines.pop() ?? '';
 				for (const line of lines) {
 					if (!line.trim()) continue;
-					// Standard format: <prefix>:<json> or data: <prefix>:<json>
 					const raw = line.startsWith('data: ') ? line.slice(6) : line;
 					if (!raw || raw === '[DONE]') continue;
 
