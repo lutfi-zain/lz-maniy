@@ -3,12 +3,17 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import type { TransactionRecord } from '@maniyy/shared';
 
-export function createMutationTools(reedrichUrl: string, token: string) {
+export function createMutationTools(reedrichUrl: string, token: string, fetcher?: Fetcher) {
 	const headers = {
 		Authorization: `Bearer ${token}`,
 		'X-Api-Key': token,
 		'Content-Type': 'application/json'
 	};
+
+	const doFetch = (url: string, init?: RequestInit) =>
+		fetcher
+			? fetcher.fetch(new Request(url, { ...init, headers: { ...headers, ...init?.headers } }))
+			: fetch(url, { ...init, headers: { ...headers, ...init?.headers } });
 
 	return {
 		create_transaction: tool({
@@ -25,9 +30,8 @@ export function createMutationTools(reedrichUrl: string, token: string) {
 				isPlanned: z.boolean().optional().describe('Apakah transaksi direncanakan')
 			}),
 			execute: async (params) => {
-				const res = await fetch(`${reedrichUrl}/api/v1/transactions`, {
+				const res = await doFetch(`${reedrichUrl}/api/v1/transactions`, {
 					method: 'POST',
-					headers,
 					body: JSON.stringify(params)
 				});
 				if (!res.ok) {
@@ -49,9 +53,8 @@ export function createMutationTools(reedrichUrl: string, token: string) {
 				date: z.string().optional().describe('Tanggal transfer format YYYY-MM-DD')
 			}),
 			execute: async (params) => {
-				const res = await fetch(`${reedrichUrl}/api/v1/transfers`, {
+				const res = await doFetch(`${reedrichUrl}/api/v1/transfers`, {
 					method: 'POST',
-					headers,
 					body: JSON.stringify(params)
 				});
 				if (!res.ok) {
@@ -74,9 +77,8 @@ export function createMutationTools(reedrichUrl: string, token: string) {
 				isPlanned: z.boolean().optional()
 			}),
 			execute: async ({ transactionId, ...delta }) => {
-				const res = await fetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
+				const res = await doFetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
 					method: 'PATCH',
-					headers,
 					body: JSON.stringify(delta)
 				});
 				if (!res.ok) {
@@ -97,9 +99,8 @@ export function createMutationTools(reedrichUrl: string, token: string) {
 				if (!confirmed) {
 					return { success: false, message: 'Penghapusan dibatalkan karena belum dikonfirmasi.' };
 				}
-				const res = await fetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
-					method: 'DELETE',
-					headers
+				const res = await doFetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
+					method: 'DELETE'
 				});
 				if (!res.ok) {
 					const err = await res.text();

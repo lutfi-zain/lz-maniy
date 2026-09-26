@@ -1,10 +1,19 @@
 export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
+export interface ToolInvocationItem {
+	toolCallId: string;
+	toolName: string;
+	args: Record<string, unknown>;
+	result?: unknown;
+	state: 'call' | 'result';
+}
+
 export interface ChatMessage {
 	id: string;
 	conversationId: string;
 	role: MessageRole;
 	content: string;
+	toolInvocations?: ToolInvocationItem[];
 	toolCalls?: unknown[];
 	toolResults?: unknown[];
 	imageRef?: string; // ephemeral ref only, never base64 in DB
