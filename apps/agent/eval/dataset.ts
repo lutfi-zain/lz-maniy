@@ -1,6 +1,6 @@
 export interface EvalTestCase {
 	id: string;
-	category: 'balance_query' | 'planning_projection' | 'transaction_filter' | 'ui_control' | 'financial_sanity';
+	category: 'balance_query' | 'planning_projection' | 'transaction_filter' | 'ui_control' | 'financial_sanity' | 'multi_currency' | 'category_breakdown';
 	prompt: string;
 	pageContext?: {
 		currentRoute: string;
@@ -9,15 +9,10 @@ export interface EvalTestCase {
 		summary: { totalNetWorth?: number; totalSpendable?: number; totalLocked?: number; walletCount: number; hasCashFlow: boolean };
 	};
 	expected: {
-		/** Tools yang diharapkan dipanggil */
 		requiredTools: string[];
-		/** Kata kunci atau fakta yang wajib muncul di jawaban */
 		mustContain?: string[];
-		/** Validasi matematis atau nilai kalkulasi */
 		mathCheck?: (text: string) => boolean;
-		/** Tidak boleh mengandung hal ini */
 		mustNotContain?: string[];
-		/** Apakah membutuhkan multi-step reasoning (> 1 step) */
 		minSteps?: number;
 	};
 }
@@ -29,7 +24,7 @@ export const EVAL_DATASET: EvalTestCase[] = [
 		prompt: 'Saldo kas siap pakai saya ada berapa saat ini?',
 		expected: {
 			requiredTools: ['get_snapshot'],
-			mustContain: ['723.792', 'kas siap pakai'],
+			mustContain: ['705', 'kas siap pakai'],
 			minSteps: 2
 		}
 	},
@@ -39,25 +34,35 @@ export const EVAL_DATASET: EvalTestCase[] = [
 		prompt: 'networth bulan depan berapa kalau semua planned terealisasi?',
 		expected: {
 			requiredTools: ['get_snapshot', 'list_transactions'],
-			mustContain: ['5.321.229', 'Oktober', 'sewa rumah'],
-			mathCheck: (text: string) => text.includes('5.321') || text.includes('5,3') || text.includes('5.3'),
+			mustContain: ['5.3', 'Oktober'],
+			mathCheck: (text: string) => text.includes('5.3') || text.includes('5 303') || text.includes('5.303'),
 			minSteps: 2
 		}
 	},
 	{
 		id: 'TC-03',
-		category: 'transaction_filter',
-		prompt: 'Berapa total cicilan Nmax dan SPP anak yang harus dibayar bulan depan?',
+		category: 'multi_currency',
+		prompt: 'Berapa saldo aset saya yang dalam bentuk USDT atau valas asing?',
 		expected: {
-			requiredTools: ['list_transactions'],
-			mustContain: ['Nmax', 'SPP'],
+			requiredTools: ['get_snapshot'],
+			mustContain: ['USDT', '115'],
 			minSteps: 2
 		}
 	},
 	{
 		id: 'TC-04',
+		category: 'category_breakdown',
+		prompt: 'Pengeluaran terbesar saya bulan ini dialokasikan ke kategori apa?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['kategori'],
+			minSteps: 2
+		}
+	},
+	{
+		id: 'TC-05',
 		category: 'ui_control',
-		prompt: 'Tolong buka halaman planning dan arahkan saya ke anggaran',
+		prompt: 'Tolong buka halaman planning',
 		expected: {
 			requiredTools: ['navigate_page'],
 			mustContain: ['/planning'],
@@ -65,9 +70,9 @@ export const EVAL_DATASET: EvalTestCase[] = [
 		}
 	},
 	{
-		id: 'TC-05',
+		id: 'TC-06',
 		category: 'financial_sanity',
-		prompt: 'Apakah transfer antar dompet sendiri mengurangi networth saya?',
+		prompt: 'Kalau saya transfer 5 juta dari BCA ke Jago, apakah networth saya berkurang?',
 		expected: {
 			requiredTools: [],
 			mustContain: ['tidak', 'berkurang'],

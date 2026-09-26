@@ -16,7 +16,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 
 	return {
 		get_snapshot: tool({
-			description: 'Ambil ringkasan portofolio: total net worth dan ringkasan kas saat ini.',
+			description: 'Ambil ringkasan portofolio: total net worth (beserta byCurrency), rincian saldo wallet, dan top alokasi kategori pengeluaran.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/account-detail`);
@@ -24,44 +24,69 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				const data = (await res.json()) as AccountDetail;
 				return {
 					totalNetWorth: data.netWorth.consolidated.total,
+					currency: data.netWorth.consolidated.currency,
+					byCurrency: data.netWorth.byCurrency,
 					totalSpendable: data.wallets.spendable.total,
-					totalLocked: data.wallets.locked.total
+					totalLocked: data.wallets.locked.total,
+					wallets: [
+						...data.wallets.spendable.items.map((w) => ({
+							name: w.walletName,
+							institution: w.institution,
+							balance: w.balance,
+							currency: w.currency,
+							isLocked: false
+						})),
+						...data.wallets.locked.items.map((w) => ({
+							name: w.walletName,
+							institution: w.institution,
+							balance: w.balance,
+							currency: w.currency,
+							isLocked: true
+						}))
+					],
+					topExpenseCategories: (data.monthlyCashFlow.categoryBreakdown || []).slice(0, 6).map((c) => ({
+						category: c.categoryName,
+						amount: c.amount,
+						percentage: c.percentage
+					}))
 				};
 			}
 		}),
 
 		list_transactions: tool({
-			description: 'Ambil transaksi terencana (planned) atau riwayat mutasi dalam rentang tanggal tertentu.',
+			description: 'Ambil daftar transaksi dengan filter tanggal spesifik (misal rentang bulan tertentu), wallet, atau kategori.',
 			parameters: z.object({
-				startDate: z.string().optional().describe('Tanggal mulai (YYYY-MM-DD)'),
-				endDate: z.string().optional().describe('Tanggal akhir (YYYY-MM-DD)'),
+				startDate: z.string().optional().describe('Tanggal mulai format YYYY-MM-DD'),
+				endDate: z.string().optional().describe('Tanggal akhir format YYYY-MM-DD'),
+				walletId: z.string().optional().describe('Filter ID wallet'),
+				categoryId: z.string().optional().describe('Filter ID kategori'),
 				limit: z.number().int().min(1).max(50).default(30)
 			}),
 			execute: async (params) => {
 				const qs = new URLSearchParams();
 				if (params.startDate) qs.set('startDate', params.startDate);
 				if (params.endDate) qs.set('endDate', params.endDate);
+				if (params.walletId) qs.set('walletId', params.walletId);
+				if (params.categoryId) qs.set('categoryId', params.categoryId);
 				qs.set('limit', String(params.limit));
 				const res = await doFetch(`${reedrichUrl}/api/v1/transactions?${qs}`);
 				if (!res.ok) throw new Error(`list_transactions failed: ${res.status}`);
 				const raw = (await res.json()) as TransactionRecord[];
 				const items = Array.isArray(raw) ? raw : (raw as unknown as { items: TransactionRecord[] }).items ?? [];
-				// Filter to only needed fields and exclude transfers
 				return items
-					.filter((t) => t.transactionType !== 'transfer')
-					.slice(0, 30)
+					.slice(0, 40)
 					.map((t) => ({
 						date: t.transactionDate ? t.transactionDate.slice(0, 10) : '',
 						amount: t.transactionAmount,
 						type: t.transactionType,
 						isPlanned: t.transactionIsPlanned === 1,
-						desc: (t.transactionDescription ?? '').slice(0, 35)
+						desc: (t.transactionDescription ?? '').slice(0, 40)
 					}));
 			}
 		}),
 
 		get_categories: tool({
-			description: 'Ambil kategori transaksi.',
+			description: 'Ambil semua kategori transaksi.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/categories`);
