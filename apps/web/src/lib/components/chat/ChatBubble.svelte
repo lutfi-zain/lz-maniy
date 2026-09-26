@@ -38,9 +38,14 @@
 		{#if uiCommand}
 			<ChatUICommandCard command={uiCommand} />
 		{:else if message.content}
-			{message.content}
-		{:else if message.role === 'assistant' && (!message.toolInvocations || message.toolInvocations.length === 0)}
-			<span class="inline-block size-2 animate-pulse rounded-full bg-[#787774]"></span>
+			<div class="prose prose-sm max-w-none text-[#111111]">
+				{message.content}
+			</div>
+		{:else if message.role === 'assistant'}
+			<div class="flex items-center gap-1.5 py-0.5 text-xs text-[#787774]">
+				<span class="inline-block size-1.5 animate-pulse rounded-full bg-[#111111]"></span>
+				<span>Menyiapkan jawaban...</span>
+			</div>
 		{/if}
 	</div>
 </div>
