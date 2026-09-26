@@ -8,6 +8,16 @@ import type { Env } from './types.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Global error handler to surface exact stack trace in JSON response
+app.onError((err, c) => {
+	console.error('Unhandled app error:', err);
+	return c.json({
+		error: 'internal_server_error',
+		message: err.message,
+		stack: err.stack
+	}, 500);
+});
+
 // CORS — allow apps/web origins in dev and prod
 app.use(
 	'*',

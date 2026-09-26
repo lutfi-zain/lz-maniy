@@ -66,13 +66,11 @@ chatRouter.post('/', async (c) => {
 		conversationId,
 		role: 'user',
 		content: body.message,
-		// Never persist base64 image to D1 — just note it existed
 		imageRef: body.image ? 'ephemeral-image' : undefined
 	});
 
 	// Load conversation history for context
 	const history = await listMessages(c.env.DB, conversationId);
-	// Build messages array for AI SDK (exclude current user message, it's added below)
 	const prior = history.filter((m) => m.id !== userMsgId);
 	type CoreMsg = { role: 'user' | 'assistant'; content: string };
 	const priorMessages: CoreMsg[] = prior
@@ -95,8 +93,7 @@ chatRouter.post('/', async (c) => {
 	};
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName);
-
-	let assistantContent = '';
+	const activeConvId = conversationId!;
 
 	const result = streamText({
 		model: aiModel,
@@ -107,24 +104,27 @@ chatRouter.post('/', async (c) => {
 		],
 		tools,
 		maxSteps: 8,
-		onFinish: async ({ text }) => {
-			assistantContent = text;
-			// Persist assistant message
-			await insertMessage(c.env.DB, {
-				id: crypto.randomUUID(),
-				conversationId: conversationId!,
-				role: 'assistant',
-				content: assistantContent
-			});
-			await touchConversation(c.env.DB, conversationId!);
+		onFinish: (ev) => {
+			const finishTask = async () => {
+				const finalContent = ev.text || '';
+				if (finalContent) {
+					await insertMessage(c.env.DB, {
+						id: crypto.randomUUID(),
+						conversationId: activeConvId,
+						role: 'assistant',
+						content: finalContent
+					});
+					await touchConversation(c.env.DB, activeConvId);
+				}
+			};
+			c.executionCtx.waitUntil(finishTask());
 		}
 	});
 
-	// Send conversationId and isNew as headers so client can track
 	return result.toDataStreamResponse({
 		getErrorMessage: (err) => (err as Error)?.message || String(err),
 		headers: {
-			'X-Conversation-Id': conversationId,
+			'X-Conversation-Id': activeConvId,
 			'X-Is-New-Conversation': isNewConversation ? '1' : '0',
 			'Access-Control-Expose-Headers': 'X-Conversation-Id, X-Is-New-Conversation'
 		}
