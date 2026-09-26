@@ -11,3 +11,9 @@ vite.config.ts.timestamp-*
 *.log
 test-results/
 playwright-report/
+# Agent
+apps/agent/.dev.vars
+apps/agent/.wrangler/
+# Workspace nested node_modules
+apps/*/node_modules/
+packages/*/node_modules/

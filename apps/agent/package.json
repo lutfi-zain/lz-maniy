@@ -1,0 +1,28 @@
+{
+	"name": "@maniyy/agent",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"build": "wrangler deploy --dry-run",
+		"deploy": "wrangler deploy",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@ai-sdk/google": "^1.0.0",
+		"@ai-sdk/groq": "^1.0.0",
+		"@maniyy/shared": "workspace:*",
+		"ai": "^4.0.0",
+		"hono": "^4.6.0",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.5.0",
+		"@cloudflare/workers-types": "^4.20241022.0",
+		"typescript": "^6.0.3",
+		"vitest": "^2.1.0",
+		"wrangler": "^4.0.0"
+	}
+}

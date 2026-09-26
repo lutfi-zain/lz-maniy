@@ -1,0 +1,26 @@
+name = "maniyy-agent"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "maniyy-agent-db"
+database_id = "3a9ed758-9cdb-49af-baa7-e300bbf4b25b"
+migrations_dir = "db/migrations"
+
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "299995e06bcc421caaf932b019078bad"
+
+[[services]]
+binding = "REEDRICH"
+service = "reedrich-mcp"
+
+[vars]
+REEDRICH_API_URL = "https://reedrich-mcp.lutfidmz.workers.dev"
+
+# Secrets (set via `wrangler secret put`):
+# GEMINI_API_KEY
+# GROQ_API_KEY
