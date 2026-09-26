@@ -13,6 +13,12 @@ import { reedrichStore } from './reedrich.svelte.js';
 import { transactionFormStore } from './transaction-form.svelte.js';
 import { dateFilterStore } from './date-filter.svelte.js';
 
+function delay(ms: number): Promise<void> {
+	const { promise, resolve } = Promise.withResolvers<void>();
+	setTimeout(resolve, ms);
+	return promise;
+}
+
 export class ChatStore {
 	conversations = $state<ConversationMeta[]>([]);
 	activeConversationId = $state<string | null>(null);
@@ -205,7 +211,6 @@ export class ChatStore {
 			if (res.ok) {
 				const models = (await res.json()) as ModelConfig[];
 				this.availableModels = models;
-				// Maintain selectedModel if it exists in models, otherwise pick first (gpt-oss-20b)
 				const current = models.find((m) => m.model === this.selectedModel.model);
 				if (current) {
 					this.selectedModel = current;
@@ -266,7 +271,6 @@ export class ChatStore {
 
 			if (!res.ok) throw new Error(`Agent error: ${res.status}`);
 
-			// Update conversation ID from response header if new
 			const newConvId = res.headers.get('X-Conversation-Id');
 			if (newConvId) {
 				this.activeConversationId = newConvId;
@@ -278,7 +282,7 @@ export class ChatStore {
 				}
 			}
 
-			// Stream AI SDK data stream protocol
+			// Read SSE stream
 			const reader = res.body!.getReader();
 			const decoder = new TextDecoder();
 			let buffer = '';
@@ -353,7 +357,6 @@ export class ChatStore {
 									)
 								};
 							});
-							// Check if result is a UI command
 							if ((toolRes.result as { type?: string })?.type === 'ui_command') {
 								this.executeUICommand(toolRes.result as UICommand);
 							}
@@ -376,14 +379,33 @@ export class ChatStore {
 				}
 			}
 
-			// If after stream finishes the assistant content is still empty,
-			// fetch the saved message from D1 to ensure complete display
+			// Clean up trailing buffer if any
+			if (buffer.trim()) {
+				const raw = buffer.startsWith('data: ') ? buffer.slice(6) : buffer;
+				const colonIndex = raw.indexOf(':');
+				if (colonIndex !== -1 && raw.slice(0, colonIndex) === '0') {
+					try {
+						const delta = JSON.parse(raw.slice(colonIndex + 1)) as string;
+						this.messages = this.messages.map((m) =>
+							m.id === assistantId ? { ...m, content: m.content + delta } : m
+						);
+					} catch {
+						/* ignore */
+					}
+				}
+			}
+
+			// Post-stream check: if assistant message has no content, fetch from D1
 			const currentAssistant = this.messages.find((m) => m.id === assistantId);
 			if (currentAssistant && !currentAssistant.content && this.activeConversationId) {
 				try {
-					const convRes = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/${this.activeConversationId}`, {
-						headers: { Authorization: `Bearer ${authStore.accessToken}` }
-					});
+					await delay(600);
+					const convRes = await fetch(
+						`${PUBLIC_AGENT_URL}/api/conversations/${this.activeConversationId}`,
+						{
+							headers: { Authorization: `Bearer ${authStore.accessToken}` }
+						}
+					);
 					if (convRes.ok) {
 						const convData = (await convRes.json()) as { messages: ChatMessage[] };
 						const lastDbAssistant = convData.messages.filter((m) => m.role === 'assistant').at(-1);

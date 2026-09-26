@@ -43,9 +43,9 @@ conversationsRouter.delete('/:id', async (c) => {
 // POST /api/conversations/export
 conversationsRouter.post('/export', async (c) => {
 	const user = c.get('user');
-	const body = await c.req.json<{ conversationIds?: string[] }>().catch(() => ({}));
+	const body = await c.req.json<{ conversationIds?: string[] }>().catch(() => ({ conversationIds: undefined }));
 	const conversations = await listConversations(c.env.DB, user.userId);
-	const filtered = body.conversationIds
+	const filtered = body?.conversationIds
 		? conversations.filter((conv) => body.conversationIds!.includes(conv.id))
 		: conversations;
 	const exported: ExportedConversation[] = await Promise.all(
