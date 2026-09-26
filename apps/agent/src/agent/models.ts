@@ -1,9 +1,16 @@
+/// <reference types="@cloudflare/workers-types" />
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
 import type { ModelConfig } from '@maniyy/shared';
 import type { Env } from '../types.js';
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
+	{
+		provider: 'groq',
+		model: 'openai/gpt-oss-20b',
+		displayName: 'GPT-OSS 20B (Groq Fast)',
+		capabilities: { vision: false, tool_calling: true }
+	},
 	{
 		provider: 'groq',
 		model: 'qwen/qwen3.8-27b',

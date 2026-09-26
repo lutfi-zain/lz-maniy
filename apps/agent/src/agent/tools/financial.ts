@@ -8,6 +8,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		'X-Api-Key': token,
 		'Content-Type': 'application/json'
 	};
+
 	const doFetch = (url: string, init?: RequestInit) =>
 		fetcher
 			? fetcher.fetch(new Request(url, { ...init, headers: { ...headers, ...init?.headers } }))
@@ -15,12 +16,38 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 
 	return {
 		get_snapshot: tool({
-			description: 'Ambil data account lengkap: net worth, wallet, budget, goals, obligasi, dan cash flow bulanan.',
+			description: 'Ambil ringkasan akun: total net worth, daftar wallet beserta saldo, dan ringkasan anggaran.',
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/account-detail`);
 				if (!res.ok) throw new Error(`get_snapshot failed: ${res.status}`);
-				return (await res.json()) as AccountDetail;
+				const data = (await res.json()) as AccountDetail;
+				// Return a lean, token-efficient payload to prevent TPM/ITPM rate limits
+				return {
+					netWorth: {
+						total: data.netWorth.consolidated.total,
+						currency: data.netWorth.consolidated.currency
+					},
+					spendableWallets: data.wallets.spendable.items.map((w) => ({
+						walletName: w.walletName,
+						institution: w.institution,
+						balance: w.balance,
+						currency: w.currency
+					})),
+					totalSpendable: data.wallets.spendable.total,
+					lockedWallets: data.wallets.locked.items.map((w) => ({
+						walletName: w.walletName,
+						institution: w.institution,
+						balance: w.balance,
+						currency: w.currency
+					})),
+					totalLocked: data.wallets.locked.total,
+					monthlySummary: {
+						totalIncome: data.monthlyCashFlow.totalIncome,
+						totalExpense: data.monthlyCashFlow.totalExpense,
+						netSavings: data.monthlyCashFlow.netSavings
+					}
+				};
 			}
 		}),
 
@@ -30,7 +57,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				walletId: z.string().optional().describe('Filter by wallet ID'),
 				categoryId: z.string().optional().describe('Filter by category ID'),
 				budgetId: z.string().optional().describe('Filter by budget ID'),
-				limit: z.number().int().min(1).max(100).default(50).describe('Max results'),
+				limit: z.number().int().min(1).max(20).default(10).describe('Max results (max 20)'),
 				offset: z.number().int().min(0).default(0).describe('Pagination offset')
 			}),
 			execute: async (params) => {
@@ -42,7 +69,13 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				qs.set('offset', String(params.offset));
 				const res = await doFetch(`${reedrichUrl}/api/v1/transactions?${qs}`);
 				if (!res.ok) throw new Error(`list_transactions failed: ${res.status}`);
-				return (await res.json()) as TransactionRecord[];
+				const data = (await res.json()) as TransactionRecord[];
+				return data.slice(0, 15).map((t) => ({
+					date: t.transactionDate,
+					amount: t.transactionAmount,
+					type: t.transactionType,
+					description: t.transactionDescription
+				}));
 			}
 		}),
 
@@ -52,7 +85,12 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 			execute: async () => {
 				const res = await doFetch(`${reedrichUrl}/api/v1/categories`);
 				if (!res.ok) throw new Error(`get_categories failed: ${res.status}`);
-				return (await res.json()) as CategoryRecord[];
+				const data = (await res.json()) as CategoryRecord[];
+				return data.map((c) => ({
+					id: c.categoryId,
+					name: c.categoryName,
+					type: c.categoryType
+				}));
 			}
 		}),
 

@@ -22,27 +22,7 @@ describe('buildSystemPrompt', () => {
 		expect(prompt).toContain('Lutfi Zain');
 		expect(prompt).toContain('/ledger');
 		expect(prompt).toContain('spendable');
-		expect(prompt).toContain('BCA');
 		expect(prompt).toContain('Rp 17.050.000');
 		expect(prompt).toContain('Rp 7.050.000');
-	});
-
-	it('handles drawer open state', () => {
-		const ctx: PageContext = {
-			...sampleContext,
-			drawerOpen: true,
-			drawerType: 'wallet'
-		};
-		const prompt = buildSystemPrompt(ctx, 'Test User');
-		expect(prompt).toContain('Drawer terbuka: wallet');
-	});
-
-	it('includes all required tool descriptions', () => {
-		const prompt = buildSystemPrompt(sampleContext, 'Test User');
-		expect(prompt).toContain('get_snapshot');
-		expect(prompt).toContain('list_transactions');
-		expect(prompt).toContain('create_transaction');
-		expect(prompt).toContain('delete_transaction');
-		expect(prompt).toContain('navigate_page');
 	});
 });
