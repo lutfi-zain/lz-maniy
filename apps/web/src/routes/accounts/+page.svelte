@@ -182,6 +182,17 @@
 			return bTotalIDR - aTotalIDR;
 		});
 	});
+
+	function openWalletDrawer(wallet: WalletItem) {
+		reedrichStore.openDrawer({
+			type: 'wallet',
+			title: wallet.walletName,
+			subtitle: `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`,
+			badge: wallet.isLocked === 1 ? 'DOMPET TERKUNCI' : 'DOMPET SPENDABLE',
+			data: { wallet }
+		});
+		reedrichStore.fetchTransactionsForDrawer({ walletId: wallet.walletId, limit: 50 });
+	}
 </script>
 
 <div class="space-y-4">
@@ -418,10 +429,12 @@
 					<!-- Wallets List inside this bank -->
 					<div class="divide-y divide-[#EAEAEA]">
 						{#each group.wallets as w (w.walletId)}
-							<a
-								href="/ledger?walletId={encodeURIComponent(w.walletId)}"
-								class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
-								title="Buka mutasi {w.walletName} di Ledger"
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								onclick={() => openWalletDrawer(w)}
+								class="group flex cursor-pointer flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
+								title="Buka rincian & edit {w.walletName}"
 							>
 								<div class="flex items-center gap-3">
 									<div
@@ -467,7 +480,7 @@
 								<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
 									{fmtCurrency(getWalletBalance(w), w.currency)}
 								</div>
-							</a>
+							</div>
 						{/each}
 					</div>
 				</div>
@@ -483,10 +496,12 @@
 			class="divide-y divide-[#EAEAEA] overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs"
 		>
 			{#each sortedWallets as w (w.walletId)}
-				<a
-					href="/ledger?walletId={encodeURIComponent(w.walletId)}"
-					class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
-					title="Buka mutasi {w.walletName} di Ledger"
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					onclick={() => openWalletDrawer(w)}
+					class="group flex cursor-pointer flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
+					title="Buka rincian & edit {w.walletName}"
 				>
 					<div class="flex items-center gap-3">
 						<div
@@ -534,7 +549,7 @@
 					<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
 						{fmtCurrency(getWalletBalance(w), w.currency)}
 					</div>
-				</a>
+				</div>
 			{:else}
 				<div class="py-12 text-center font-mono text-xs text-[#787774]">
 					Tidak ada akun yang sesuai dengan filter "{searchQuery}".

@@ -16,7 +16,7 @@
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
-	import type { RecurringTemplate } from '$lib/types/account-detail';
+	import type { RecurringTemplate, GoalSnapshot, BudgetSnapshot } from '$lib/types/account-detail';
 
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations'>('goals');
 
@@ -40,6 +40,26 @@
 			badge: 'RECURRING',
 			data: { template: t }
 		});
+	}
+	function openGoalDrawer(goal: GoalSnapshot) {
+		reedrichStore.openDrawer({
+			type: 'goal',
+			title: goal.goalName,
+			subtitle: `${goal.daysRemaining !== null ? `${goal.daysRemaining} hari tersisa` : 'Jangka panjang'} ${goal.isDerived ? '· Derived dari dompet terhubung' : ''}`,
+			badge: 'TARGET TABUNGAN',
+			data: { goal }
+		});
+	}
+
+	function openBudgetDrawer(budget: BudgetSnapshot) {
+		reedrichStore.openDrawer({
+			type: 'budget',
+			title: budget.budgetName,
+			subtitle: `Kategori: ${budget.categoryName || 'General'} · Status: ${budget.status}`,
+			badge: 'BUDGET & PAGU',
+			data: { budget }
+		});
+		reedrichStore.fetchTransactionsForDrawer({ budgetId: budget.budgetId, limit: 50 });
 	}
 
 </script>
@@ -164,8 +184,15 @@
 						: g.currentAmount}
 				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 				{@const linked = g.linkedWalletsBreakdown ?? []}
-				<div class="space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs">
-					<div class="flex flex-wrap items-start justify-between gap-3">
+				<div class="space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]">
+					<!-- Header clickable to open detail/edit drawer -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						onclick={() => openGoalDrawer(g)}
+						class="flex cursor-pointer flex-wrap items-start justify-between gap-3"
+						title="Buka rincian, edit, atau setor ke {g.goalName}"
+					>
 						<div>
 							<div class="flex items-center gap-2">
 								<h2 class="text-base font-semibold text-[#111111]">{g.goalName}</h2>
@@ -249,10 +276,12 @@
 					{@const p = b.percentUsed || 0}
 					{@const isOver = p > 100}
 					{@const isWarning = p >= 80 && p <= 100}
-					<a
-						href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
-						class="group block space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 no-underline shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
-						title="Buka mutasi anggaran {b.budgetName} di Ledger"
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						onclick={() => openBudgetDrawer(b)}
+						class="group block cursor-pointer space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
+						title="Buka rincian, edit, atau hapus pagu {b.budgetName}"
 					>
 						<div class="flex items-start justify-between gap-3">
 							<div>
@@ -300,7 +329,7 @@
 								{fmtIDR(b.remaining)}
 							</span>
 						</div>
-					</a>
+					</div>
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
 						Belum ada pagu anggaran aktif tercatat.
