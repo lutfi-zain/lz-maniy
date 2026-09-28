@@ -4,6 +4,7 @@
 	import Topbar from '$lib/components/layout/Topbar.svelte';
 	import BottomNav from '$lib/components/layout/BottomNav.svelte';
 	import TransactionFormDrawer from '$lib/components/transaction/TransactionFormDrawer.svelte';
+	import DrilldownDrawer from '$lib/components/drawer/DrilldownDrawer.svelte';
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -121,6 +122,7 @@
 		</footer>
 		<BottomNav />
 		<TransactionFormDrawer />
+		<DrilldownDrawer />
 		<ChatPanel />
 	</div>
 {/if}

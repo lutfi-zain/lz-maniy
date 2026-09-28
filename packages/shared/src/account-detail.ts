@@ -76,12 +76,15 @@ export interface MonthlyCashFlow {
 export interface BudgetSnapshot {
 	budgetId: string;
 	budgetName: string;
-	categoryName: string;
+	categoryName?: string;
+	categoryId?: string | null;
 	amount: number;
+	periodStart?: string;
+	periodEnd?: string;
 	spent: number;
 	remaining: number;
 	percentUsed: number;
-	status: 'on_track' | 'warning' | 'over_budget';
+	status?: 'on_track' | 'warning' | 'over_budget';
 }
 
 export interface LinkedWalletBreakdown {
@@ -98,6 +101,11 @@ export interface GoalSnapshot {
 	goalName: string;
 	targetAmount: number;
 	currentAmount: number;
+	currency?: string;
+	targetDate?: string | null;
+	categoryId?: string | null;
+	notes?: string | null;
+	status?: 'in_progress' | 'completed' | 'cancelled';
 	progressPercentage: number;
 	isDerived: boolean;
 	daysRemaining: number | null;
@@ -196,7 +204,20 @@ export interface CategoryRecord {
 	categoryIcon?: string | null;
 }
 
-export type DrawerType = 'wallet' | 'category' | 'budget' | 'goal' | 'obligation' | 'networth';
+export type DrawerType =
+	| 'wallet'
+	| 'category'
+	| 'budget'
+	| 'goal'
+	| 'obligation'
+	| 'networth'
+	| 'wallet-form'
+	| 'category-form'
+	| 'budget-form'
+	| 'goal-form'
+	| 'recurring-detail'
+	| 'recurring-form'
+	| 'profile-form';
 
 export interface DrawerState {
 	type: DrawerType;
@@ -211,4 +232,139 @@ export interface UserSettings {
 	dateStartOfMonth?: number;
 	language?: 'id' | 'en';
 	mainCurrency?: 'IDR' | 'USD';
+}
+export interface CreateWalletPayload {
+	name: string;
+	institution?: string;
+	type?: 'bank' | 'cash' | 'e-wallet' | 'credit' | 'crypto' | 'investment';
+	balance?: number;
+	currency?: string;
+	isLocked?: boolean;
+}
+
+export interface UpdateWalletPayload {
+	name?: string;
+	institution?: string;
+	type?: 'bank' | 'cash' | 'e-wallet' | 'credit' | 'crypto' | 'investment';
+	balance?: number;
+	currency?: string;
+	isLocked?: boolean;
+}
+
+export interface CreateCategoryPayload {
+	name: string;
+	type?: 'expense' | 'income';
+	icon?: string | null;
+}
+
+export interface UpdateCategoryPayload {
+	name?: string;
+	icon?: string | null;
+}
+
+export interface CreateBudgetPayload {
+	name: string;
+	amount: number;
+	periodStart: string;
+	periodEnd: string;
+	categoryId?: string | null;
+}
+
+export interface UpdateBudgetPayload {
+	name?: string;
+	amount?: number;
+	periodStart?: string;
+	periodEnd?: string;
+	categoryId?: string | null;
+}
+
+export interface CreateGoalPayload {
+	name: string;
+	targetAmount: number;
+	currentAmount?: number;
+	currency?: string;
+	targetDate?: string | null;
+	walletId?: string | null;
+	walletIds?: string[];
+	categoryId?: string | null;
+	notes?: string | null;
+}
+
+export interface UpdateGoalPayload {
+	name?: string;
+	targetAmount?: number;
+	currentAmount?: number;
+	currency?: string;
+	targetDate?: string | null;
+	status?: 'in_progress' | 'completed' | 'cancelled';
+	notes?: string | null;
+}
+
+export interface ContributeGoalPayload {
+	amount: number;
+	walletId?: string | null;
+}
+
+export interface RecurringTemplate {
+	templateId: string;
+	templateUserId?: string;
+	templateName: string;
+	templateWalletId: string;
+	templateTargetWalletId?: string | null;
+	templateCategoryId?: string | null;
+	templateAmount: number;
+	templateAdminFee?: number;
+	templateType: 'expense' | 'income' | 'transfer';
+	templateFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+	templateInterval?: number;
+	templateStartDate: string;
+	templateNextRunDate?: string;
+	templateEndDate?: string | null;
+	templateIsActive: number | boolean;
+	templateNotes?: string | null;
+	templateCreatedAt?: string;
+}
+
+export interface CreateRecurringTemplatePayload {
+	name: string;
+	walletId: string;
+	targetWalletId?: string | null;
+	categoryId?: string | null;
+	amount: number;
+	adminFee?: number;
+	type?: 'expense' | 'income' | 'transfer';
+	frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+	interval?: number;
+	startDate: string;
+	nextRunDate?: string;
+	endDate?: string | null;
+	isActive?: boolean;
+	notes?: string | null;
+}
+
+export interface UpdateRecurringTemplatePayload {
+	name?: string;
+	walletId?: string;
+	categoryId?: string | null;
+	amount?: number;
+	adminFee?: number;
+	type?: 'expense' | 'income' | 'transfer';
+	frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+	interval?: number;
+	nextRunDate?: string;
+	endDate?: string | null;
+	isActive?: boolean;
+	notes?: string | null;
+}
+
+export interface ApplyRecurringTemplatePayload {
+	transactionId?: string;
+	executionDate?: string;
+	actualAmount?: number;
+}
+
+export interface UpdateProfilePayload {
+	firstName?: string;
+	lastName?: string;
+	whatsappNumber?: string;
 }

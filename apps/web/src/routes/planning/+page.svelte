@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { budgetFormStore } from '$lib/stores/budget-form.svelte';
+	import { goalFormStore } from '$lib/stores/goal-form.svelte';
+	import { recurringFormStore } from '$lib/stores/recurring-form.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import Target from 'phosphor-svelte/lib/Target';
@@ -8,124 +12,36 @@
 	import Handshake from 'phosphor-svelte/lib/Handshake';
 	import CalendarCheck from 'phosphor-svelte/lib/CalendarCheck';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import type { RecurringTemplate } from '$lib/types/account-detail';
+
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations'>('goals');
+
+	onMount(() => {
+		reedrichStore.fetchRecurringTemplates();
+	});
 
 	const budgets = $derived(reedrichStore.activeBudgets);
 	const goals = $derived(reedrichStore.activeGoals);
 	const ob = $derived(reedrichStore.snapshot?.obligations);
 	const debts = $derived(ob?.activeDebts ?? []);
 	const loans = $derived(ob?.activeLoans ?? []);
+	const recurringTemplates = $derived(reedrichStore.recurringTemplates);
+	const isRecurringLoading = $derived(reedrichStore.isRecurringLoading);
 
-	// Mock recurring templates for comprehensive planning display
-	const recurringTemplates = [
-		{
-			name: 'Gaji Siloam Bulanan',
-			type: 'income',
-			amount: 20475000,
-			freq: 'Bulanan (tgl 5)',
-			next: '2026-10-05',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Sewa Rumah (Cicilan Simpanan)',
-			type: 'expense',
-			amount: 1500000,
-			freq: 'Bulanan',
-			next: '2026-10-01',
-			wallet: 'BCA Pocket Sewa'
-		},
-		{
-			name: 'Nafkah Istri Bulanan',
-			type: 'expense',
-			amount: 1500000,
-			freq: 'Bulanan',
-			next: '2026-10-05',
-			wallet: 'Main Wallet Jago'
-		},
-		{
-			name: 'Nafkah Anak Bulanan',
-			type: 'expense',
-			amount: 1500000,
-			freq: 'Bulanan',
-			next: '2026-10-05',
-			wallet: 'Main Wallet Jago'
-		},
-		{
-			name: 'Cicilan Motor Yamaha Nmax',
-			type: 'expense',
-			amount: 1300000,
-			freq: 'Bulanan',
-			next: '2026-10-06',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Konsumsi Makan Keluarga',
-			type: 'expense',
-			amount: 2700000,
-			freq: 'Bulanan',
-			next: '2026-10-05',
-			wallet: 'Main Wallet Jago'
-		},
-		{
-			name: 'Nafkah Ibu Bulanan',
-			type: 'expense',
-			amount: 600000,
-			freq: 'Bulanan',
-			next: '2026-10-05',
-			wallet: 'Main Wallet Jago'
-		},
-		{
-			name: 'Tagihan BPJS Kesehatan',
-			type: 'expense',
-			amount: 452500,
-			freq: 'Bulanan',
-			next: '2026-10-10',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Tagihan Internet Indihome',
-			type: 'expense',
-			amount: 336000,
-			freq: 'Bulanan',
-			next: '2026-10-15',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Tagihan PAM Air',
-			type: 'expense',
-			amount: 208000,
-			freq: 'Bulanan',
-			next: '2026-10-20',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Tagihan Telkomsel Halo',
-			type: 'expense',
-			amount: 169000,
-			freq: 'Bulanan',
-			next: '2026-10-20',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Tagihan IPL Lingkungan',
-			type: 'expense',
-			amount: 95000,
-			freq: 'Bulanan',
-			next: '2026-10-15',
-			wallet: 'BCA Main'
-		},
-		{
-			name: 'Tagihan XL Prioritas',
-			type: 'expense',
-			amount: 88800,
-			freq: 'Bulanan',
-			next: '2026-10-22',
-			wallet: 'BCA Main'
-		}
-	];
+	function openRecurringDetail(t: RecurringTemplate) {
+		reedrichStore.openDrawer({
+			type: 'recurring-detail',
+			title: t.templateName,
+			subtitle: `${t.templateType.toUpperCase()} · ${t.templateFrequency}`,
+			badge: 'RECURRING',
+			data: { template: t }
+		});
+	}
+
 </script>
 
 <div class="space-y-4">
@@ -188,6 +104,38 @@
 					title="Reset ke Bulan Ini"
 				>
 					Reset
+				</button>
+			{/if}
+		</div>
+
+		<!-- Action Button according to active sub-tab -->
+		<div class="flex items-center gap-2">
+			{#if activeSubTab === 'goals'}
+				<button
+					type="button"
+					onclick={() => goalFormStore.openCreate()}
+					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>+ Buat Target</span>
+				</button>
+			{:else if activeSubTab === 'budgets'}
+				<button
+					type="button"
+					onclick={() => budgetFormStore.openCreate()}
+					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>+ Tambah Budget</span>
+				</button>
+			{:else if activeSubTab === 'obligations'}
+				<button
+					type="button"
+					onclick={() => recurringFormStore.openCreate()}
+					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>+ Tambah Recurring</span>
 				</button>
 			{/if}
 		</div>
@@ -436,7 +384,7 @@
 					<div class="flex items-center gap-2">
 						<CalendarCheck class="size-4 text-[#111111]" weight="bold" />
 						<h2 class="text-sm font-semibold text-[#111111]">
-							Jadwal Tagihan & Pemasukan Rutin (13 Template)
+							Jadwal Tagihan & Pemasukan Rutin ({recurringTemplates.length} Template)
 						</h2>
 					</div>
 					<span class="font-mono text-xs text-[#787774]">Dasar Perhitungan Safe-To-Spend</span>
@@ -456,26 +404,49 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-[#EAEAEA]">
-							{#each recurringTemplates as r (r.name)}
-								{@const isInc = r.type === 'income'}
-								<tr
-									onclick={() => goto(`/ledger?search=${encodeURIComponent(r.name)}`)}
-									class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
-									title="Buka mutasi {r.name} di Ledger"
-								>
-									<td class="px-3 py-2.5 font-medium text-[#111111]">{r.name}</td>
-									<td class="px-3 py-2.5 text-[#787774]">{r.freq}</td>
-									<td class="px-3 py-2.5 font-mono text-[11px] text-[#787774]">{dFmt(r.next)}</td>
-									<td class="px-3 py-2.5 text-[#787774]">{r.wallet}</td>
-									<td
-										class="px-3 py-2.5 text-right font-mono font-semibold tabular-nums {isInc
-											? 'text-[#346538]'
-											: 'text-[#111111]'}"
+							{#if isRecurringLoading && recurringTemplates.length === 0}
+								{#each [0, 1, 2] as i (i)}
+									<tr>
+										<td class="px-3 py-2.5"><Skeleton class="h-3 w-32" /></td>
+										<td class="px-3 py-2.5"><Skeleton class="h-3 w-16" /></td>
+										<td class="px-3 py-2.5"><Skeleton class="h-3 w-20" /></td>
+										<td class="px-3 py-2.5"><Skeleton class="h-3 w-24" /></td>
+										<td class="px-3 py-2.5 text-right"><Skeleton class="ml-auto h-3 w-20" /></td>
+									</tr>
+								{/each}
+							{:else}
+								{#each recurringTemplates as r (r.templateId)}
+									{@const isInc = r.templateType === 'income'}
+									{@const walletName =
+										reedrichStore.allWallets.find((w) => w.walletId === r.templateWalletId)
+											?.walletName || 'Dompet'}
+									<tr
+										onclick={() => openRecurringDetail(r)}
+										class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
+										title="Lihat rincian {r.templateName}"
 									>
-										{isInc ? '+' : '−'}{fmtIDR(r.amount)}
-									</td>
-								</tr>
-							{/each}
+										<td class="px-3 py-2.5 font-medium text-[#111111]">{r.templateName}</td>
+										<td class="px-3 py-2.5 text-[#787774] capitalize">{r.templateFrequency}</td>
+										<td class="px-3 py-2.5 font-mono text-[11px] text-[#787774]">
+											{r.templateNextRunDate ? dFmt(r.templateNextRunDate) : 'Sesuai Siklus'}
+										</td>
+										<td class="px-3 py-2.5 text-[#787774]">{walletName}</td>
+										<td
+											class="px-3 py-2.5 text-right font-mono font-semibold tabular-nums {isInc
+												? 'text-[#346538]'
+												: 'text-[#111111]'}"
+										>
+											{isInc ? '+' : '−'}{fmtIDR(r.templateAmount)}
+										</td>
+									</tr>
+								{:else}
+									<tr>
+										<td colspan="5" class="py-8 text-center font-mono text-xs text-[#787774]">
+											Belum ada tagihan atau pemasukan rutin tercatat.
+										</td>
+									</tr>
+								{/each}
+							{/if}
 						</tbody>
 					</table>
 				</div>

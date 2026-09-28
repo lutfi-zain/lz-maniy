@@ -12,8 +12,10 @@
 	import Money from 'phosphor-svelte/lib/Money';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import SortAscending from 'phosphor-svelte/lib/SortAscending';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import StatusBadge from '$lib/components/ui/StatusBadge.svelte';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
 	import {
 		calculatePointInTimeNetWorth,
 		calculatePointInTimeWalletBalances
@@ -263,6 +265,14 @@
 						dateFilterStore.setFilter(preset as DatePreset, start, end);
 					}}
 				/>
+				<button
+					type="button"
+					onclick={() => walletFormStore.openCreate()}
+					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>+ Dompet</span>
+				</button>
 				{#if dateFilterStore.preset !== 'this_month'}
 					<button
 						type="button"

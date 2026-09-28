@@ -4,7 +4,8 @@
 	import { dFmt } from '$lib/utils/dates';
 	import CategoryBar from './CategoryBar.svelte';
 	import ChartBar from 'phosphor-svelte/lib/ChartBar';
-
+	import Plus from 'phosphor-svelte/lib/Plus';
+	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	const cf = $derived(reedrichStore.snapshot?.monthlyCashFlow);
 	const categories = $derived(cf?.categoryBreakdown ?? []);
 	const netSav = $derived(cf?.netSavings ?? 0);
@@ -28,15 +29,25 @@
 			</div>
 		</div>
 
-		<span
-			class="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold {netSav >= 0
-				? 'bg-[#EDF3EC] text-[#346538]'
-				: 'bg-[#FDEBEC] text-[#9F2F2D]'}"
-		>
-			{netSav >= 0 ? '+' : '−'}{fmtIDR(Math.abs(netSav))}
-		</span>
-	</div>
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				onclick={() => categoryFormStore.openCreate()}
+				class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+			>
+				<Plus class="size-3" weight="bold" />
+				<span>+ Kategori</span>
+			</button>
 
+			<span
+				class="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold {netSav >= 0
+					? 'bg-[#EDF3EC] text-[#346538]'
+					: 'bg-[#FDEBEC] text-[#9F2F2D]'}"
+			>
+				{netSav >= 0 ? '+' : '−'}{fmtIDR(Math.abs(netSav))}
+			</span>
+		</div>
+	</div>
 	<!-- Monthly Totals Card -->
 	<div
 		class="mb-4 flex items-center justify-between rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs"

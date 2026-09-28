@@ -8,13 +8,30 @@ import {
 import { authStore } from '$lib/stores/auth.svelte';
 import type {
 	AccountDetail,
+	ApplyRecurringTemplatePayload,
+	BudgetSnapshot,
 	CategoryRecord,
+	ContributeGoalPayload,
+	CreateBudgetPayload,
+	CreateCategoryPayload,
+	CreateGoalPayload,
+	CreateRecurringTemplatePayload,
 	CreateTransactionPayload,
 	CreateTransferPayload,
+	CreateWalletPayload,
 	DrawerState,
+	GoalSnapshot,
+	RecurringTemplate,
 	TransactionRecord,
+	UpdateBudgetPayload,
+	UpdateCategoryPayload,
+	UpdateGoalPayload,
+	UpdateProfilePayload,
+	UpdateRecurringTemplatePayload,
 	UpdateTransactionPayload,
-	UserProfileDTO
+	UpdateWalletPayload,
+	UserProfileDTO,
+	WalletItem
 } from '$lib/types/account-detail';
 
 export class ReedrichStore {
@@ -33,6 +50,9 @@ export class ReedrichStore {
 	isDrawerLoading = $state<boolean>(false);
 	drawerSearch = $state<string>('');
 
+	// Recurring templates dataset
+	recurringTemplates = $state<RecurringTemplate[]>([]);
+	isRecurringLoading = $state<boolean>(false);
 	// Ledger full dataset
 	allTransactions = $state<TransactionRecord[]>([]);
 	isLedgerLoading = $state<boolean>(false);
@@ -83,6 +103,7 @@ export class ReedrichStore {
 	loadMock() {
 		this.snapshot = MOCK_SNAPSHOT;
 		this.categories = MOCK_CATEGORIES;
+		this.recurringTemplates = [];
 		this.isLive = false;
 		this.isLoading = false;
 		this.statusMessage = 'Memakai data snapshot mock.';
@@ -231,6 +252,22 @@ export class ReedrichStore {
 			this.isDrawerLoading = false;
 		}
 	}
+	async fetchRecurringTemplates(): Promise<RecurringTemplate[]> {
+		this.isRecurringLoading = true;
+		try {
+			const res = await this.request(`${DEFAULT_API_URL}/api/v1/recurring-templates`);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const json = await res.json();
+			const items: RecurringTemplate[] = Array.isArray(json) ? json : (json.items ?? []);
+			this.recurringTemplates = items;
+			return items;
+		} catch (err) {
+			console.warn('Gagal memuat recurring templates:', err);
+			return [];
+		} finally {
+			this.isRecurringLoading = false;
+		}
+	}
 	private async request(url: string, init: RequestInit = {}): Promise<Response> {
 		// Proactively refresh if near expiration
 		if (authStore.accessToken && authStore.isExpiringSoon && authStore.refreshToken) {
@@ -265,7 +302,11 @@ export class ReedrichStore {
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
 		this.allTransactions = [];
-		await Promise.all([this.fetchSnapshot(), this.fetchAllTransactions()]);
+		await Promise.all([
+			this.fetchSnapshot(),
+			this.fetchAllTransactions(),
+			this.fetchRecurringTemplates()
+		]);
 	}
 
 	/**
@@ -349,11 +390,382 @@ export class ReedrichStore {
 
 		await this.invalidateAndRefresh();
 	}
+	// --- Wallets CRUD ---
+
+	async createWallet(payload: CreateWalletPayload): Promise<WalletItem> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal membuat dompet (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as WalletItem;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	async updateWallet(id: string, delta: UpdateWalletPayload): Promise<WalletItem> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets/${encodeURIComponent(id)}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(delta)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui dompet (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as WalletItem;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async deleteWallet(id: string): Promise<void> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets/${encodeURIComponent(id)}`, {
+			method: 'DELETE'
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menghapus dompet (HTTP ${res.status})`);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	// --- Categories CRUD ---
+
+	async createCategory(payload: CreateCategoryPayload): Promise<CategoryRecord> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/categories`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal membuat kategori (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as CategoryRecord;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	async updateCategory(id: string, delta: UpdateCategoryPayload): Promise<CategoryRecord> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/categories/${encodeURIComponent(id)}`,
+			{
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(delta)
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui kategori (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as CategoryRecord;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async deleteCategory(id: string): Promise<void> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/categories/${encodeURIComponent(id)}`,
+			{
+				method: 'DELETE'
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menghapus kategori (HTTP ${res.status})`);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	// --- Budgets CRUD ---
+
+	async createBudget(payload: CreateBudgetPayload): Promise<BudgetSnapshot> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal membuat budget (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as BudgetSnapshot;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	async updateBudget(id: string, delta: UpdateBudgetPayload): Promise<BudgetSnapshot> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets/${encodeURIComponent(id)}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(delta)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui budget (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as BudgetSnapshot;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async deleteBudget(id: string): Promise<void> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets/${encodeURIComponent(id)}`, {
+			method: 'DELETE'
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menghapus budget (HTTP ${res.status})`);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	// --- Goals CRUD ---
+
+	async createGoal(payload: CreateGoalPayload): Promise<GoalSnapshot> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal membuat target (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as GoalSnapshot;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	async updateGoal(id: string, delta: UpdateGoalPayload): Promise<GoalSnapshot> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(id)}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(delta)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui target (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as GoalSnapshot;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async deleteGoal(id: string): Promise<void> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(id)}`, {
+			method: 'DELETE'
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menghapus target (HTTP ${res.status})`);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	async contributeToGoal(id: string, payload: ContributeGoalPayload): Promise<GoalSnapshot> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(id)}/contribute`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal menyetor ke target (HTTP ${res.status})`);
+		}
+
+		const updated = (await res.json()) as GoalSnapshot;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async linkGoalWallet(goalId: string, walletId: string): Promise<void> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(goalId)}/wallets`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ walletId })
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(
+				errData.message || `Gagal menghubungkan dompet ke target (HTTP ${res.status})`
+			);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	async unlinkGoalWallet(goalId: string, walletId: string): Promise<void> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(goalId)}/wallets/${encodeURIComponent(walletId)}`,
+			{
+				method: 'DELETE'
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(
+				errData.message || `Gagal memutuskan dompet dari target (HTTP ${res.status})`
+			);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	// --- Recurring Templates CRUD ---
+
+	async createRecurringTemplate(
+		payload: CreateRecurringTemplatePayload
+	): Promise<RecurringTemplate> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/recurring-templates`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal membuat recurring template (HTTP ${res.status})`);
+		}
+
+		const created = (await res.json()) as RecurringTemplate;
+		await this.invalidateAndRefresh();
+		return created;
+	}
+
+	async updateRecurringTemplate(
+		id: string,
+		delta: UpdateRecurringTemplatePayload
+	): Promise<RecurringTemplate> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/recurring-templates/${encodeURIComponent(id)}`,
+			{
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(delta)
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(
+				errData.message || `Gagal memperbarui recurring template (HTTP ${res.status})`
+			);
+		}
+
+		const updated = (await res.json()) as RecurringTemplate;
+		await this.invalidateAndRefresh();
+		return updated;
+	}
+
+	async deleteRecurringTemplate(id: string): Promise<void> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/recurring-templates/${encodeURIComponent(id)}`,
+			{
+				method: 'DELETE'
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(
+				errData.message || `Gagal menghapus recurring template (HTTP ${res.status})`
+			);
+		}
+
+		await this.invalidateAndRefresh();
+	}
+
+	async applyRecurringTemplate(
+		id: string,
+		payload?: ApplyRecurringTemplatePayload
+	): Promise<TransactionRecord> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/recurring-templates/${encodeURIComponent(id)}/apply`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload || {})
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(
+				errData.message || `Gagal menerapkan recurring template (HTTP ${res.status})`
+			);
+		}
+
+		const json = await res.json();
+		const txn = (json.transaction ?? json) as TransactionRecord;
+		await this.invalidateAndRefresh();
+		return txn;
+	}
+
+	// --- Profile Update ---
+
+	async updateProfile(delta: UpdateProfilePayload): Promise<UserProfileDTO> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/me`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(delta)
+		});
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memperbarui profil (HTTP ${res.status})`);
+		}
+
+		const profile = (await res.json()) as UserProfileDTO;
+		if (profile && profile.userId) {
+			authStore.setUserProfile(profile);
+		}
+		return profile;
+	}
 
 	reset() {
 		this.snapshot = null;
 		this.categories = [];
 		this.allTransactions = [];
+		this.recurringTemplates = [];
 		this.transactionCache.clear();
 		this.loadMock();
 		this.isLive = false;

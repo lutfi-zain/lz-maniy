@@ -206,9 +206,25 @@
 									</p>
 								{/if}
 							</div>
-							<div class="pt-1.5">
+							<div class="space-y-0.5 pt-1.5">
 								<button
 									type="button"
+									onclick={() => {
+										isUserMenuOpen = false;
+										reedrichStore.openDrawer({
+											type: 'profile-form',
+											title: 'Edit Profil Pengguna',
+											subtitle: 'Perbarui nama lengkap dan kontak WhatsApp',
+											badge: 'PROFIL',
+											data: {}
+										});
+									}}
+									class="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
+								>
+									<UserCircle class="size-3.5" weight="bold" />
+									<span>Edit Profil</span>
+								</button>
+								<button
 									onclick={handleLogout}
 									class="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDEBEC]"
 								>
