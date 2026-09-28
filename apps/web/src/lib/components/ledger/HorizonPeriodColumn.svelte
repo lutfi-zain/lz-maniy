@@ -140,24 +140,24 @@
 			</span>
 		</div>
 
-		<div class="flex items-center gap-1.5">
+		<div class="flex items-center gap-1">
 			<button
 				type="button"
 				onclick={handleQuickAdd}
-				class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
+				class="flex size-6 cursor-pointer items-center justify-center rounded bg-[#111111] text-white transition-colors hover:bg-[#333333] active:scale-95"
 				title="Catat transaksi di bulan ini"
+				aria-label="Catat transaksi di bulan ini"
 			>
-				<Plus class="size-3" weight="bold" />
-				<span>+ Transaksi</span>
+				<Plus class="size-3.5" weight="bold" />
 			</button>
 
 			{#if canRemove}
 				<button
 					type="button"
 					onclick={() => settingsStore.removePeriod(periodKey)}
-					class="flex cursor-pointer items-center justify-center size-6 rounded text-[#787774] transition-colors hover:bg-[#F0EFEC] hover:text-[#9F2F2D]"
+					class="flex size-6 cursor-pointer items-center justify-center rounded text-[#787774] transition-colors hover:bg-[#F0EFEC] hover:text-[#9F2F2D] active:scale-95"
 					title="Hapus periode dari board"
-					aria-label="Hapus periode"
+					aria-label="Hapus periode dari board"
 				>
 					<Trash class="size-3.5" weight="bold" />
 				</button>
