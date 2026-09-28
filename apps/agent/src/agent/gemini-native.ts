@@ -1,18 +1,20 @@
 import { GoogleGenAI, type FunctionDeclaration, Type } from '@google/genai';
 import type { PageContext } from '@maniyy/shared';
 import { createFinancialTools } from './tools/financial.js';
+import { createMutationTools } from './tools/mutations.js';
 import { createUICommandTools } from './tools/ui-commands.js';
 import { buildSystemPrompt } from './system-prompt.js';
 
 export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: string, fetcher?: Fetcher) {
 	const ai = new GoogleGenAI({ apiKey });
 	const financialTools = createFinancialTools(reedrichUrl, token, fetcher);
+	const mutationTools = createMutationTools(reedrichUrl, token, fetcher);
 	const uiCommandTools = createUICommandTools();
 
 	const toolDeclarations: FunctionDeclaration[] = [
 		{
 			name: 'get_snapshot',
-			description: 'Ambil ringkasan portofolio: total net worth, rincian saldo wallet (termasuk mata uang asing), dan top kategori pengeluaran.',
+			description: 'Ambil ringkasan portofolio: total net worth (beserta byCurrency), rincian saldo wallet (termasuk mata uang asing), dan top kategori pengeluaran.',
 			parameters: {
 				type: Type.OBJECT,
 				properties: {}
@@ -30,6 +32,37 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 					categoryId: { type: Type.STRING, description: 'Filter ID kategori' },
 					limit: { type: Type.NUMBER, description: 'Batas jumlah' }
 				}
+			}
+		},
+		{
+			name: 'create_transaction',
+			description: 'Catat transaksi pengeluaran atau pemasukan baru ke dompet pengguna.',
+			parameters: {
+				type: Type.OBJECT,
+				properties: {
+					walletId: { type: Type.STRING, description: 'ID dompet' },
+					categoryId: { type: Type.STRING, description: 'ID kategori' },
+					amount: { type: Type.NUMBER, description: 'Nominal dalam Rupiah' },
+					type: { type: Type.STRING, description: 'expense atau income' },
+					date: { type: Type.STRING, description: 'Tanggal (YYYY-MM-DD)' },
+					description: { type: Type.STRING, description: 'Keterangan transaksi' }
+				},
+				required: ['walletId', 'categoryId', 'amount', 'type', 'date']
+			}
+		},
+		{
+			name: 'create_transfer',
+			description: 'Catat transfer uang antar dompet.',
+			parameters: {
+				type: Type.OBJECT,
+				properties: {
+					sourceWalletId: { type: Type.STRING, description: 'ID dompet asal' },
+					targetWalletId: { type: Type.STRING, description: 'ID dompet tujuan' },
+					amount: { type: Type.NUMBER, description: 'Nominal transfer' },
+					description: { type: Type.STRING, description: 'Keterangan' },
+					date: { type: Type.STRING, description: 'Tanggal transfer (YYYY-MM-DD)' }
+				},
+				required: ['sourceWalletId', 'targetWalletId', 'amount']
 			}
 		},
 		{
@@ -58,10 +91,20 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			parameters: {
 				type: Type.OBJECT,
 				properties: {
-					tab: { type: Type.STRING, description: 'Tab tujuan' },
+					tab: { type: Type.STRING, description: 'Tab tujuan (all, spendable, locked)' },
 					message: { type: Type.STRING, description: 'Pesan ke pengguna' }
 				},
 				required: ['tab', 'message']
+			}
+		},
+		{
+			name: 'open_transaction_form',
+			description: 'Buka popup modal form pencatatan transaksi baru di layar.',
+			parameters: {
+				type: Type.OBJECT,
+				properties: {
+					message: { type: Type.STRING, description: 'Pesan konfirmasi' }
+				}
 			}
 		}
 	];
@@ -81,6 +124,29 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 					},
 					{ toolCallId, messages: [] }
 				);
+			case 'create_transaction':
+				return await mutationTools.create_transaction.execute(
+					{
+						walletId: String(args.walletId),
+						categoryId: String(args.categoryId),
+						amount: Number(args.amount),
+						type: args.type === 'income' ? 'income' : 'expense',
+						date: String(args.date),
+						description: typeof args.description === 'string' ? args.description : undefined
+					},
+					{ toolCallId, messages: [] }
+				);
+			case 'create_transfer':
+				return await mutationTools.create_transfer.execute(
+					{
+						sourceWalletId: String(args.sourceWalletId),
+						targetWalletId: String(args.targetWalletId),
+						amount: Number(args.amount),
+						description: typeof args.description === 'string' ? args.description : undefined,
+						date: typeof args.date === 'string' ? args.date : undefined
+					},
+					{ toolCallId, messages: [] }
+				);
 			case 'get_categories':
 				return await financialTools.get_categories.execute({}, { toolCallId, messages: [] });
 			case 'navigate_page':
@@ -91,6 +157,11 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			case 'change_tab':
 				return await uiCommandTools.change_tab.execute(
 					args as { tab: 'all' | 'spendable' | 'locked'; message: string },
+					{ toolCallId, messages: [] }
+				);
+			case 'open_transaction_form':
+				return await uiCommandTools.open_transaction_form.execute(
+					{ message: typeof args.message === 'string' ? args.message : 'Membuka form transaksi' },
 					{ toolCallId, messages: [] }
 				);
 			default:
