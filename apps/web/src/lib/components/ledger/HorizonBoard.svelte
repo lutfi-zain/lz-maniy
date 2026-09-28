@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
-	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline.js';
+	import { calculatePointInTimeNetWorth, calculatePointInTimeWalletBalances } from '$lib/utils/networth-timeline.js';
 	import { getConvertedBalanceInIDR } from '$lib/utils/currency.js';
 	import HorizonPeriodColumn, { type GlobalFilters } from './HorizonPeriodColumn.svelte';
 	import AddPeriodCard from './AddPeriodCard.svelte';
@@ -43,30 +43,12 @@
 		return w?.currency ?? 'IDR';
 	}
 
-	// Goal wallet mapping: Set of wallet IDs associated with each goal
-	const goalWalletMap = $derived.by(() => {
-		const map = new Map<string, string[]>();
-		for (const g of activeGoals) {
-			const linkedIds = (g.linkedWalletsBreakdown ?? []).map((w) => w.walletId);
-			map.set(g.goalId, linkedIds);
-		}
-		return map;
-	});
 
 	// Cascading Period Summaries Computation
 	const periodSummaries = $derived.by(() => {
 		const summaries: PeriodSummary[] = [];
-		let runningNetWorth = currentNetWorth;
-		let runningSpendable = currentSpendable;
-		let runningLocked = currentLocked;
 
-		// Running accumulated balances for each goal
-		const runningGoalAmounts = new Map<string, number>();
-		for (const g of activeGoals) {
-			runningGoalAmounts.set(g.goalId, g.currentAmount);
-		}
-
-		// Milestone tracking so a goal only badges "Tercapai!" the first time it crosses 100%
+		// Milestone tracking so a goal only badges "Tercapai!" the first period it crosses 100%
 		const achievedGoals = new Set<string>();
 
 		for (let i = 0; i < orderedPeriods.length; i++) {
@@ -76,10 +58,6 @@
 			// Filter transactions for this period to compute cashflow
 			let inSum = 0;
 			let outSum = 0;
-			let plannedGoalTransfers = 0;
-
-			// Goal-specific planned contributions in this period
-			const periodGoalDelta = new Map<string, number>();
 
 			for (const t of allTxs) {
 				const txDate = t.transactionDate.slice(0, 10);
@@ -91,63 +69,40 @@
 						inSum += amtIDR;
 					} else if (t.transactionType === 'expense') {
 						outSum += amtIDR;
-					} else if (t.transactionType === 'transfer' && t.transactionTargetWalletId) {
-						// Check if transfer targets a goal-linked wallet
-						for (const [goalId, walletIds] of goalWalletMap.entries()) {
-							if (walletIds.includes(t.transactionTargetWalletId)) {
-								const curVal = periodGoalDelta.get(goalId) ?? 0;
-								periodGoalDelta.set(goalId, curVal + amtIDR);
-								plannedGoalTransfers += amtIDR;
-							}
-						}
 					}
 				}
 			}
 
 			const net = inSum - outSum;
 
-			let closingNetWorth = 0;
-			let spendable = 0;
-			let locked = 0;
-			let label = 'PROYEKSI NET WORTH';
+			// Deterministic portfolio Net Worth and Spendable/Locked breakdown at this period's horizon
+			const nwResult = calculatePointInTimeNetWorth({
+				currentNetWorth,
+				allTransactions: allTxs,
+				endDate,
+				wallets: allWallets,
+				currentSpendable,
+				currentLocked
+			});
 
-			if (i === 0) {
-				// Anchor period 0 to existing robust calculatePointInTimeNetWorth
-				const baseResult = calculatePointInTimeNetWorth({
-					currentNetWorth,
-					allTransactions: allTxs,
-					endDate,
-					wallets: allWallets,
-					currentSpendable,
-					currentLocked
-				});
-				closingNetWorth = baseResult.amount;
-				spendable = baseResult.spendableAmount;
-				locked = baseResult.lockedAmount;
-				label = baseResult.label;
+			// Deterministic point-in-time balances for every individual wallet at this period's horizon
+			const walletBalancesAtHorizon = calculatePointInTimeWalletBalances({
+				wallets: allWallets,
+				allTransactions: allTxs,
+				endDate
+			});
 
-				runningNetWorth = closingNetWorth;
-				runningSpendable = spendable;
-				runningLocked = locked;
-			} else {
-				// Cascading accumulation for subsequent periods
-				runningNetWorth += net;
-				// Transfers into goals/locked increase locked and reduce spendable
-				runningSpendable = Math.max(0, runningSpendable + net - plannedGoalTransfers);
-				runningLocked += plannedGoalTransfers;
-
-				closingNetWorth = runningNetWorth;
-				spendable = runningSpendable;
-				locked = runningLocked;
-				label = 'PROYEKSI NET WORTH';
-			}
-
-			// Compute Goal Snapshots at this horizon
+			// Compute Goal Snapshots derived from linked wallet balances at this horizon
 			const goalSnapshots: GoalProjection[] = activeGoals.map((g) => {
-				const prevAmt = runningGoalAmounts.get(g.goalId) ?? g.currentAmount;
-				const addition = periodGoalDelta.get(g.goalId) ?? 0;
-				const currentAmount = prevAmt + addition;
-				runningGoalAmounts.set(g.goalId, currentAmount);
+				let currentAmount = 0;
+				if (g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0) {
+					for (const lw of g.linkedWalletsBreakdown) {
+						const rawBal = walletBalancesAtHorizon.get(lw.walletId) ?? lw.balance;
+						currentAmount += getConvertedBalanceInIDR(rawBal, lw.currency);
+					}
+				} else {
+					currentAmount = g.currentAmount;
+				}
 
 				const progressPercentage = g.targetAmount > 0 ? (currentAmount / g.targetAmount) * 100 : 0;
 				const reached = currentAmount >= g.targetAmount && g.targetAmount > 0;
@@ -174,11 +129,11 @@
 				income: inSum,
 				expense: outSum,
 				net,
-				closingNetWorth,
-				spendable,
-				locked,
+				closingNetWorth: nwResult.amount,
+				spendable: nwResult.spendableAmount,
+				locked: nwResult.lockedAmount,
 				goalSnapshots,
-				label
+				label: nwResult.label
 			});
 		}
 
