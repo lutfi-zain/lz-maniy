@@ -19,7 +19,7 @@ The shared types package SHALL define the `PageContext` type capturing the compl
   - `activeDrawer?: { type: DrawerType; isOpen: boolean }` (drawer visibility state)
 
 ### Requirement: Chat Message and History Models
-The shared types package SHALL define standard types for chat messages, roles, and tool executions.
+The shared types package SHALL define standard types for chat messages, roles, tool executions, and assistant response versioning.
 
 #### Scenario: Chat Message Structure
 - **WHEN** consumer imports `ChatMessage` from `@maniyy/shared`
@@ -33,6 +33,11 @@ The shared types package SHALL define standard types for chat messages, roles, a
   - `timestamp: number`
   - `imageRef?: string` (optional client cache identifier for images)
 
+#### Scenario: Chat Message Structure with Response Variants
+- **WHEN** consumer imports `ChatMessage` from `@maniyy/shared`
+- **THEN** the interface defines:
+  - `variants?: Array<{ content: string; toolInvocations?: ToolInvocationItem[]; timestamp: number; error?: string }>` (alternative assistant generations)
+  - `activeVariantIndex?: number` (currently selected 0-based variant index)
 ### Requirement: UI Command Protocol Types
 The shared types package SHALL define the discriminated union for `UICommand` payloads returned by the agent.
 
@@ -59,20 +64,28 @@ The shared types package SHALL define structures for conversation listing, expor
 - **THEN** the interface includes `version: string`, `exportedAt: number`, `conversations: Array<ConversationMeta & { messages: ChatMessage[] }>`
 
 ### Requirement: Model Configuration and Provider Types
-The shared types package SHALL define configurations and capability flags for AI model providers.
+The shared types package SHALL define configurations and capability flags for AI model providers including thinking/reasoning and OpenCode.
 
 #### Scenario: Model Config Structure
 - **WHEN** consumer imports `ModelConfig` from `@maniyy/shared`
 - **THEN** the interface provides:
-  - `provider: 'gemini' | 'groq'`
+  - `provider: 'gemini' | 'groq' | 'opencode'`
   - `model: string`
   - `displayName: string`
   - `capabilities: { vision: boolean; tool_calling: boolean }`
 
+#### Scenario: Model Config Structure with Thinking Capabilities
+- **WHEN** consumer imports `ModelConfig` from `@maniyy/shared`
+- **THEN** the interface supports:
+  - `provider: 'gemini' | 'groq' | 'opencode'`
+  - `model: string`
+  - `displayName: string`
+  - `capabilities: { vision: boolean; tool_calling: boolean; thinking?: boolean }`
+  - `thinkingLevels?: Array<'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'>`
+
 #### Scenario: Agent Settings Structure
 - **WHEN** consumer imports `AgentSettings` from `@maniyy/shared`
 - **THEN** the interface defines `defaultProvider: 'gemini' | 'groq'`, `defaultModel: string`, and optional `systemPromptOverride?: string`
-
 ### Requirement: Re-Export of Core Domain Types
 The shared types package SHALL re-export all core Reedrich financial entity and DTO types.
 
@@ -86,3 +99,10 @@ The shared package SHALL contain zero external runtime dependencies and build as
 #### Scenario: Dependency Verification
 - **WHEN** `@maniyy/shared` package is inspected
 - **THEN** its `package.json` contains no runtime `dependencies`, only `devDependencies` for TypeScript compilation and validation
+### Requirement: Thinking Level and Stream Request Configuration
+The shared types package SHALL define request parameters for selecting thinking effort levels during streaming generation.
+
+#### Scenario: Stream Request with Thinking Level
+- **WHEN** consumer constructs a `ChatStreamRequest`
+- **THEN** the payload accepts an optional `thinkingLevel?: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'`
+- **THEN** the payload accepts `model?: { provider: 'gemini' | 'groq' | 'opencode'; model: string }`
