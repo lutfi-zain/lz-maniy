@@ -6,6 +6,7 @@
 	import { dFmt } from '$lib/utils/dates';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import Trash from 'phosphor-svelte/lib/Trash';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import PeriodSummaryCard, { type PeriodSummary } from './PeriodSummaryCard.svelte';
 	import type { TransactionRecord } from '$lib/types/account-detail';
 
@@ -167,7 +168,23 @@
 
 	<!-- Dense Ledger Table -->
 	<div class="h-[320px] overflow-y-auto divide-y divide-[#EAEAEA] text-xs">
-		{#if periodTransactions.length === 0}
+		{#if reedrichStore.isLedgerLoading && periodTransactions.length === 0}
+			<div class="space-y-3 p-3.5">
+				{#each [0, 1, 2, 3, 4] as i (i)}
+					<div class="space-y-1.5 py-1">
+						<div class="flex items-center justify-between gap-2">
+							<Skeleton class="h-3 w-14 shrink-0" />
+							<Skeleton class="h-3 flex-1 max-w-[140px]" />
+							<Skeleton class="h-3 w-20 shrink-0 text-right" />
+						</div>
+						<div class="flex items-center justify-between">
+							<Skeleton class="h-2.5 w-16" />
+							<Skeleton class="h-2.5 w-12" />
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else if periodTransactions.length === 0}
 			<div class="flex h-full flex-col items-center justify-center p-4 text-center">
 				<p class="text-[11px] text-[#787774]">Belum ada transaksi di periode ini.</p>
 				<button
