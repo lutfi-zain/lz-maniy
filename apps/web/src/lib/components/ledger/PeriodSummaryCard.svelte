@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
 	import Target from 'phosphor-svelte/lib/Target';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 
 	export interface GoalProjection {
 		goalId: string;
@@ -29,7 +31,34 @@
 </script>
 
 <div class="space-y-3 rounded-b-lg border-t border-[#EAEAEA] bg-[#FDFCFB] p-3 text-xs">
-	<!-- Layer 1: Cashflow Metrics -->
+	{#if reedrichStore.isLedgerLoading && (!summary || !summary.closingNetWorth)}
+		<!-- Skeleton state for summary card -->
+		<div class="space-y-1.5 border-b border-[#EAEAEA] pb-2.5">
+			<div class="flex justify-between">
+				<Skeleton class="h-2.5 w-20" />
+				<Skeleton class="h-3 w-16" />
+			</div>
+			<div class="flex justify-between">
+				<Skeleton class="h-2.5 w-24" />
+				<Skeleton class="h-2.5 w-24" />
+			</div>
+		</div>
+		<div class="space-y-1 border-b border-[#EAEAEA] pb-2.5">
+			<div class="flex justify-between">
+				<Skeleton class="h-2.5 w-28" />
+				<Skeleton class="h-4 w-24" />
+			</div>
+			<div class="flex justify-between">
+				<Skeleton class="h-2.5 w-20" />
+				<Skeleton class="h-2.5 w-20" />
+			</div>
+		</div>
+		<div class="space-y-2">
+			<Skeleton class="h-2.5 w-20" />
+			<Skeleton class="h-10 w-full rounded" />
+		</div>
+	{:else}
+		<!-- Layer 1: Cashflow Metrics -->
 	<div class="space-y-1.5 border-b border-[#EAEAEA] pb-2.5">
 		<div class="flex items-center justify-between text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 			<span>Arus Kas Bulan Ini</span>
@@ -123,4 +152,5 @@
 			</div>
 		{/if}
 	</div>
+	{/if}
 </div>

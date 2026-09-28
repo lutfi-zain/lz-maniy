@@ -6,6 +6,7 @@
 	import HorizonPeriodColumn, { type GlobalFilters } from './HorizonPeriodColumn.svelte';
 	import AddPeriodCard from './AddPeriodCard.svelte';
 	import type { PeriodSummary, GoalProjection } from './PeriodSummaryCard.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
 	let { globalFilters }: { globalFilters: GlobalFilters } = $props();
 
@@ -141,8 +142,68 @@
 	});
 </script>
 
-<!-- Multi-Period Wrapping Grid -->
-<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+{#if reedrichStore.isLedgerLoading && reedrichStore.allTransactions.length === 0}
+	<!-- Skeleton Loading Board -->
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+		{#each [0, 1, 2] as i (i)}
+			<div class="flex flex-col rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
+				<!-- Header skeleton -->
+				<div class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#FDFCFB] px-3.5 py-2.5">
+					<div class="space-y-1">
+						<Skeleton class="h-3.5 w-24" />
+						<Skeleton class="h-2.5 w-16" />
+					</div>
+					<Skeleton class="size-6 rounded" />
+				</div>
+				<!-- Table rows skeleton -->
+				<div class="h-[320px] divide-y divide-[#EAEAEA] p-3 space-y-3">
+					{#each [0, 1, 2, 3, 4] as r (r)}
+						<div class="space-y-1.5 py-1">
+							<div class="flex items-center justify-between gap-2">
+								<Skeleton class="h-3 w-14 shrink-0" />
+								<Skeleton class="h-3 flex-1 max-w-[140px]" />
+								<Skeleton class="h-3 w-20 shrink-0 text-right" />
+							</div>
+							<div class="flex items-center justify-between">
+								<Skeleton class="h-2.5 w-16" />
+								<Skeleton class="h-2.5 w-12" />
+							</div>
+						</div>
+					{/each}
+				</div>
+				<!-- Summary card skeleton -->
+				<div class="space-y-3 rounded-b-lg border-t border-[#EAEAEA] bg-[#FDFCFB] p-3">
+					<div class="space-y-1.5 border-b border-[#EAEAEA] pb-2.5">
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-20" />
+							<Skeleton class="h-3 w-16" />
+						</div>
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-24" />
+							<Skeleton class="h-2.5 w-24" />
+						</div>
+					</div>
+					<div class="space-y-1 border-b border-[#EAEAEA] pb-2.5">
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-28" />
+							<Skeleton class="h-4 w-24" />
+						</div>
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-20" />
+							<Skeleton class="h-2.5 w-20" />
+						</div>
+					</div>
+					<div class="space-y-2">
+						<Skeleton class="h-2.5 w-20" />
+						<Skeleton class="h-10 w-full rounded" />
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
+{:else}
+	<!-- Multi-Period Wrapping Grid -->
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
 	{#each orderedPeriods as periodKey, i (periodKey)}
 		{@const { startDate, endDate } = getMonthDateBounds(periodKey)}
 		<HorizonPeriodColumn
@@ -157,4 +218,5 @@
 
 	<!-- Add Period Action Card -->
 	<AddPeriodCard />
-</div>
+	</div>
+{/if}
