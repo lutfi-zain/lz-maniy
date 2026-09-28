@@ -1,0 +1,88 @@
+# agent-chat/shared-types Specification
+
+## Purpose
+Shared TypeScript contracts, data models, and payload types shared across the SvelteKit frontend web client (`apps/web`) and the Cloudflare Worker agent backend (`apps/agent`) with zero runtime dependencies.
+
+## Requirements
+
+### Requirement: Page Context Contract
+The shared types package SHALL define the `PageContext` type capturing the complete user interface state for agent awareness.
+
+#### Scenario: Page Context Structure
+- **WHEN** consumer imports `PageContext` from `@maniyy/shared`
+- **THEN** the type specifies:
+  - `route: string` (current application path)
+  - `activeTab?: string` (active cockpit/studio tab)
+  - `selectedInstitution?: string` (currently filtered bank/e-wallet institution)
+  - `dateFilter?: { start: string; end: string }` (active date range)
+  - `visibleWallets?: Array<{ walletId: string; walletName: string; balance: number }>` (visible wallet items)
+  - `activeDrawer?: { type: DrawerType; isOpen: boolean }` (drawer visibility state)
+
+### Requirement: Chat Message and History Models
+The shared types package SHALL define standard types for chat messages, roles, and tool executions.
+
+#### Scenario: Chat Message Structure
+- **WHEN** consumer imports `ChatMessage` from `@maniyy/shared`
+- **THEN** the interface defines:
+  - `id: string` (unique message UUID)
+  - `conversationId: string` (parent conversation UUID)
+  - `role: 'user' | 'assistant' | 'system' | 'tool'`
+  - `content: string`
+  - `toolCalls?: ToolCallPayload[]`
+  - `toolResults?: ToolResultPayload[]`
+  - `timestamp: number`
+  - `imageRef?: string` (optional client cache identifier for images)
+
+### Requirement: UI Command Protocol Types
+The shared types package SHALL define the discriminated union for `UICommand` payloads returned by the agent.
+
+#### Scenario: UI Command Types and Actions
+- **WHEN** consumer imports `UICommand` from `@maniyy/shared`
+- **THEN** the type is a discriminated union with `type: 'ui_command'` and `command`:
+  - `'navigate'`: payload `{ route: string }`
+  - `'filter'`: payload `{ institution?: string; walletId?: string }`
+  - `'tab'`: payload `{ tab: string }`
+  - `'date_range'`: payload `{ start: string; end: string }`
+  - `'drawer'`: payload `{ drawerState: DrawerState }`
+  - `'transaction_form'`: payload `{ mode: 'create' | 'edit'; formData?: Partial<CreateTransactionPayload> }`
+  - `'focus'`: payload `{ selector: string }`
+
+### Requirement: Conversation Metadata and Management Types
+The shared types package SHALL define structures for conversation listing, export, and import.
+
+#### Scenario: Conversation Metadata Definition
+- **WHEN** consumer imports `ConversationMeta` from `@maniyy/shared`
+- **THEN** the interface contains `id: string`, `title: string`, `model: string`, `provider: 'gemini' | 'groq'`, `createdAt: number`, `updatedAt: number`, and `messageCount: number`
+
+#### Scenario: Export and Import Payload Bundles
+- **WHEN** consumer imports `ConversationExportBundle` from `@maniyy/shared`
+- **THEN** the interface includes `version: string`, `exportedAt: number`, `conversations: Array<ConversationMeta & { messages: ChatMessage[] }>`
+
+### Requirement: Model Configuration and Provider Types
+The shared types package SHALL define configurations and capability flags for AI model providers.
+
+#### Scenario: Model Config Structure
+- **WHEN** consumer imports `ModelConfig` from `@maniyy/shared`
+- **THEN** the interface provides:
+  - `provider: 'gemini' | 'groq'`
+  - `model: string`
+  - `displayName: string`
+  - `capabilities: { vision: boolean; tool_calling: boolean }`
+
+#### Scenario: Agent Settings Structure
+- **WHEN** consumer imports `AgentSettings` from `@maniyy/shared`
+- **THEN** the interface defines `defaultProvider: 'gemini' | 'groq'`, `defaultModel: string`, and optional `systemPromptOverride?: string`
+
+### Requirement: Re-Export of Core Domain Types
+The shared types package SHALL re-export all core Reedrich financial entity and DTO types.
+
+#### Scenario: Core Domain Exports
+- **WHEN** consumers import domain types from `@maniyy/shared`
+- **THEN** the package provides `UserProfileDTO`, `TransactionType`, `WalletItem`, `AccountDetail`, `TransactionRecord`, `CreateTransactionPayload`, `CreateTransferPayload`, `UpdateTransactionPayload`, `CategoryRecord`, `DrawerType`, and `DrawerState` without requiring import from application-specific paths
+
+### Requirement: Zero Runtime Dependency Guarantee
+The shared package SHALL contain zero external runtime dependencies and build as pure TypeScript declarations.
+
+#### Scenario: Dependency Verification
+- **WHEN** `@maniyy/shared` package is inspected
+- **THEN** its `package.json` contains no runtime `dependencies`, only `devDependencies` for TypeScript compilation and validation
