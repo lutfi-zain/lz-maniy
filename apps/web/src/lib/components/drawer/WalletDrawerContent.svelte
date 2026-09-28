@@ -2,12 +2,39 @@
 	import { fmtCurrency, fmtIDR } from '$lib/utils/currency';
 	import { dFmtTime } from '$lib/utils/dates';
 	import DrawerTransactionTable from './DrawerTransactionTable.svelte';
+	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
+	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
+	import Trash from 'phosphor-svelte/lib/Trash';
 	import type { WalletItem } from '$lib/types/account-detail';
 
 	let { wallet }: { wallet: WalletItem } = $props();
 
+	let showDeleteConfirm = $state(false);
+	let isDeleting = $state(false);
+	let deleteError = $state<string | null>(null);
+
 	const isLocked = $derived(wallet.isLocked === 1);
 	const lt = $derived(wallet.lastTransaction);
+	const canDelete = $derived(wallet.balance === 0);
+
+	function handleEdit() {
+		walletFormStore.openEdit(wallet);
+	}
+
+	async function handleDelete() {
+		if (!canDelete) return;
+		isDeleting = true;
+		deleteError = null;
+		try {
+			await reedrichStore.deleteWallet(wallet.walletId);
+			reedrichStore.closeDrawer();
+		} catch (err: unknown) {
+			deleteError = err instanceof Error ? err.message : 'Gagal menghapus dompet';
+			isDeleting = false;
+		}
+	}
+
 </script>
 
 <div class="space-y-4">
@@ -59,5 +86,80 @@
 			Riwayat Transaksi Dompet
 		</div>
 		<DrawerTransactionTable currency={wallet.currency} />
+	</div>
+	<!-- Action Toolbar -->
+	<div class="space-y-2 border-t border-[#EAEAEA] pt-3 text-xs">
+		{#if deleteError}
+			<div class="rounded-md border border-[#FDEBEC] bg-[#FDF2F2] p-2.5 text-xs text-[#9F2F2D]">
+				{deleteError}
+			</div>
+		{/if}
+
+		<div class="flex items-center justify-end gap-2">
+			<button
+				type="button"
+				onclick={handleEdit}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
+			>
+				<PencilSimple class="size-3.5" weight="bold" />
+				<span>Edit Dompet</span>
+			</button>
+
+			<button
+				type="button"
+				onclick={() => (showDeleteConfirm = true)}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
+			>
+				<Trash class="size-3.5" weight="bold" />
+				<span>Hapus</span>
+			</button>
+		</div>
+
+		<!-- Inline Delete Confirmation -->
+		{#if showDeleteConfirm}
+			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
+				{#if !canDelete}
+					<p class="text-xs font-medium text-[#9F2F2D]">
+						Dompet tidak dapat dihapus karena saldo masih tersisa ({fmtCurrency(wallet.balance, wallet.currency)}).
+					</p>
+					<p class="mt-0.5 text-[11px] text-[#787774]">
+						Pindahkan atau sesuaikan saldo menjadi 0 terlebih dahulu sebelum menghapus dompet ini.
+					</p>
+					<div class="mt-2.5 flex justify-end">
+						<button
+							type="button"
+							onclick={() => (showDeleteConfirm = false)}
+							class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
+						>
+							Tutup
+						</button>
+					</div>
+				{:else}
+					<p class="text-xs font-medium text-[#9F2F2D]">
+						Yakin ingin menghapus dompet "{wallet.walletName}"?
+					</p>
+					<p class="mt-0.5 text-[11px] text-[#787774]">
+						Tindakan ini permanen. Pastikan tidak ada target tabungan atau tagihan rutin yang terhubung ke dompet ini.
+					</p>
+					<div class="mt-2.5 flex items-center justify-end gap-2">
+						<button
+							type="button"
+							onclick={() => (showDeleteConfirm = false)}
+							class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
+						>
+							Batal
+						</button>
+						<button
+							type="button"
+							onclick={handleDelete}
+							disabled={isDeleting}
+							class="cursor-pointer rounded-md bg-[#9F2F2D] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+						>
+							{isDeleting ? 'Menghapus...' : 'Ya, Hapus Dompet'}
+						</button>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>

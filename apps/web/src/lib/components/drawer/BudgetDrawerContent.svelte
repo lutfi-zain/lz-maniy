@@ -1,11 +1,36 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
 	import DrawerTransactionTable from './DrawerTransactionTable.svelte';
+	import { budgetFormStore } from '$lib/stores/budget-form.svelte';
+	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
+	import Trash from 'phosphor-svelte/lib/Trash';
 	import type { BudgetSnapshot } from '$lib/types/account-detail';
 
 	let { budget }: { budget: BudgetSnapshot } = $props();
 
+	let showDeleteConfirm = $state(false);
+	let isDeleting = $state(false);
+	let deleteError = $state<string | null>(null);
+
 	const p = $derived(budget.percentUsed || 0);
+
+	function handleEdit() {
+		budgetFormStore.openEdit(budget);
+	}
+
+	async function handleDelete() {
+		isDeleting = true;
+		deleteError = null;
+		try {
+			await reedrichStore.deleteBudget(budget.budgetId);
+			reedrichStore.closeDrawer();
+		} catch (err: unknown) {
+			deleteError = err instanceof Error ? err.message : 'Gagal menghapus budget';
+			isDeleting = false;
+		}
+	}
+
 </script>
 
 <div class="space-y-4">
@@ -46,5 +71,62 @@
 			Transaksi Di Bawah Budget Ini
 		</div>
 		<DrawerTransactionTable currency="IDR" />
+	</div>
+	<!-- Action Toolbar -->
+	<div class="space-y-2 border-t border-[#EAEAEA] pt-3 text-xs">
+		{#if deleteError}
+			<div class="rounded-md border border-[#FDEBEC] bg-[#FDF2F2] p-2.5 text-xs text-[#9F2F2D]">
+				{deleteError}
+			</div>
+		{/if}
+
+		<div class="flex items-center justify-end gap-2">
+			<button
+				type="button"
+				onclick={handleEdit}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
+			>
+				<PencilSimple class="size-3.5" weight="bold" />
+				<span>Edit Pagu</span>
+			</button>
+
+			<button
+				type="button"
+				onclick={() => (showDeleteConfirm = true)}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
+			>
+				<Trash class="size-3.5" weight="bold" />
+				<span>Hapus</span>
+			</button>
+		</div>
+
+		<!-- Inline Delete Confirmation -->
+		{#if showDeleteConfirm}
+			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
+				<p class="text-xs font-medium text-[#9F2F2D]">
+					Yakin ingin menghapus pagu anggaran "{budget.budgetName}"?
+				</p>
+				<p class="mt-0.5 text-[11px] text-[#787774]">
+					Transaksi yang sudah tercatat akan tetap tersimpan di buku besar.
+				</p>
+				<div class="mt-2.5 flex items-center justify-end gap-2">
+					<button
+						type="button"
+						onclick={() => (showDeleteConfirm = false)}
+						class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
+					>
+						Batal
+					</button>
+					<button
+						type="button"
+						onclick={handleDelete}
+						disabled={isDeleting}
+						class="cursor-pointer rounded-md bg-[#9F2F2D] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+					>
+						{isDeleting ? 'Menghapus...' : 'Ya, Hapus Pagu'}
+					</button>
+				</div>
+			</div>
+		{/if}
 	</div>
 </div>

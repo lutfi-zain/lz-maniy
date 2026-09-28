@@ -7,11 +7,19 @@
 	import GoalDrawerContent from './GoalDrawerContent.svelte';
 	import ObligationDrawerContent from './ObligationDrawerContent.svelte';
 	import NetWorthDrawerContent from './NetWorthDrawerContent.svelte';
+	import WalletFormContent from './WalletFormContent.svelte';
+	import CategoryFormContent from './CategoryFormContent.svelte';
+	import BudgetFormContent from './BudgetFormContent.svelte';
+	import GoalFormContent from './GoalFormContent.svelte';
+	import RecurringDetailContent from './RecurringDetailContent.svelte';
+	import RecurringFormContent from './RecurringFormContent.svelte';
+	import ProfileFormContent from './ProfileFormContent.svelte';
 	import type {
 		WalletItem,
 		CategoryBreakdownItem,
 		BudgetSnapshot,
 		GoalSnapshot,
+		RecurringTemplate,
 		ActiveDebt,
 		ActiveLoan,
 		NetWorthSnapshot
@@ -79,12 +87,26 @@
 		<div class="flex-1 overflow-y-auto px-6 py-5">
 			{#if activeDrawer.type === 'wallet'}
 				<WalletDrawerContent wallet={activeDrawer.data.wallet as WalletItem} />
+			{:else if activeDrawer.type === 'wallet-form'}
+				<WalletFormContent />
 			{:else if activeDrawer.type === 'category'}
 				<CategoryDrawerContent item={activeDrawer.data.item as CategoryBreakdownItem} />
+			{:else if activeDrawer.type === 'category-form'}
+				<CategoryFormContent />
 			{:else if activeDrawer.type === 'budget'}
 				<BudgetDrawerContent budget={activeDrawer.data.budget as BudgetSnapshot} />
+			{:else if activeDrawer.type === 'budget-form'}
+				<BudgetFormContent />
 			{:else if activeDrawer.type === 'goal'}
 				<GoalDrawerContent goal={activeDrawer.data.goal as GoalSnapshot} />
+			{:else if activeDrawer.type === 'goal-form'}
+				<GoalFormContent />
+			{:else if activeDrawer.type === 'recurring-detail'}
+				<RecurringDetailContent template={activeDrawer.data.template as RecurringTemplate} />
+			{:else if activeDrawer.type === 'recurring-form'}
+				<RecurringFormContent />
+			{:else if activeDrawer.type === 'profile-form'}
+				<ProfileFormContent />
 			{:else if activeDrawer.type === 'obligation'}
 				<ObligationDrawerContent
 					item={activeDrawer.data.item as ActiveDebt | ActiveLoan}
