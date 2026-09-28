@@ -33,9 +33,9 @@ describe('buildSystemPrompt - Dynamic Temporal & Accounting Rules', () => {
 		expect(prompt).toContain("JANGAN PERNAH menghitung transfer sebagai beban pengurang Net Worth");
 	});
 
-	it('embeds multi-currency awareness', () => {
+	it('embeds multi-currency awareness and FX conversion', () => {
 		const prompt = buildSystemPrompt(sampleContext, 'Lutfi Zain');
-		expect(prompt).toContain("Multi-Currency (Valuta Asing & Kripto)");
+		expect(prompt).toContain("Multi-Currency FX Conversion");
 		expect(prompt).toContain("byCurrency");
 	});
 

@@ -30,6 +30,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 					totalLocked: data.wallets.locked.total,
 					wallets: [
 						...data.wallets.spendable.items.map((w) => ({
+							id: w.walletId,
 							name: w.walletName,
 							institution: w.institution,
 							balance: w.balance,
@@ -37,6 +38,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 							isLocked: false
 						})),
 						...data.wallets.locked.items.map((w) => ({
+							id: w.walletId,
 							name: w.walletName,
 							institution: w.institution,
 							balance: w.balance,
@@ -60,7 +62,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				endDate: z.string().optional().describe('Tanggal akhir format YYYY-MM-DD'),
 				walletId: z.string().optional().describe('Filter ID wallet'),
 				categoryId: z.string().optional().describe('Filter ID kategori'),
-				limit: z.number().int().min(1).max(50).default(30)
+				limit: z.number().int().min(1).max(100).default(50)
 			}),
 			execute: async (params) => {
 				const qs = new URLSearchParams();
@@ -74,13 +76,14 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				const raw = (await res.json()) as TransactionRecord[];
 				const items = Array.isArray(raw) ? raw : (raw as unknown as { items: TransactionRecord[] }).items ?? [];
 				return items
-					.slice(0, 40)
 					.map((t) => ({
 						date: t.transactionDate ? t.transactionDate.slice(0, 10) : '',
 						amount: t.transactionAmount,
+						walletId: t.transactionWalletId,
+						targetWalletId: t.transactionTargetWalletId,
 						type: t.transactionType,
 						isPlanned: t.transactionIsPlanned === 1,
-						desc: (t.transactionDescription ?? '').slice(0, 40)
+						desc: (t.transactionDescription ?? '').slice(0, 50)
 					}));
 			}
 		}),
