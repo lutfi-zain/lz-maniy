@@ -1,5 +1,5 @@
-import { GoogleGenAI, type FunctionDeclaration, Type } from '@google/genai';
-import type { PageContext } from '@maniyy/shared';
+import { GoogleGenAI, type FunctionDeclaration, ThinkingLevel as GeminiThinkingLevel, Type } from '@google/genai';
+import type { PageContext, ThinkingLevel } from '@maniyy/shared';
 import { createFinancialTools } from './tools/financial.js';
 import { createMutationTools } from './tools/mutations.js';
 import { createUICommandTools } from './tools/ui-commands.js';
@@ -173,22 +173,51 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 		modelName: string,
 		userMessage: string,
 		pageContext: PageContext,
-		userName: string
+		userName: string,
+		priorMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+		thinkingLevel?: ThinkingLevel
 	): AsyncGenerator<string> {
 		yield `f:{"messageId":"msg-${crypto.randomUUID()}"}\n`;
 
 		const systemInstruction = buildSystemPrompt(pageContext, userName);
 
+		const thinkingConfig = (() => {
+			if (!thinkingLevel || thinkingLevel === 'off') {
+				return { thinkingBudget: 0 };
+			}
+			switch (thinkingLevel) {
+				case 'minimal':
+					return { thinkingLevel: GeminiThinkingLevel.MINIMAL, thinkingBudget: 1024 };
+				case 'low':
+					return { thinkingLevel: GeminiThinkingLevel.LOW, thinkingBudget: 2048 };
+				case 'medium':
+					return { thinkingLevel: GeminiThinkingLevel.MEDIUM, thinkingBudget: 8192 };
+				case 'high':
+				case 'xhigh':
+					return { thinkingLevel: GeminiThinkingLevel.HIGH, thinkingBudget: 24576 };
+				default:
+					return undefined;
+			}
+		})();
+
+		const history = priorMessages
+			.filter((m) => m.content?.trim())
+			.map((m) => ({
+				role: m.role === 'user' ? 'user' : 'model',
+				parts: [{ text: m.content }]
+			}));
+
 		const chat = ai.chats.create({
 			model: modelName,
+			history,
 			config: {
 				systemInstruction,
-				tools: [{ functionDeclarations: toolDeclarations }]
+				tools: [{ functionDeclarations: toolDeclarations }],
+				...(thinkingConfig ? { thinkingConfig } : {})
 			}
 		});
 
 		let response = await chat.sendMessage({ message: userMessage });
-
 		let loops = 8;
 		while (loops-- > 0 && response.functionCalls && response.functionCalls.length > 0) {
 			const fCalls = response.functionCalls;
@@ -212,19 +241,19 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			}
 
 			const stream = await chat.sendMessageStream({ message: parts });
-			let hasText = false;
+			let nextFunctionCalls: typeof response.functionCalls | undefined;
+
 			for await (const chunk of stream) {
 				if (chunk.text) {
-					hasText = true;
 					yield `0:${JSON.stringify(chunk.text)}\n`;
 				}
 				if (chunk.functionCalls && chunk.functionCalls.length > 0) {
+					nextFunctionCalls = chunk.functionCalls;
 					response = chunk;
-					break;
 				}
 			}
 
-			if (hasText) {
+			if (!nextFunctionCalls || nextFunctionCalls.length === 0) {
 				yield `e:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100},"isContinued":false}\n`;
 				yield `d:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100}}\n`;
 				return;

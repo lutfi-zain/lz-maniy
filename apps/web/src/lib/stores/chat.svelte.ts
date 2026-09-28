@@ -1,12 +1,15 @@
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { PUBLIC_AGENT_URL } from '$env/static/public';
-import type {
-	ChatMessage,
-	ConversationMeta,
-	ModelConfig,
-	PageContext,
-	UICommand
+import {
+	DEFAULT_MODELS,
+	type AssistantVariant,
+	type ChatMessage,
+	type ConversationMeta,
+	type ModelConfig,
+	type PageContext,
+	type ThinkingLevel,
+	type UICommand
 } from '@maniyy/shared';
 import { authStore } from './auth.svelte.js';
 import { reedrichStore } from './reedrich.svelte.js';
@@ -27,13 +30,14 @@ export class ChatStore {
 	isStreaming = $state<boolean>(false);
 	panelOpen = $state<boolean>(false);
 	panelWidth = $state<number>(360);
-	availableModels = $state<ModelConfig[]>([]);
+	availableModels = $state<ModelConfig[]>([...DEFAULT_MODELS]);
 	showConversationList = $state<boolean>(false);
+	thinkingLevel = $state<ThinkingLevel>('low');
 	selectedModel = $state<ModelConfig>({
 		provider: 'gemini',
 		model: 'gemini-3.1-flash-lite',
 		displayName: 'Gemini 3.1 Flash Lite (Google)',
-		capabilities: { vision: true, tool_calling: true }
+		capabilities: { vision: true, tool_calling: true, thinking: true }
 	});
 
 	private abortController: AbortController | null = null;
@@ -69,8 +73,16 @@ export class ChatStore {
 
 	setModel = (model: ModelConfig) => {
 		this.selectedModel = model;
+		if (model.capabilities.thinking && this.thinkingLevel === 'off') {
+			this.thinkingLevel = 'low';
+		} else if (!model.capabilities.thinking) {
+			this.thinkingLevel = 'off';
+		}
 	};
 
+	setThinkingLevel = (level: ThinkingLevel) => {
+		this.thinkingLevel = level;
+	};
 	buildPageContext = (): PageContext => ({
 		currentRoute: page.url.pathname,
 		activeTab: reedrichStore.activeTab,
@@ -209,18 +221,110 @@ export class ChatStore {
 		try {
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/models`);
 			if (res.ok) {
-				const models = (await res.json()) as ModelConfig[];
-				this.availableModels = models;
-				const current = models.find((m) => m.model === this.selectedModel.model);
-				if (current) {
-					this.selectedModel = current;
-				} else if (models.length > 0) {
-					this.selectedModel = models[0];
+				const remoteModels = (await res.json()) as ModelConfig[];
+				if (Array.isArray(remoteModels) && remoteModels.length > 0) {
+					const merged = [...remoteModels];
+					for (const def of DEFAULT_MODELS) {
+						const idx = merged.findIndex((m) => m.model === def.model && m.provider === def.provider);
+						if (idx !== -1) {
+							merged[idx] = {
+								...merged[idx],
+								capabilities: { ...merged[idx].capabilities, ...def.capabilities },
+								thinkingLevels: def.thinkingLevels ?? merged[idx].thinkingLevels
+							};
+						} else {
+							merged.push(def);
+						}
+					}
+					this.availableModels = merged;
+					const current = merged.find((m) => m.model === this.selectedModel.model);
+					if (current) {
+						this.selectedModel = current;
+					}
 				}
 			}
 		} catch {
-			/* ignore */
+			/* fallback to DEFAULT_MODELS */
 		}
+	};
+
+	private syncActiveVariant = (msg: ChatMessage): ChatMessage => {
+		if (msg.role !== 'assistant') return msg;
+		const variants: AssistantVariant[] =
+			msg.variants && msg.variants.length > 0
+				? [...msg.variants]
+				: [{ content: msg.content, toolInvocations: msg.toolInvocations, timestamp: msg.timestamp }];
+		const activeIndex = msg.activeVariantIndex ?? variants.length - 1;
+		variants[activeIndex] = {
+			content: msg.content,
+			toolInvocations: msg.toolInvocations ? [...msg.toolInvocations] : [],
+			timestamp: Date.now()
+		};
+		return {
+			...msg,
+			variants,
+			activeVariantIndex: activeIndex
+		};
+	};
+
+	switchMessageVariant = (messageId: string, index: number) => {
+		this.messages = this.messages.map((m) => {
+			if (m.id !== messageId || m.role !== 'assistant' || !m.variants) return m;
+			if (index < 0 || index >= m.variants.length) return m;
+			const targetVariant = m.variants[index];
+			return {
+				...m,
+				activeVariantIndex: index,
+				content: targetVariant.content,
+				toolInvocations: targetVariant.toolInvocations ? [...targetVariant.toolInvocations] : []
+			};
+		});
+	};
+
+	retryMessage = async (messageId: string) => {
+		if (this.isStreaming) return;
+		const target = this.messages.find((m) => m.id === messageId);
+		if (!target || target.role !== 'assistant') return;
+
+		const targetIdx = this.messages.findIndex((m) => m.id === messageId);
+		const userMsg = this.messages
+			.slice(0, targetIdx)
+			.filter((m) => m.role === 'user')
+			.at(-1);
+		if (!userMsg) return;
+
+		const currentVariants: AssistantVariant[] =
+			target.variants && target.variants.length > 0
+				? [...target.variants]
+				: [
+						{
+							content: target.content,
+							toolInvocations: target.toolInvocations ? [...target.toolInvocations] : [],
+							timestamp: target.timestamp
+						}
+					];
+
+		const newVariant: AssistantVariant = {
+			content: '',
+			toolInvocations: [],
+			timestamp: Date.now()
+		};
+		const updatedVariants = [...currentVariants, newVariant];
+		const nextIndex = updatedVariants.length - 1;
+
+		this.messages = this.messages.map((m) =>
+			m.id === messageId
+				? {
+						...m,
+						variants: updatedVariants,
+						activeVariantIndex: nextIndex,
+						content: '',
+						toolInvocations: []
+					}
+				: m
+		);
+
+		await this.executeStream(userMsg.content, target.id);
 	};
 
 	sendMessage = async (text: string, image?: { data: string; mimeType: string }) => {
@@ -235,20 +339,34 @@ export class ChatStore {
 			timestamp: Date.now()
 		};
 		this.messages = [...this.messages, userMsg];
-		this.isStreaming = true;
 
-		// Placeholder for streaming assistant message
 		const assistantId = crypto.randomUUID();
+		const initialVariant: AssistantVariant = {
+			content: '',
+			toolInvocations: [],
+			timestamp: Date.now()
+		};
 		const assistantMsg: ChatMessage = {
 			id: assistantId,
 			conversationId: this.activeConversationId ?? '',
 			role: 'assistant',
 			content: '',
 			toolInvocations: [],
+			variants: [initialVariant],
+			activeVariantIndex: 0,
 			timestamp: Date.now()
 		};
 		this.messages = [...this.messages, assistantMsg];
 
+		await this.executeStream(text, assistantId, image);
+	};
+
+	private executeStream = async (
+		text: string,
+		assistantId: string,
+		image?: { data: string; mimeType: string }
+	) => {
+		this.isStreaming = true;
 		this.abortController = new AbortController();
 
 		try {
@@ -257,6 +375,7 @@ export class ChatStore {
 				conversationId: this.activeConversationId ?? undefined,
 				pageContext: this.buildPageContext(),
 				model: { provider: this.selectedModel.provider, model: this.selectedModel.model },
+				thinkingLevel: this.thinkingLevel,
 				image
 			};
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
@@ -308,7 +427,9 @@ export class ChatStore {
 						try {
 							const delta = JSON.parse(payloadStr) as string;
 							this.messages = this.messages.map((m) =>
-								m.id === assistantId ? { ...m, content: m.content + delta } : m
+								m.id === assistantId
+									? this.syncActiveVariant({ ...m, content: m.content + delta })
+									: m
 							);
 						} catch {
 							/* ignore */
@@ -348,7 +469,7 @@ export class ChatStore {
 							this.messages = this.messages.map((m) => {
 								if (m.id !== assistantId) return m;
 								const current = m.toolInvocations ?? [];
-								return {
+								const updated = {
 									...m,
 									toolInvocations: current.map((t) =>
 										t.toolCallId === toolRes.toolCallId
@@ -356,6 +477,7 @@ export class ChatStore {
 											: t
 									)
 								};
+								return this.syncActiveVariant(updated);
 							});
 							if ((toolRes.result as { type?: string })?.type === 'ui_command') {
 								this.executeUICommand(toolRes.result as UICommand);
@@ -369,7 +491,10 @@ export class ChatStore {
 							const errMsg = JSON.parse(payloadStr) as string;
 							this.messages = this.messages.map((m) =>
 								m.id === assistantId
-									? { ...m, content: m.content ? `${m.content}\n\n⚠️ ${errMsg}` : `⚠️ ${errMsg}` }
+									? this.syncActiveVariant({
+											...m,
+											content: m.content ? `${m.content}\n\n⚠️ ${errMsg}` : `⚠️ ${errMsg}`
+										})
 									: m
 							);
 						} catch {
@@ -425,18 +550,21 @@ export class ChatStore {
 			} else {
 				this.messages = this.messages.map((m) =>
 					m.id === assistantId
-						? {
+						? this.syncActiveVariant({
 								...m,
 								content:
 									m.content ||
 									'Koneksi terputus saat menerima jawaban. Silakan coba lagi.'
-							}
+							})
 						: m
 				);
 			}
 		} finally {
 			this.isStreaming = false;
 			this.abortController = null;
+			this.messages = this.messages.map((m) =>
+				m.id === assistantId ? this.syncActiveVariant(m) : m
+			);
 		}
 	};
 }

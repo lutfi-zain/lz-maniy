@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { ArrowUp, Stop, PaperclipHorizontal } from 'phosphor-svelte';
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import ImageAttachmentPreview from './ImageAttachmentPreview.svelte';
@@ -8,6 +9,16 @@
 	let textareaEl = $state<HTMLTextAreaElement | undefined>(undefined);
 	let fileInputEl = $state<HTMLInputElement | undefined>(undefined);
 
+	$effect(() => {
+		if (chatStore.panelOpen && !chatStore.showConversationList && textareaEl) {
+			const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+			if (isDesktop) {
+				tick().then(() => {
+					textareaEl?.focus();
+				});
+			}
+		}
+	});
 	function autoResize() {
 		if (!textareaEl) return;
 		textareaEl.style.height = 'auto';
