@@ -183,20 +183,6 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Studio Header -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] pb-3">
-		<div>
-			<h1 class="flex items-center gap-2 text-xl font-semibold text-[#111111]">
-				<Bank class="size-5 text-[#111111]" weight="bold" />
-				<span>Matriks Akun & Bank</span>
-			</h1>
-			<p class="mt-0.5 text-xs text-[#787774]">
-				Hierarki rekening terdistribusi menurut institusi keuangan, subtotal saldo per bank, dan
-				pemisahan dana operasional vs cadangan.
-			</p>
-		</div>
-	</div>
-
 	<!-- Macro Summary Tiles -->
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
