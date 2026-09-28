@@ -136,7 +136,8 @@
 						amount: transactionFormStore.amount!,
 						adminFee: transactionFormStore.adminFee || 0,
 						description: transactionFormStore.description.trim() || null,
-						date: transactionFormStore.date
+						date: transactionFormStore.date,
+						isPlanned: transactionFormStore.isPlanned
 					};
 					await reedrichStore.createTransfer(payload);
 				} else {
@@ -452,8 +453,7 @@
 					></textarea>
 				</div>
 
-				<!-- Planned Checkbox (Hidden for transfer) -->
-				{#if transactionType !== 'transfer'}
+				<!-- Planned Checkbox -->
 					<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
 						<label class="flex cursor-pointer items-center gap-2.5">
 							<input
@@ -469,7 +469,6 @@
 							</div>
 						</label>
 					</div>
-				{/if}
 
 				<!-- Budget Linked (Visible only for Expense if budgets exist) -->
 				{#if transactionType === 'expense' && reedrichStore.activeBudgets.length > 0}

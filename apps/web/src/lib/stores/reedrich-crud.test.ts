@@ -73,6 +73,42 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 			await expect(store.deleteWallet('w-non-empty')).rejects.toThrow('Balance must be 0');
 		});
 	});
+	// --- Transfers ---
+	describe('Transfers CRUD', () => {
+		it('createTransfer() sends POST with isPlanned: true and returns transaction', async () => {
+			const mockTransferTxn = {
+				transactionId: 'tx-transfer-1',
+				transactionType: 'transfer',
+				transactionWalletId: 'w-src',
+				transactionTargetWalletId: 'w-tgt',
+				transactionAmount: 100000,
+				transactionIsPlanned: 1
+			};
+			const mockFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+				if (init?.method === 'POST') {
+					return Promise.resolve(new Response(JSON.stringify(mockTransferTxn), { status: 201 }));
+				}
+				return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+			});
+			vi.stubGlobal('fetch', mockFetch);
+
+			const result = await store.createTransfer({
+				sourceWalletId: 'w-src',
+				targetWalletId: 'w-tgt',
+				amount: 100000,
+				isPlanned: true
+			});
+
+			expect(result).toEqual(mockTransferTxn);
+			expect(mockFetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/transfers'),
+				expect.objectContaining({
+					method: 'POST',
+					body: expect.stringContaining('"isPlanned":true')
+				})
+			);
+		});
+	});
 
 	// --- Categories ---
 	describe('Categories CRUD', () => {
