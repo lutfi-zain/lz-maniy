@@ -23,13 +23,21 @@ app.onError((err, c) => {
 app.use(
 	'*',
 	cors({
-		origin: [
-			'http://localhost:5173',
-			'http://localhost:4173',
-			'https://maniyy2.pages.dev',
-			'https://maniyy.lutfidmz.workers.dev'
-		],
-		allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+		origin: (origin) => {
+			if (!origin) return '*';
+			if (
+				origin === 'http://localhost:5173' ||
+				origin === 'http://localhost:4173' ||
+				origin === 'https://maniyy2.pages.dev' ||
+				origin.endsWith('.maniyy2.pages.dev') ||
+				origin === 'https://maniyy.lutfidmz.workers.dev' ||
+				origin === 'https://maniyy-agent.lutfidmz.workers.dev'
+			) {
+				return origin;
+			}
+			return null;
+		},
+		allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 		allowHeaders: ['Content-Type', 'Authorization', 'X-Api-Key'],
 		exposeHeaders: ['X-Conversation-Id', 'X-Is-New-Conversation'],
 		credentials: true
