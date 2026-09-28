@@ -275,85 +275,74 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- Studio Header -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] pb-3">
-		<div>
-			<h1 class="flex items-center gap-2 text-xl font-semibold text-[#111111]">
-				<Table class="size-5 text-[#111111]" weight="bold" />
-				<span>Ledger Studio</span>
-			</h1>
-			<p class="mt-0.5 text-xs text-[#787774]">
-				Tabel transaksi lengkap dengan mesin filter multi-parameter real-time dan kalkulasi agregat
-				langsung.
-			</p>
-		</div>
-
-		<div class="flex items-center gap-2">
-			<ViewModeSwitcher />
-
-			<button
-				type="button"
-				onclick={() => transactionFormStore.openCreate()}
-				class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
-			>
-				<Plus class="size-3.5" weight="bold" />
-				<span>Catat Transaksi</span>
-			</button>
-
-			<button
-				type="button"
-				onclick={resetFilters}
-				class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
-			>
-				Reset Filter
-			</button>
-		</div>
-	</div>
-
-	<!-- Super Dynamic Filter Bar -->
+	<!-- Super Dynamic Filter Bar (Unified Utility Toolbar) -->
 	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
-		<!-- Row 1: Search + Date Range Picker -->
-		<div class="flex flex-wrap items-center gap-3">
-			<!-- Instant Search with Keyboard Shortcut -->
-			<div class="relative w-full flex-1 sm:min-w-[240px]">
-				<MagnifyingGlass
-					class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
-					weight="bold"
-				/>
-				<input
-					id="ledgerSearch"
-					type="search"
-					bind:value={searchKeyword}
-					placeholder="Cari transaksi... (tekan '/' untuk fokus)"
-					class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-12 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
-				/>
-				<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
-			</div>
+		<!-- Row 1: Search + Date Range Picker + Switcher + Actions -->
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<div class="flex flex-1 flex-wrap items-center gap-2.5 min-w-[280px]">
+				<!-- Instant Search with Keyboard Shortcut -->
+				<div class="relative min-w-[200px] flex-1 sm:max-w-[340px]">
+					<MagnifyingGlass
+						class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
+						weight="bold"
+					/>
+					<input
+						id="ledgerSearch"
+						type="search"
+						bind:value={searchKeyword}
+						placeholder="Cari transaksi... (tekan '/' untuk fokus)"
+						class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 pr-10 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden"
+					/>
+					<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
+				</div>
 
-			<!-- Custom 2-Click Date Range Picker with Presets -->
-			<div class="flex items-center gap-1.5">
-				<DateRangePicker
-					bind:start={dateFilterStore.startDate}
-					bind:end={dateFilterStore.endDate}
-					bind:preset={dateFilterStore.preset}
-					onchange={({ preset, start, end }) => {
-						dateFilterStore.setFilter(preset as DatePreset, start, end);
-						currentPage = 1;
-					}}
-				/>
-				{#if dateFilterStore.preset !== 'this_month'}
-					<button
-						type="button"
-						onclick={() => {
-							dateFilterStore.reset();
+				<!-- Custom 2-Click Date Range Picker with Presets -->
+				<div class="flex items-center gap-1.5">
+					<DateRangePicker
+						bind:start={dateFilterStore.startDate}
+						bind:end={dateFilterStore.endDate}
+						bind:preset={dateFilterStore.preset}
+						onchange={({ preset, start, end }) => {
+							dateFilterStore.setFilter(preset as DatePreset, start, end);
 							currentPage = 1;
 						}}
-						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
-						title="Reset ke Bulan Ini"
-					>
-						Reset
-					</button>
-				{/if}
+					/>
+					{#if dateFilterStore.preset !== 'this_month'}
+						<button
+							type="button"
+							onclick={() => {
+								dateFilterStore.reset();
+								currentPage = 1;
+							}}
+							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+							title="Reset ke Bulan Ini"
+						>
+							Reset
+						</button>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Right Actions: View Mode Switcher + Actions -->
+			<div class="flex items-center gap-2">
+				<ViewModeSwitcher />
+
+				<button
+					type="button"
+					onclick={() => transactionFormStore.openCreate()}
+					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
+				>
+					<Plus class="size-3.5" weight="bold" />
+					<span>Catat Transaksi</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={resetFilters}
+					class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1.5 text-xs text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
+				>
+					Reset Filter
+				</button>
 			</div>
 		</div>
 

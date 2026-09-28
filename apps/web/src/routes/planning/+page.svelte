@@ -129,80 +129,67 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Studio Header -->
+	<!-- Planning Utility Toolbar -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] pb-3">
-		<div>
-			<h1 class="flex items-center gap-2 text-xl font-semibold text-[#111111]">
-				<Target class="size-5 text-[#111111]" weight="bold" />
-				<span>Studio Perencanaan & Forecasting</span>
-			</h1>
-			<p class="mt-0.5 text-xs text-[#787774]">
-				Pantau pagu anggaran bulanan, target tabungan berjenjang dari dompet terhubung, dan jadwal
-				kewajiban utang/rutin.
-			</p>
+		<!-- Workspace Sub-tabs -->
+		<div class="flex items-center rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs">
+			<button
+				type="button"
+				onclick={() => (activeSubTab = 'goals')}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+				'goals'
+					? 'bg-white font-semibold text-[#111111] shadow-2xs'
+					: 'text-[#787774] hover:text-[#111111]'}"
+			>
+				<Target class="size-3.5" weight="bold" />
+				<span>Target Tabungan ({goals.length})</span>
+			</button>
+
+			<button
+				type="button"
+				onclick={() => (activeSubTab = 'budgets')}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+				'budgets'
+					? 'bg-white font-semibold text-[#111111] shadow-2xs'
+					: 'text-[#787774] hover:text-[#111111]'}"
+			>
+				<ChartPieSlice class="size-3.5" weight="bold" />
+				<span>Pagu Anggaran ({budgets.length})</span>
+			</button>
+
+			<button
+				type="button"
+				onclick={() => (activeSubTab = 'obligations')}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+				'obligations'
+					? 'bg-white font-semibold text-[#111111] shadow-2xs'
+					: 'text-[#787774] hover:text-[#111111]'}"
+			>
+				<Handshake class="size-3.5" weight="bold" />
+				<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
+			</button>
 		</div>
 
-		<div class="flex flex-wrap items-center gap-2">
-			<!-- Workspace Sub-tabs -->
-			<div class="flex items-center rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs">
+		<!-- Synchronized Global Date Filter -->
+		<div class="flex items-center gap-1.5">
+			<DateRangePicker
+				bind:start={dateFilterStore.startDate}
+				bind:end={dateFilterStore.endDate}
+				bind:preset={dateFilterStore.preset}
+				onchange={({ preset, start, end }) => {
+					dateFilterStore.setFilter(preset as DatePreset, start, end);
+				}}
+			/>
+			{#if dateFilterStore.preset !== 'this_month'}
 				<button
 					type="button"
-					onclick={() => (activeSubTab = 'goals')}
-					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-					'goals'
-						? 'bg-white font-semibold text-[#111111] shadow-2xs'
-						: 'text-[#787774]'}"
+					onclick={() => dateFilterStore.reset()}
+					class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+					title="Reset ke Bulan Ini"
 				>
-					<Target class="size-3.5" weight="bold" />
-					<span>Target Tabungan ({goals.length})</span>
+					Reset
 				</button>
-
-				<button
-					type="button"
-					onclick={() => (activeSubTab = 'budgets')}
-					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-					'budgets'
-						? 'bg-white font-semibold text-[#111111] shadow-2xs'
-						: 'text-[#787774]'}"
-				>
-					<ChartPieSlice class="size-3.5" weight="bold" />
-					<span>Pagu Anggaran ({budgets.length})</span>
-				</button>
-
-				<button
-					type="button"
-					onclick={() => (activeSubTab = 'obligations')}
-					class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
-					'obligations'
-						? 'bg-white font-semibold text-[#111111] shadow-2xs'
-						: 'text-[#787774]'}"
-				>
-					<Handshake class="size-3.5" weight="bold" />
-					<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
-				</button>
-			</div>
-
-			<!-- Synchronized Global Date Filter -->
-			<div class="flex items-center gap-1.5">
-				<DateRangePicker
-					bind:start={dateFilterStore.startDate}
-					bind:end={dateFilterStore.endDate}
-					bind:preset={dateFilterStore.preset}
-					onchange={({ preset, start, end }) => {
-						dateFilterStore.setFilter(preset as DatePreset, start, end);
-					}}
-				/>
-				{#if dateFilterStore.preset !== 'this_month'}
-					<button
-						type="button"
-						onclick={() => dateFilterStore.reset()}
-						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
-						title="Reset ke Bulan Ini"
-					>
-						Reset
-					</button>
-				{/if}
-			</div>
+			{/if}
 		</div>
 	</div>
 
