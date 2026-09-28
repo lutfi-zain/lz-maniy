@@ -13,6 +13,7 @@
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import SortAscending from 'phosphor-svelte/lib/SortAscending';
 	import Plus from 'phosphor-svelte/lib/Plus';
+	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import StatusBadge from '$lib/components/ui/StatusBadge.svelte';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
@@ -429,12 +430,10 @@
 					<!-- Wallets List inside this bank -->
 					<div class="divide-y divide-[#EAEAEA]">
 						{#each group.wallets as w (w.walletId)}
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div
-								onclick={() => openWalletDrawer(w)}
-								class="group flex cursor-pointer flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
-								title="Buka rincian & edit {w.walletName}"
+							<a
+								href="/ledger?walletId={encodeURIComponent(w.walletId)}"
+								class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
+								title="Buka mutasi {w.walletName} di Ledger"
 							>
 								<div class="flex items-center gap-3">
 									<div
@@ -477,10 +476,25 @@
 									</div>
 								</div>
 
-								<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
-									{fmtCurrency(getWalletBalance(w), w.currency)}
+								<div class="flex items-center gap-3">
+									<span class="font-mono text-sm font-semibold text-[#111111] tabular-nums">
+										{fmtCurrency(getWalletBalance(w), w.currency)}
+									</span>
+									<button
+										type="button"
+										onclick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											openWalletDrawer(w);
+										}}
+										class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+										title="Ubah & kelola akun"
+										aria-label="Ubah akun {w.walletName}"
+									>
+										<PencilSimple class="size-3.5" weight="bold" />
+									</button>
 								</div>
-							</div>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -496,12 +510,10 @@
 			class="divide-y divide-[#EAEAEA] overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs"
 		>
 			{#each sortedWallets as w (w.walletId)}
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div
-					onclick={() => openWalletDrawer(w)}
-					class="group flex cursor-pointer flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
-					title="Buka rincian & edit {w.walletName}"
+				<a
+					href="/ledger?walletId={encodeURIComponent(w.walletId)}"
+					class="group flex flex-wrap items-center justify-between gap-3 p-3.5 no-underline transition-colors hover:bg-[#FBFBFA]"
+					title="Buka mutasi {w.walletName} di Ledger"
 				>
 					<div class="flex items-center gap-3">
 						<div
@@ -546,10 +558,25 @@
 						</div>
 					</div>
 
-					<div class="text-right font-mono text-sm font-semibold text-[#111111] tabular-nums">
-						{fmtCurrency(getWalletBalance(w), w.currency)}
+					<div class="flex items-center gap-3">
+						<span class="font-mono text-sm font-semibold text-[#111111] tabular-nums">
+							{fmtCurrency(getWalletBalance(w), w.currency)}
+						</span>
+						<button
+							type="button"
+							onclick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								openWalletDrawer(w);
+							}}
+							class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+							title="Ubah & kelola akun"
+							aria-label="Ubah akun {w.walletName}"
+						>
+							<PencilSimple class="size-3.5" weight="bold" />
+						</button>
 					</div>
-				</div>
+				</a>
 			{:else}
 				<div class="py-12 text-center font-mono text-xs text-[#787774]">
 					Tidak ada akun yang sesuai dengan filter "{searchQuery}".

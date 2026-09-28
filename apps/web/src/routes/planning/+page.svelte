@@ -13,6 +13,7 @@
 	import CalendarCheck from 'phosphor-svelte/lib/CalendarCheck';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
 	import Plus from 'phosphor-svelte/lib/Plus';
+	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
@@ -184,18 +185,17 @@
 						: g.currentAmount}
 				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 				{@const linked = g.linkedWalletsBreakdown ?? []}
-				<div class="space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]">
-					<!-- Header clickable to open detail/edit drawer -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						onclick={() => openGoalDrawer(g)}
-						class="flex cursor-pointer flex-wrap items-start justify-between gap-3"
-						title="Buka rincian, edit, atau setor ke {g.goalName}"
-					>
+				<div class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]">
+					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div>
 							<div class="flex items-center gap-2">
-								<h2 class="text-base font-semibold text-[#111111]">{g.goalName}</h2>
+								<a
+									href="/ledger?search={encodeURIComponent(g.goalName)}"
+									class="text-base font-semibold text-[#111111] no-underline hover:underline"
+									title="Buka mutasi {g.goalName} di Ledger"
+								>
+									{g.goalName}
+								</a>
 								{#if g.isDerived}
 									<span
 										class="rounded bg-[#F0EFEC] px-2 py-0.5 font-mono text-[10px] text-[#787774] uppercase"
@@ -211,9 +211,22 @@
 							</p>
 						</div>
 
-						<div class="text-right font-mono tabular-nums">
-							<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
-							<span class="ml-1 text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+						<div class="flex items-center gap-3">
+							<div class="text-right font-mono tabular-nums">
+								<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
+								<span class="ml-1 text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+							</div>
+
+							<!-- Pencil button on card hover only -->
+							<button
+								type="button"
+								onclick={() => openGoalDrawer(g)}
+								class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+								title="Rincian & edit target"
+								aria-label="Rincian & edit target {g.goalName}"
+							>
+								<PencilSimple class="size-3.5" weight="bold" />
+							</button>
 						</div>
 					</div>
 
@@ -276,12 +289,10 @@
 					{@const p = b.percentUsed || 0}
 					{@const isOver = p > 100}
 					{@const isWarning = p >= 80 && p <= 100}
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						onclick={() => openBudgetDrawer(b)}
-						class="group block cursor-pointer space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
-						title="Buka rincian, edit, atau hapus pagu {b.budgetName}"
+					<a
+						href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
+						class="group relative block space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 no-underline shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
+						title="Buka mutasi anggaran {b.budgetName} di Ledger"
 					>
 						<div class="flex items-start justify-between gap-3">
 							<div>
@@ -292,15 +303,30 @@
 								</h2>
 								<p class="mt-0.5 text-xs text-[#787774]">Kategori: {b.categoryName || 'General'}</p>
 							</div>
-							<span
-								class="rounded px-2 py-0.5 font-mono text-[10px] font-semibold uppercase {isOver
-									? 'bg-[#FDEBEC] text-[#9F2F2D]'
-									: isWarning
-										? 'bg-[#FBF3DB] text-[#956400]'
-										: 'bg-[#EDF3EC] text-[#346538]'}"
-							>
-								{b.status}
-							</span>
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									onclick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										openBudgetDrawer(b);
+									}}
+									class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+									title="Ubah pagu anggaran"
+									aria-label="Ubah pagu anggaran {b.budgetName}"
+								>
+									<PencilSimple class="size-3.5" weight="bold" />
+								</button>
+								<span
+									class="rounded px-2 py-0.5 font-mono text-[10px] font-semibold uppercase {isOver
+										? 'bg-[#FDEBEC] text-[#9F2F2D]'
+										: isWarning
+											? 'bg-[#FBF3DB] text-[#956400]'
+											: 'bg-[#EDF3EC] text-[#346538]'}"
+								>
+									{b.status}
+								</span>
+							</div>
 						</div>
 
 						<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
@@ -329,7 +355,7 @@
 								{fmtIDR(b.remaining)}
 							</span>
 						</div>
-					</div>
+					</a>
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
 						Belum ada pagu anggaran aktif tercatat.
@@ -450,9 +476,9 @@
 										reedrichStore.allWallets.find((w) => w.walletId === r.templateWalletId)
 											?.walletName || 'Dompet'}
 									<tr
-										onclick={() => openRecurringDetail(r)}
-										class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
-										title="Lihat rincian {r.templateName}"
+										onclick={() => goto(`/ledger?search=${encodeURIComponent(r.templateName)}`)}
+										class="group cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
+										title="Buka mutasi {r.templateName} di Ledger"
 									>
 										<td class="px-3 py-2.5 font-medium text-[#111111]">{r.templateName}</td>
 										<td class="px-3 py-2.5 text-[#787774] capitalize">{r.templateFrequency}</td>
@@ -460,12 +486,25 @@
 											{r.templateNextRunDate ? dFmt(r.templateNextRunDate) : 'Sesuai Siklus'}
 										</td>
 										<td class="px-3 py-2.5 text-[#787774]">{walletName}</td>
-										<td
-											class="px-3 py-2.5 text-right font-mono font-semibold tabular-nums {isInc
-												? 'text-[#346538]'
-												: 'text-[#111111]'}"
-										>
-											{isInc ? '+' : '−'}{fmtIDR(r.templateAmount)}
+										<td class="px-3 py-2.5 text-right font-mono tabular-nums">
+											<div class="flex items-center justify-end gap-2">
+												<span class="font-semibold {isInc ? 'text-[#346538]' : 'text-[#111111]'}">
+													{isInc ? '+' : '−'}{fmtIDR(r.templateAmount)}
+												</span>
+												<button
+													type="button"
+													onclick={(e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														openRecurringDetail(r);
+													}}
+													class="flex size-6 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+													title="Rincian & ubah tagihan"
+													aria-label="Rincian tagihan {r.templateName}"
+												>
+													<PencilSimple class="size-3" weight="bold" />
+												</button>
+											</div>
 										</td>
 									</tr>
 								{:else}
