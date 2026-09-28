@@ -187,14 +187,14 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			}
 			switch (thinkingLevel) {
 				case 'minimal':
-					return { thinkingLevel: GeminiThinkingLevel.MINIMAL, thinkingBudget: 1024 };
+					return { thinkingLevel: GeminiThinkingLevel.MINIMAL };
 				case 'low':
-					return { thinkingLevel: GeminiThinkingLevel.LOW, thinkingBudget: 2048 };
+					return { thinkingLevel: GeminiThinkingLevel.LOW };
 				case 'medium':
-					return { thinkingLevel: GeminiThinkingLevel.MEDIUM, thinkingBudget: 8192 };
+					return { thinkingLevel: GeminiThinkingLevel.MEDIUM };
 				case 'high':
 				case 'xhigh':
-					return { thinkingLevel: GeminiThinkingLevel.HIGH, thinkingBudget: 24576 };
+					return { thinkingLevel: GeminiThinkingLevel.HIGH };
 				default:
 					return undefined;
 			}
