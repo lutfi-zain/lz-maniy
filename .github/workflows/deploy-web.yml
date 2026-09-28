@@ -30,8 +30,8 @@ jobs:
           PUBLIC_AGENT_URL: ${{ secrets.PUBLIC_AGENT_URL || 'https://maniyy-agent.lutfidmz.workers.dev' }}
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/build --project-name=maniyy2 --branch=main
+        run: bunx wrangler pages deploy build --project-name=maniyy2 --branch=main
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

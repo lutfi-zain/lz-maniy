@@ -48,4 +48,50 @@ describe('ChatStore', () => {
 		expect(store.selectedModel.provider).toBe('groq');
 		expect(store.selectedModel.model).toBe('openai/gpt-oss-20b');
 	});
+
+	it('configures and updates thinking level', () => {
+		expect(store.thinkingLevel).toBe('low');
+		store.setThinkingLevel('high');
+		expect(store.thinkingLevel).toBe('high');
+		store.setThinkingLevel('off');
+		expect(store.thinkingLevel).toBe('off');
+	});
+
+	it('switches assistant message variant correctly', () => {
+		store.messages = [
+			{
+				id: 'user-1',
+				conversationId: 'c1',
+				role: 'user',
+				content: 'Hitung saldo',
+				timestamp: 1000
+			},
+			{
+				id: 'asst-1',
+				conversationId: 'c1',
+				role: 'assistant',
+				content: 'Saldo Anda 10 juta (Versi 2)',
+				variants: [
+					{ content: 'Saldo Anda 5 juta (Versi 1)', toolInvocations: [], timestamp: 1001 },
+					{ content: 'Saldo Anda 10 juta (Versi 2)', toolInvocations: [], timestamp: 1002 }
+				],
+				activeVariantIndex: 1,
+				timestamp: 1002
+			}
+		];
+
+		// Switch to version 1 (index 0)
+		store.switchMessageVariant('asst-1', 0);
+		expect(store.messages[1].activeVariantIndex).toBe(0);
+		expect(store.messages[1].content).toBe('Saldo Anda 5 juta (Versi 1)');
+
+		// Switch back to version 2 (index 1)
+		store.switchMessageVariant('asst-1', 1);
+		expect(store.messages[1].activeVariantIndex).toBe(1);
+		expect(store.messages[1].content).toBe('Saldo Anda 10 juta (Versi 2)');
+
+		// Out of range index should be ignored
+		store.switchMessageVariant('asst-1', 99);
+		expect(store.messages[1].activeVariantIndex).toBe(1);
+	});
 });

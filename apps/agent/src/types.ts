@@ -7,6 +7,7 @@ export interface Env {
 	REEDRICH_API_URL: string;
 	GEMINI_API_KEY: string;
 	GROQ_API_KEY: string;
+	OPENCODE_API_KEY?: string;
 }
 
 export interface AuthedUser {

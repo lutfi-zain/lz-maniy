@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { streamText } from 'ai';
+import { streamText, type LanguageModelV1 } from 'ai';
 import { authMiddleware } from '../middleware/auth.js';
 import { getModel, AVAILABLE_MODELS } from '../agent/models.js';
 import { buildSystemPrompt } from '../agent/system-prompt.js';
@@ -70,6 +70,14 @@ chatRouter.post('/', async (c) => {
 
 	const activeConvId = conversationId!;
 
+	// Retrieve conversation history
+	const history = await listMessages(c.env.DB, conversationId);
+	const prior = history.filter((m) => m.id !== userMsgId);
+	type CoreMsg = { role: 'user' | 'assistant'; content: string };
+	const priorMessages: CoreMsg[] = prior
+		.filter((m) => m.role === 'user' || m.role === 'assistant')
+		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
 	// Route to native Gemini Runner if Gemini provider is selected
 	if (modelConfig.provider === 'gemini') {
 		const runner = createGeminiRunner(
@@ -83,9 +91,10 @@ chatRouter.post('/', async (c) => {
 			modelConfig.model,
 			body.message,
 			body.pageContext,
-			user.fullName
+			user.fullName,
+			priorMessages,
+			body.thinkingLevel
 		);
-
 		let fullAssistantText = '';
 
 		const readable = new ReadableStream({
@@ -135,13 +144,7 @@ chatRouter.post('/', async (c) => {
 	// Fallback to AI SDK for Groq / other providers
 	const aiModel = getModel(c.env, modelConfig.provider, modelConfig.model);
 
-	const history = await listMessages(c.env.DB, conversationId);
-	const prior = history.filter((m) => m.id !== userMsgId);
-	type CoreMsg = { role: 'user' | 'assistant'; content: string };
-	const priorMessages: CoreMsg[] = prior
-		.filter((m) => m.role === 'user' || m.role === 'assistant')
-		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-
+	// History already retrieved above
 	const tools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
@@ -151,14 +154,14 @@ chatRouter.post('/', async (c) => {
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName);
 
 	const result = streamText({
-		model: aiModel,
+		model: aiModel as unknown as LanguageModelV1,
 		system: systemPrompt,
 		messages: [
 			...priorMessages,
 			{ role: 'user', content: [{ type: 'text', text: body.message }] }
 		],
 		tools,
-		maxSteps: 8,
+		maxSteps: 10,
 		onFinish: (ev) => {
 			c.executionCtx.waitUntil((async () => {
 				const finalContent = ev.text || '';

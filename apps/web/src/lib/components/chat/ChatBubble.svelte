@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { ChatMessage } from '@maniyy/shared';
+	import { CaretLeft, CaretRight, ArrowClockwise } from 'phosphor-svelte';
+	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import ChatUICommandCard from './ChatUICommandCard.svelte';
 	import ChatToolInvocation from './ChatToolInvocation.svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
@@ -7,6 +9,16 @@
 	let { message }: { message: ChatMessage } = $props();
 
 	const isUser = $derived(message.role === 'user');
+	const variants = $derived(message.variants ?? []);
+	const variantCount = $derived(variants.length);
+	const activeIndex = $derived(message.activeVariantIndex ?? 0);
+
+	const isErrorMessage = $derived(
+		!isUser &&
+			(message.content.includes('Koneksi terputus') ||
+				message.content.startsWith('⚠️') ||
+				message.content.includes('⚠️'))
+	);
 
 	// Check if content contains a ui_command (agent emitted it in text)
 	const uiCommand = $derived.by(() => {
@@ -49,6 +61,66 @@
 				<div class="flex items-center gap-1.5 py-1 text-xs text-[#787774]">
 					<span class="inline-block size-2 animate-pulse rounded-full bg-[#111111]"></span>
 					<span class="font-medium">Menyusun jawaban...</span>
+				</div>
+			{/if}
+
+			<!-- In-bubble Error Retry Banner -->
+			{#if isErrorMessage}
+				<div class="mt-2.5 flex items-center gap-2 pt-2 border-t border-[#FDEBEC]">
+					<button
+						type="button"
+						onclick={() => chatStore.retryMessage(message.id)}
+						disabled={chatStore.isStreaming}
+						class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#FDEBEC] text-[#C23934] hover:bg-[#FCD8D7] text-[11px] font-medium transition-colors disabled:opacity-50"
+					>
+						<ArrowClockwise size={12} weight="bold" />
+						<span>Coba Lagi</span>
+					</button>
+				</div>
+			{/if}
+
+			<!-- Footer Actions: Version Pager & Retry Button -->
+			{#if (message.content || (message.toolInvocations && message.toolInvocations.length > 0)) && !chatStore.isStreaming}
+				<div class="mt-2.5 pt-2 border-t border-[#EAEAEA] flex items-center justify-between text-[11px] text-[#787774]">
+					{#if variantCount > 1}
+						<div class="flex items-center gap-1">
+							<button
+								type="button"
+								onclick={() => chatStore.switchMessageVariant(message.id, activeIndex - 1)}
+								disabled={activeIndex <= 0 || chatStore.isStreaming}
+								class="p-0.5 rounded hover:bg-[#F7F6F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+								aria-label="Versi sebelumnya"
+								title="Versi sebelumnya"
+							>
+								<CaretLeft size={12} weight="bold" />
+							</button>
+							<span class="font-mono text-[10px]">{activeIndex + 1} / {variantCount}</span>
+							<button
+								type="button"
+								onclick={() => chatStore.switchMessageVariant(message.id, activeIndex + 1)}
+								disabled={activeIndex >= variantCount - 1 || chatStore.isStreaming}
+								class="p-0.5 rounded hover:bg-[#F7F6F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+								aria-label="Versi berikutnya"
+								title="Versi berikutnya"
+							>
+								<CaretRight size={12} weight="bold" />
+							</button>
+						</div>
+					{:else}
+						<div></div>
+					{/if}
+
+					<button
+						type="button"
+						onclick={() => chatStore.retryMessage(message.id)}
+						disabled={chatStore.isStreaming}
+						class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[#F7F6F3] text-[#787774] hover:text-[#111111] transition-colors disabled:opacity-40"
+						title="Ulang jawaban (Retry)"
+						aria-label="Ulang jawaban"
+					>
+						<ArrowClockwise size={12} weight="bold" />
+						<span>Ulang</span>
+					</button>
 				</div>
 			{/if}
 		{/if}
