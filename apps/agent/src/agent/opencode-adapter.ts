@@ -1,4 +1,4 @@
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createOpenAI } from '@ai-sdk/openai';
 
 export const OPENCODE_VERSION = '1.18.31';
 export const OPENCODE_USER_AGENT = `opencode/${OPENCODE_VERSION} ai-sdk/provider-utils/4.0.40 runtime/bun/1.3.14`;
@@ -67,7 +67,7 @@ export function createOpenCodeProvider(
 	apiKey = 'public',
 	customFetch?: typeof fetch
 ) {
-	return createOpenAICompatible({
+	return createOpenAI({
 		name: 'opencode',
 		baseURL: OPENCODE_BASE_URL,
 		apiKey: apiKey || 'public',
