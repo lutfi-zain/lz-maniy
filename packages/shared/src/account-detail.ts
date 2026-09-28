@@ -205,3 +205,10 @@ export interface DrawerState {
 	badge: string;
 	data: Record<string, unknown>;
 }
+export interface UserSettings {
+	ledgerViewMode: 'single' | 'calendar_board';
+	activePeriods: string[];
+	dateStartOfMonth?: number;
+	language?: 'id' | 'en';
+	mainCurrency?: 'IDR' | 'USD';
+}

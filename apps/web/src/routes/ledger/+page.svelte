@@ -20,6 +20,10 @@
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import { matchesBudgetFilter } from '$lib/utils/budget-filter';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import { settingsStore } from '$lib/stores/settings.svelte.js';
+	import ViewModeSwitcher from '$lib/components/ledger/ViewModeSwitcher.svelte';
+	import HorizonBoard from '$lib/components/ledger/HorizonBoard.svelte';
+	import type { GlobalFilters } from '$lib/components/ledger/HorizonPeriodColumn.svelte';
 	// Filters
 	let selectedWalletIds = $state<string[]>([]);
 	let selectedCategoryIds = $state<string[]>([]);
@@ -28,6 +32,15 @@
 	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>('all');
 	let selectedStatus = $state<'all' | 'realized' | 'planned'>('all');
 	let searchKeyword = $state<string>('');
+
+	const globalFilters = $derived<GlobalFilters>({
+		walletIds: selectedWalletIds,
+		categoryIds: selectedCategoryIds,
+		budgetIds: selectedBudgetIds,
+		type: selectedType,
+		status: selectedStatus,
+		searchKeyword
+	});
 
 	// Pagination
 	let currentPage = $state<number>(1);
@@ -276,6 +289,8 @@
 		</div>
 
 		<div class="flex items-center gap-2">
+			<ViewModeSwitcher />
+
 			<button
 				type="button"
 				onclick={() => transactionFormStore.openCreate()}
@@ -525,7 +540,10 @@
 		{/if}
 	</div>
 
-	<!-- Dual-Layer Live Summary Strip -->
+	{#if settingsStore.settings.ledgerViewMode === 'calendar_board'}
+		<HorizonBoard {globalFilters} />
+	{:else}
+		<!-- Dual-Layer Live Summary Strip -->
 	<div
 		class="flex flex-col gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between lg:gap-6"
 	>
@@ -824,4 +842,5 @@
 			</div>
 		{/if}
 	</div>
+	{/if}
 </div>

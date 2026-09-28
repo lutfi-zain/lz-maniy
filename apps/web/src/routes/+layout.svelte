@@ -12,6 +12,8 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import ChatPanel from '$lib/components/chat/ChatPanel.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte.js';
+	import { settingsStore } from '$lib/stores/settings.svelte.js';
+	import { PUBLIC_AGENT_URL } from '$env/static/public';
 
 	let { children } = $props();
 
@@ -25,6 +27,9 @@
 		if (authStore.isAuthenticated) {
 			reedrichStore.fetchSnapshot();
 			reedrichStore.fetchUserProfile();
+			if (authStore.accessToken) {
+				settingsStore.load(PUBLIC_AGENT_URL, authStore.accessToken);
+			}
 		}
 	});
 
@@ -43,6 +48,10 @@
 		// If authenticated and visiting /login, redirect to cockpit
 		else if (authStore.isAuthenticated && page.url.pathname === '/login') {
 			goto('/', { replaceState: true });
+		}
+
+		if (authStore.isAuthenticated && authStore.accessToken && !settingsStore.isLoaded) {
+			settingsStore.load(PUBLIC_AGENT_URL, authStore.accessToken);
 		}
 	});
 

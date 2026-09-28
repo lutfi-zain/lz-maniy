@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import type { ChatMessage, ConversationMeta } from '@maniyy/shared';
+import type { ChatMessage, ConversationMeta, UserSettings } from '@maniyy/shared';
 
 export interface DBConversation {
 	id: string;
@@ -160,4 +160,56 @@ export async function bulkInsertConversationWithMessages(
 		)
 	];
 	await db.batch(stmts);
+}
+export const DEFAULT_USER_SETTINGS: UserSettings = {
+	ledgerViewMode: 'single',
+	activePeriods: []
+};
+
+export async function getUserSettings(db: D1Database, userId: string): Promise<UserSettings> {
+	const row = await db
+		.prepare('SELECT settings_json FROM user_settings WHERE user_id = ?')
+		.bind(userId)
+		.first<{ settings_json: string }>();
+
+	if (!row?.settings_json) {
+		return { ...DEFAULT_USER_SETTINGS };
+	}
+
+	try {
+		const parsed = JSON.parse(row.settings_json) as Partial<UserSettings>;
+		return {
+			...DEFAULT_USER_SETTINGS,
+			...parsed
+		};
+	} catch {
+		return { ...DEFAULT_USER_SETTINGS };
+	}
+}
+
+export async function upsertUserSettings(
+	db: D1Database,
+	userId: string,
+	partialSettings: Partial<UserSettings>
+): Promise<UserSettings> {
+	const current = await getUserSettings(db, userId);
+	const merged: UserSettings = {
+		...current,
+		...partialSettings
+	};
+	const jsonStr = JSON.stringify(merged);
+	const now = Date.now();
+
+	await db
+		.prepare(
+			`INSERT INTO user_settings (user_id, settings_json, updated_at)
+			 VALUES (?, ?, ?)
+			 ON CONFLICT(user_id) DO UPDATE SET
+			   settings_json = excluded.settings_json,
+			   updated_at = excluded.updated_at`
+		)
+		.bind(userId, jsonStr, now)
+		.run();
+
+	return merged;
 }
