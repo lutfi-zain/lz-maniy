@@ -164,9 +164,10 @@
 					isPlanned: transactionFormStore.isPlanned
 				};
 
-				// Only include category/budget/wallet if allowed
-				if (existingTxn.transactionType !== 'transfer') {
-					delta.walletId = transactionFormStore.walletId;
+				delta.walletId = transactionFormStore.walletId;
+				if (existingTxn.transactionType === 'transfer') {
+					delta.targetWalletId = transactionFormStore.targetWalletId;
+				} else {
 					delta.categoryId = transactionFormStore.categoryId || null;
 					delta.budgetId = transactionFormStore.budgetId || null;
 				}
@@ -177,6 +178,11 @@
 					...existingTxn,
 					...updated,
 					transactionAmount: transactionFormStore.amount!,
+					transactionWalletId: transactionFormStore.walletId,
+					transactionTargetWalletId:
+						existingTxn.transactionType === 'transfer'
+							? transactionFormStore.targetWalletId
+							: existingTxn.transactionTargetWalletId,
 					transactionDescription: transactionFormStore.description.trim() || null,
 					transactionDate: transactionFormStore.date,
 					transactionIsPlanned: transactionFormStore.isPlanned ? 1 : 0
@@ -308,7 +314,6 @@
 								bind:value={transactionFormStore.walletId}
 								placeholder="Pilih akun sumber..."
 								searchPlaceholder="Cari akun/bank..."
-								disabled={mode === 'edit'}
 								hasError={Boolean(fieldErrors.walletId)}
 							/>
 							{#if fieldErrors.walletId}
@@ -325,7 +330,6 @@
 								bind:value={transactionFormStore.targetWalletId}
 								placeholder="Pilih akun tujuan..."
 								searchPlaceholder="Cari akun tujuan..."
-								disabled={mode === 'edit'}
 								hasError={Boolean(fieldErrors.targetWalletId)}
 							/>
 							{#if fieldErrors.targetWalletId}
