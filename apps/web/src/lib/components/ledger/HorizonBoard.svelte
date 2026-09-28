@@ -173,23 +173,31 @@
 				</div>
 				<!-- Summary card skeleton -->
 				<div class="space-y-3 rounded-b-lg border-t border-[#EAEAEA] bg-[#FDFCFB] p-3">
-					<div class="space-y-1.5 border-b border-[#EAEAEA] pb-2.5">
+					<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
 						<div class="flex justify-between">
 							<Skeleton class="h-2.5 w-20" />
 							<Skeleton class="h-3 w-16" />
 						</div>
 						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-16" />
 							<Skeleton class="h-2.5 w-24" />
+						</div>
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-16" />
 							<Skeleton class="h-2.5 w-24" />
 						</div>
 					</div>
-					<div class="space-y-1 border-b border-[#EAEAEA] pb-2.5">
+					<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
 						<div class="flex justify-between">
 							<Skeleton class="h-2.5 w-28" />
-							<Skeleton class="h-4 w-24" />
+							<Skeleton class="h-3 w-24" />
 						</div>
 						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-24" />
 							<Skeleton class="h-2.5 w-20" />
+						</div>
+						<div class="flex justify-between">
+							<Skeleton class="h-2.5 w-24" />
 							<Skeleton class="h-2.5 w-20" />
 						</div>
 					</div>

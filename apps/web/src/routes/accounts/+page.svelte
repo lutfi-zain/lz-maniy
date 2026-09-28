@@ -280,10 +280,10 @@
 				<button
 					type="button"
 					onclick={() => walletFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>+ Dompet</span>
+					<span>Tambah Dompet</span>
 				</button>
 				{#if dateFilterStore.preset !== 'this_month'}
 					<button
@@ -298,7 +298,7 @@
 			</div>
 		</div>
 
-		<!-- Row 2: Status Filter + Sort + View Toggle -->
+		<!-- Row 2: Status Filter (Left) + Sort & View Controls (Right) -->
 		<div
 			class="flex w-full flex-wrap items-center justify-between gap-2.5 border-t border-[#EAEAEA] pt-2 sm:border-t-0 sm:pt-0"
 		>
@@ -336,42 +336,45 @@
 				</button>
 			</div>
 
-			<!-- Sort dropdown -->
-			<div class="flex items-center gap-1.5">
-				<SortAscending class="size-3.5 text-[#787774]" weight="bold" />
-				<select
-					bind:value={sortBy}
-					class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-				>
-					<option value="balance_desc">Saldo Terbesar</option>
-					<option value="balance_asc">Saldo Terkecil</option>
-					<option value="name">Nama A-Z</option>
-					<option value="last_tx">Mutasi Terkini</option>
-				</select>
-			</div>
+			<!-- Right: Sort Dropdown & View Mode Toggle -->
+			<div class="flex items-center gap-2.5">
+				<!-- Sort dropdown -->
+				<div class="flex items-center gap-1.5">
+					<SortAscending class="size-3.5 text-[#787774]" weight="bold" />
+					<select
+						bind:value={sortBy}
+						class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
+					>
+						<option value="balance_desc">Saldo Terbesar</option>
+						<option value="balance_asc">Saldo Terkecil</option>
+						<option value="name">Nama A-Z</option>
+						<option value="last_tx">Mutasi Terkini</option>
+					</select>
+				</div>
 
-			<!-- View mode toggle -->
-			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
-				<button
-					type="button"
-					onclick={() => (viewMode = 'grouped')}
-					class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-					'grouped'
-						? 'bg-white text-[#111111] shadow-2xs'
-						: 'text-[#787774]'}"
-				>
-					Grup Bank
-				</button>
-				<button
-					type="button"
-					onclick={() => (viewMode = 'flat')}
-					class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-					'flat'
-						? 'bg-white text-[#111111] shadow-2xs'
-						: 'text-[#787774]'}"
-				>
-					Tabel Rata
-				</button>
+				<!-- View mode toggle -->
+				<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
+					<button
+						type="button"
+						onclick={() => (viewMode = 'grouped')}
+						class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
+						'grouped'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774]'}"
+					>
+						Grup Bank
+					</button>
+					<button
+						type="button"
+						onclick={() => (viewMode = 'flat')}
+						class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
+						'flat'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774]'}"
+					>
+						Tabel Rata
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
