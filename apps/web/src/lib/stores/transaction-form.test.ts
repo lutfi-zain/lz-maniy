@@ -99,6 +99,33 @@ describe('TransactionFormStore', () => {
 		expect(store.amount).toBe(50000);
 	});
 
+	it('supports isPlanned toggle for transfer in create and edit modes', () => {
+		// Create mode with transfer
+		store.openCreate('transfer');
+		expect(store.transactionType).toBe('transfer');
+		expect(store.isPlanned).toBe(false);
+
+		// Toggle isPlanned to true
+		store.isPlanned = true;
+		expect(store.isPlanned).toBe(true);
+
+		// Edit mode with planned transfer
+		const plannedTransfer: TransactionRecord = {
+			...sampleTxn,
+			transactionType: 'transfer',
+			transactionTargetWalletId: 'wallet-target',
+			transactionIsPlanned: 1
+		};
+		store.openEdit(plannedTransfer);
+		expect(store.mode).toBe('edit');
+		expect(store.transactionType).toBe('transfer');
+		expect(store.isPlanned).toBe(true);
+
+		// Toggle isPlanned to false (realize)
+		store.isPlanned = false;
+		expect(store.isPlanned).toBe(false);
+	});
+
 	describe('isValid validation logic', () => {
 		it('validates expense requires wallet, category, positive amount, and date', () => {
 			store.openCreate('expense');

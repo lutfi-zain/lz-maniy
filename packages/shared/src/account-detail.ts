@@ -182,6 +182,7 @@ export interface CreateTransferPayload {
 	categoryId?: string | null;
 	date?: string;
 	transactionDate?: string;
+	isPlanned?: boolean;
 }
 
 export interface UpdateTransactionPayload {
