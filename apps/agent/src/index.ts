@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { modelsRouter } from './routes/models.js';
 import { conversationsRouter } from './routes/conversations.js';
 import { chatRouter } from './routes/chat.js';
+import { settingsRouter } from './routes/settings.js';
 import type { Env } from './types.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -38,6 +39,7 @@ app.use(
 app.route('/api/models', modelsRouter);
 app.route('/api/conversations', conversationsRouter);
 app.route('/api/chat', chatRouter);
+app.route('/api/settings', settingsRouter);
 
 // Health check
 app.get('/', (c) => c.json({ status: 'ok', service: 'maniyy-agent' }));

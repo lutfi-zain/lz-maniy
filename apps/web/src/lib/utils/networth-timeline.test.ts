@@ -360,3 +360,120 @@ describe('calculatePointInTimeWalletBalances', () => {
 		expect(balances.get('w2')).toBe(5_000_000);
 	});
 });
+describe('Multi-Period Cascading Simulation', () => {
+	const baselineNetWorth = 20_000_000;
+	const referenceDate = '2026-09-24';
+
+	it('cascades transactions in period N into periods N+1 and N+2 closing projections', () => {
+		// Period 1 (Oct 2026): Net cashflow = +10,000,000 (Income) - 5,000,000 (Expense) = +5,000,000
+		const octTxs: TransactionRecord[] = [
+			{
+				transactionId: 't-oct-1',
+				transactionWalletId: 'w1',
+				transactionAmount: 10_000_000,
+				transactionType: 'income',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-05T00:00:00+07:00'
+			},
+			{
+				transactionId: 't-oct-2',
+				transactionWalletId: 'w1',
+				transactionAmount: 5_000_000,
+				transactionType: 'expense',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-10-15T00:00:00+07:00'
+			}
+		];
+
+		// Period 2 (Nov 2026): Net cashflow = -2,000,000 (Expense)
+		const novTxs: TransactionRecord[] = [
+			{
+				transactionId: 't-nov-1',
+				transactionWalletId: 'w1',
+				transactionAmount: 2_000_000,
+				transactionType: 'expense',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-11-10T00:00:00+07:00'
+			}
+		];
+
+		// Period 3 (Dec 2026): Net cashflow = +8,000,000 (Income)
+		const decTxs: TransactionRecord[] = [
+			{
+				transactionId: 't-dec-1',
+				transactionWalletId: 'w1',
+				transactionAmount: 8_000_000,
+				transactionType: 'income',
+				transactionIsPlanned: 1,
+				transactionDate: '2026-12-05T00:00:00+07:00'
+			}
+		];
+
+		const allTransactions = [...octTxs, ...novTxs, ...decTxs];
+
+		// Oct closing Net Worth: 20M + 5M = 25M
+		const octResult = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions,
+			endDate: '2026-10-31',
+			referenceDate
+		});
+		expect(octResult.amount).toBe(25_000_000);
+
+		// Nov closing Net Worth: 20M + (5M - 2M) = 23M
+		const novResult = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions,
+			endDate: '2026-11-30',
+			referenceDate
+		});
+		expect(novResult.amount).toBe(23_000_000);
+
+		// Dec closing Net Worth: 20M + (5M - 2M + 8M) = 31M
+		const decResult = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions,
+			endDate: '2026-12-31',
+			referenceDate
+		});
+		expect(decResult.amount).toBe(31_000_000);
+
+		// User simulation: What if an additional 3,000,000 expense is added in October?
+		const simulatedOctExpense: TransactionRecord = {
+			transactionId: 't-oct-extra',
+			transactionWalletId: 'w1',
+			transactionAmount: 3_000_000,
+			transactionType: 'expense',
+			transactionIsPlanned: 1,
+			transactionDate: '2026-10-20T00:00:00+07:00'
+		};
+		const simulatedTransactions = [...allTransactions, simulatedOctExpense];
+
+		// Oct closing drops by 3M -> 22M
+		const simOct = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions: simulatedTransactions,
+			endDate: '2026-10-31',
+			referenceDate
+		});
+		expect(simOct.amount).toBe(22_000_000);
+
+		// Nov closing cascades drop by 3M -> 20M
+		const simNov = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions: simulatedTransactions,
+			endDate: '2026-11-30',
+			referenceDate
+		});
+		expect(simNov.amount).toBe(20_000_000);
+
+		// Dec closing cascades drop by 3M -> 28M
+		const simDec = calculatePointInTimeNetWorth({
+			currentNetWorth: baselineNetWorth,
+			allTransactions: simulatedTransactions,
+			endDate: '2026-12-31',
+			referenceDate
+		});
+		expect(simDec.amount).toBe(28_000_000);
+	});
+});
