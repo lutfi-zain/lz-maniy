@@ -107,8 +107,8 @@
 			</button>
 		</div>
 
-		<!-- Synchronized Global Date Filter -->
-		<div class="flex items-center gap-1.5">
+		<!-- Right: Date Filter & Action Button -->
+		<div class="flex items-center gap-2">
 			<DateRangePicker
 				bind:start={dateFilterStore.startDate}
 				bind:end={dateFilterStore.endDate}
@@ -127,36 +127,33 @@
 					Reset
 				</button>
 			{/if}
-		</div>
 
-		<!-- Action Button according to active sub-tab -->
-		<div class="flex items-center gap-2">
 			{#if activeSubTab === 'goals'}
 				<button
 					type="button"
 					onclick={() => goalFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>+ Buat Target</span>
+					<span>Buat Target</span>
 				</button>
 			{:else if activeSubTab === 'budgets'}
 				<button
 					type="button"
 					onclick={() => budgetFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>+ Tambah Budget</span>
+					<span>Tambah Budget</span>
 				</button>
 			{:else if activeSubTab === 'obligations'}
 				<button
 					type="button"
 					onclick={() => recurringFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>+ Tambah Recurring</span>
+					<span>Tambah Recurring</span>
 				</button>
 			{/if}
 		</div>
