@@ -254,7 +254,7 @@
 		class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3 text-xs shadow-2xs"
 	>
 		<!-- Row 1: Search input + DateRangePicker -->
-		<div class="flex w-full flex-wrap items-center gap-2.5">
+		<div class="flex w-full flex-wrap items-center justify-between gap-2.5">
 			<div class="relative w-full sm:w-[260px] sm:flex-none">
 				<MagnifyingGlass
 					class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
