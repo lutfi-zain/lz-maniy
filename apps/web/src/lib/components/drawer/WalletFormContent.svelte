@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 
 	let isSubmitting = $state(false);
@@ -65,7 +66,7 @@
 	<!-- Name -->
 	<div>
 		<label for="wallet-name" class="mb-1 block font-medium text-[#111111]">
-			Nama Dompet / Rekening <span class="text-[#9F2F2D]">*</span>
+			{t('forms.wallet.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="wallet-name"
@@ -110,7 +111,7 @@
 	<div class="grid grid-cols-3 gap-3">
 		<div class="col-span-2">
 			<label for="wallet-balance" class="mb-1 block font-medium text-[#111111]">
-				Saldo Awal / Terkini
+				{t('forms.wallet.balanceLabel')}
 			</label>
 			<input
 				id="wallet-balance"
@@ -123,7 +124,7 @@
 		</div>
 
 		<div>
-			<label for="wallet-curr" class="mb-1 block font-medium text-[#111111]"> Mata Uang </label>
+			<label for="wallet-curr" class="mb-1 block font-medium text-[#111111]"> {t('forms.wallet.currencyLabel')} </label>
 			<input
 				id="wallet-curr"
 				type="text"
@@ -144,10 +145,9 @@
 				class="mt-0.5 size-4 rounded border-[#EAEAEA] text-[#111111] focus:ring-0"
 			/>
 			<div>
-				<span class="block font-medium text-[#111111]">Kunci sebagai Dana Cadangan (Locked)</span>
+				<span class="block font-medium text-[#111111]">{i18nStore.locale === 'id' ? 'Kunci sebagai Dana Cadangan (Locked)' : 'Lock as Committed / Reserve Capital'}</span>
 				<span class="block text-[11px] text-[#787774]">
-					Saldo dompet ini tidak akan dihitung ke dalam Safe-to-Spend runway harian, dialokasikan
-					untuk dana darurat atau simpanan terproteksi.
+					{i18nStore.locale === 'id' ? 'Saldo dompet ini tidak akan dihitung ke dalam Safe-to-Spend runway harian.' : 'Account balance will be excluded from daily spendable cash runway.'}
 				</span>
 			</div>
 		</label>
@@ -160,7 +160,7 @@
 			onclick={() => walletFormStore.close()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -168,7 +168,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Perbarui Dompet' : 'Simpan Dompet'}</span>
+			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.wallet.submitEdit') : t('forms.wallet.submitCreate')}</span>
 		</button>
 	</div>
 </form>

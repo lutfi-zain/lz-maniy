@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import CalendarPlus from 'phosphor-svelte/lib/CalendarPlus';
 	import X from 'phosphor-svelte/lib/X';
 
 	let isOpen = $state(false);
 
-	const MONTH_NAMES = [
-		'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-		'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-	];
+	const monthNames = $derived.by(() => {
+		return Array.from({ length: 12 }, (_, i) => {
+			const d = new Date(2026, i, 1);
+			return d.toLocaleDateString(i18nStore.locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' });
+		});
+	});
 
 	// Current date defaults
 	const now = new Date();
@@ -59,9 +62,9 @@
 			</div>
 
 			<div>
-				<h3 class="text-xs font-semibold text-[#111111]">Tambah Periode</h3>
+				<h3 class="text-xs font-semibold text-[#111111]">{t('ledger.addPeriod')}</h3>
 				<p class="mt-0.5 text-[11px] text-[#787774]">
-					Perluas horizon perencanaan ke bulan lain.
+					{i18nStore.locale === 'id' ? 'Perluas horizon perencanaan ke bulan lain.' : 'Extend horizon board to another month.'}
 				</p>
 			</div>
 
@@ -72,7 +75,7 @@
 					class="flex cursor-pointer items-center justify-center gap-1.5 rounded bg-[#111111] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>+1 Bulan Berikutnya</span>
+					<span>{i18nStore.locale === 'id' ? '+1 Bulan Berikutnya' : '+1 Next Month'}</span>
 				</button>
 
 				<button
@@ -80,7 +83,7 @@
 					onclick={() => (isOpen = true)}
 					class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-3 py-1 text-xs text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 				>
-					Pilih Bulan Spesifik...
+					{i18nStore.locale === 'id' ? 'Pilih Bulan Spesifik...' : 'Select Specific Month...'}
 				</button>
 			</div>
 		</div>
@@ -88,7 +91,7 @@
 		<!-- Custom Month/Year Selector Form -->
 		<div class="w-full max-w-[260px] space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-left shadow-xs">
 			<div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
-				<span class="text-xs font-semibold text-[#111111]">Pilih Periode</span>
+				<span class="text-xs font-semibold text-[#111111]">{i18nStore.locale === 'id' ? 'Pilih Periode' : 'Select Period'}</span>
 				<button
 					type="button"
 					onclick={() => (isOpen = false)}
@@ -101,7 +104,7 @@
 
 			<div class="space-y-2 text-xs">
 				<div>
-					<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase">Tahun</label>
+					<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase">{i18nStore.locale === 'id' ? 'Tahun' : 'Year'}</label>
 					<select
 						id="selectYear"
 						bind:value={selectedYear}
@@ -114,13 +117,13 @@
 				</div>
 
 				<div>
-					<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase">Bulan</label>
+					<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase">{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}</label>
 					<select
 						id="selectMonth"
 						bind:value={selectedMonth}
 						class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
 					>
-						{#each MONTH_NAMES as name, idx}
+						{#each monthNames as name, idx}
 							<option value={idx + 1}>{name}</option>
 						{/each}
 					</select>
@@ -133,14 +136,14 @@
 					onclick={() => (isOpen = false)}
 					class="cursor-pointer rounded px-2.5 py-1 text-xs text-[#787774] hover:text-[#111111]"
 				>
-					Batal
+					{t('common.cancel')}
 				</button>
 				<button
 					type="button"
 					onclick={handleAddCustom}
 					class="cursor-pointer rounded bg-[#111111] px-3 py-1 text-xs font-medium text-white hover:bg-[#333333]"
 				>
-					Tambahkan
+					{i18nStore.locale === 'id' ? 'Tambahkan' : 'Add Period'}
 				</button>
 			</div>
 		</div>

@@ -5,6 +5,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
+	import { t } from '$lib/i18n/index.svelte';
 	import Table from 'phosphor-svelte/lib/Table';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
@@ -290,7 +291,7 @@
 						id="ledgerSearch"
 						type="search"
 						bind:value={searchKeyword}
-						placeholder="Cari transaksi... (tekan '/' untuk fokus)"
+						placeholder={t('ledger.searchPlaceholder')}
 						class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 pr-10 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden"
 					/>
 					<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
@@ -317,7 +318,7 @@
 							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 							title="Reset ke Bulan Ini"
 						>
-							Reset
+							{t('common.reset')}
 						</button>
 					{/if}
 				</div>
@@ -333,7 +334,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Catat Transaksi</span>
+					<span>{t('ledger.planTransaction')}</span>
 				</button>
 
 				<button
@@ -341,7 +342,7 @@
 					onclick={resetFilters}
 					class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1.5 text-xs text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 				>
-					Reset Filter
+					{t('ledger.filters.resetFilters')}
 				</button>
 			</div>
 		</div>
@@ -352,8 +353,8 @@
 			<ComboboxMultiSelect
 				options={walletOptions}
 				bind:selected={selectedWalletIds}
-				placeholder="Semua Dompet"
-				searchPlaceholder="Ketik nama akun/bank..."
+				placeholder={t('accounts.allWallets')}
+				searchPlaceholder="Search account name..."
 				onchange={() => (currentPage = 1)}
 			/>
 
@@ -361,8 +362,8 @@
 			<ComboboxMultiSelect
 				options={categoryOptions}
 				bind:selected={selectedCategoryIds}
-				placeholder="Semua Kategori"
-				searchPlaceholder="Ketik nama kategori..."
+				placeholder="All Categories"
+				searchPlaceholder="Search category name..."
 				onchange={() => (currentPage = 1)}
 			/>
 
@@ -370,8 +371,8 @@
 			<ComboboxMultiSelect
 				options={budgetOptions}
 				bind:selected={selectedBudgetIds}
-				placeholder="Semua Anggaran"
-				searchPlaceholder="Ketik nama anggaran..."
+				placeholder="All Budgets"
+				searchPlaceholder="Search budget name..."
 				onchange={() => (currentPage = 1)}
 			/>
 
@@ -388,7 +389,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Semua Tipe
+					{t('ledger.filters.allTypes')}
 				</button>
 				<button
 					type="button"
@@ -401,7 +402,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Pengeluaran
+					{t('ledger.filters.expense')}
 				</button>
 				<button
 					type="button"
@@ -414,7 +415,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Pemasukan
+					{t('ledger.filters.income')}
 				</button>
 				<button
 					type="button"
@@ -427,7 +428,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Transfer
+					{t('ledger.filters.transfer')}
 				</button>
 			</div>
 
@@ -444,7 +445,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Semua Status
+					{t('ledger.filters.allStatuses')}
 				</button>
 				<button
 					type="button"
@@ -457,7 +458,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Realized
+					{t('ledger.filters.realized')}
 				</button>
 				<button
 					type="button"
@@ -470,13 +471,13 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Planned
+					{t('ledger.filters.planned')}
 				</button>
 			</div>
 
 			<!-- Page Size Selector -->
 			<div class="ml-auto flex items-center gap-1.5 text-xs text-[#787774]">
-				<span>Baris:</span>
+				<span>Rows:</span>
 				<select
 					bind:value={pageSize}
 					onchange={() => (currentPage = 1)}

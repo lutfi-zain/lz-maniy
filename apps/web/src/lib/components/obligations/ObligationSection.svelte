@@ -3,6 +3,7 @@
 	import { fmtIDR } from '$lib/utils/currency';
 	import ObligationCard from './ObligationCard.svelte';
 	import Handshake from 'phosphor-svelte/lib/Handshake';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 
 	const ob = $derived(reedrichStore.snapshot?.obligations);
 	const debts = $derived(ob?.activeDebts ?? []);
@@ -17,17 +18,17 @@
 		<div>
 			<h2 class="serif flex items-center gap-2 text-xl font-medium text-[#111111] md:text-2xl">
 				<Handshake class="size-5 text-[#111111]" weight="bold" />
-				<span>Kewajiban & Tagihan Aktif</span>
+				<span>{t('planning.obligations.title')}</span>
 			</h2>
 			<div class="mt-0.5 text-xs text-[#787774]">
-				Utang yang wajib dilunasi dan piutang (talangan) yang diharapkan kembali.
+				{i18nStore.locale === 'id' ? 'Utang yang wajib dilunasi dan piutang (talangan) yang diharapkan kembali.' : 'Active liabilities, debts to settle, and receivables.'}
 			</div>
 		</div>
 
 		<span
 			class="rounded-full border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-0.5 font-mono text-[11px] text-[#787774] uppercase"
 		>
-			{totalCount} catatan
+			{totalCount} {i18nStore.locale === 'id' ? 'catatan' : 'records'}
 		</span>
 	</div>
 
@@ -37,7 +38,7 @@
 			<div
 				class="mb-2 flex items-center justify-between text-[10px] font-medium tracking-wider text-[#787774] uppercase"
 			>
-				<span>Utang Wajib Dibayar</span>
+				<span>{t('planning.obligations.debts')}</span>
 				<span class="font-mono text-[#9F2F2D]">Total {fmtIDR(ob?.totalDebt)}</span>
 			</div>
 			<div>
@@ -54,7 +55,7 @@
 			<div
 				class="mb-2 flex items-center justify-between text-[10px] font-medium tracking-wider text-[#787774] uppercase"
 			>
-				<span>Piutang / Talangan Berhak Diterima</span>
+				<span>{t('planning.obligations.loans')}</span>
 				<span class="font-mono text-[#346538]">Total {fmtIDR(ob?.totalReceivable)}</span>
 			</div>
 			<div>
@@ -67,7 +68,7 @@
 
 	{#if totalCount === 0}
 		<div class="py-6 text-center font-mono text-xs text-[#787774]">
-			Tidak ada kewajiban atau piutang aktif.
+			{t('common.empty')}
 		</div>
 	{/if}
 </section>

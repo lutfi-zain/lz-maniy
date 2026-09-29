@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 
 	let isSubmitting = $state(false);
@@ -51,7 +52,7 @@
 	<!-- Name -->
 	<div>
 		<label for="cat-name" class="mb-1 block font-medium text-[#111111]">
-			Nama Kategori <span class="text-[#9F2F2D]">*</span>
+			{t('forms.category.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="cat-name"
@@ -68,8 +69,8 @@
 		<label for="cat-type" class="mb-1 block font-medium text-[#111111]"> Tipe Kategori </label>
 		{#if mode === 'edit'}
 			<div class="rounded-md border border-[#EAEAEA] bg-[#F9F9F8] px-3 py-2 font-mono text-xs text-[#787774]">
-				{categoryFormStore.type === 'expense' ? 'Pengeluaran (Expense)' : 'Pemasukan (Income)'}
-				<span class="ml-2 text-[10px] text-[#787774]">(Tipe tidak dapat diubah setelah dibuat)</span>
+				{categoryFormStore.type === 'expense' ? t('forms.transaction.typeExpense') : t('forms.transaction.typeIncome')}
+				<span class="ml-2 text-[10px] text-[#787774]">({t('forms.category.typeNotice')})</span>
 			</div>
 		{:else}
 			<div class="grid grid-cols-2 gap-2">
@@ -81,7 +82,7 @@
 						? 'border-[#111111] bg-[#111111] text-white'
 						: 'border-[#EAEAEA] bg-white text-[#787774] hover:bg-[#F9F9F8]'}"
 				>
-					Pengeluaran
+					{t('forms.transaction.typeExpense')}
 				</button>
 				<button
 					type="button"
@@ -91,7 +92,7 @@
 						? 'border-[#111111] bg-[#111111] text-white'
 						: 'border-[#EAEAEA] bg-white text-[#787774] hover:bg-[#F9F9F8]'}"
 				>
-					Pemasukan
+					{t('forms.transaction.typeIncome')}
 				</button>
 			</div>
 		{/if}
@@ -130,7 +131,7 @@
 			onclick={() => categoryFormStore.close()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -138,7 +139,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Perbarui Kategori' : 'Simpan Kategori'}</span>
+			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.category.submitEdit') : t('forms.category.submitCreate')}</span>
 		</button>
 	</div>
 </form>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fmtCurrency, fmtIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
+	import { t } from '$lib/i18n/index.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { recurringFormStore } from '$lib/stores/recurring-form.svelte';
 	import type { RecurringTemplate } from '$lib/types/account-detail';
@@ -135,30 +136,30 @@
 	<!-- Associated Accounts -->
 	<div class="space-y-2 rounded-lg border border-[#EAEAEA] bg-[#FDFCFB] p-3.5">
 		<div class="text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-			Rincian Dompet & Kategori
+			Account & Category Details
 		</div>
 
 		<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
-			<span class="text-[#787774]">Dompet Sumber</span>
+			<span class="text-[#787774]">{t('forms.transaction.sourceAccount')}</span>
 			<span class="font-medium text-[#111111]">{wallet?.walletName || template.templateWalletId}</span>
 		</div>
 
 		{#if targetWallet}
 			<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
-				<span class="text-[#787774]">Dompet Tujuan</span>
+				<span class="text-[#787774]">{t('forms.transaction.targetAccount')}</span>
 				<span class="font-medium text-[#111111]">{targetWallet.walletName}</span>
 			</div>
 		{/if}
 
 		{#if category}
 			<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
-				<span class="text-[#787774]">Kategori</span>
+				<span class="text-[#787774]">{t('common.category')}</span>
 				<span class="font-medium text-[#111111]">{category.categoryIcon || '🏷️'} {category.categoryName}</span>
 			</div>
 		{/if}
 
 		<div class="flex items-center justify-between py-1">
-			<span class="text-[#787774]">Tanggal Mulai</span>
+			<span class="text-[#787774]">{t('forms.recurring.startDateLabel')}</span>
 			<span class="font-mono text-[#111111]">{dFmt(template.templateStartDate)}</span>
 		</div>
 	</div>
@@ -166,7 +167,7 @@
 	{#if template.templateNotes}
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#FDFCFB] p-3">
 			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase mb-1">
-				Catatan
+				Notes
 			</span>
 			<p class="text-xs text-[#111111]">{template.templateNotes}</p>
 		</div>

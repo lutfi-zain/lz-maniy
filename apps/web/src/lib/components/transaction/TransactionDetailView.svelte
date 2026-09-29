@@ -3,6 +3,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt, dFmtTime } from '$lib/utils/dates';
+	import { t } from '$lib/i18n/index.svelte';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
@@ -27,7 +28,7 @@
 	}
 
 	function getCategoryName(id: string | null | undefined): string {
-		if (!id) return 'Tanpa Kategori';
+		if (!id) return 'Uncategorized';
 		const c = reedrichStore.categories.find((cat) => cat.categoryId === id);
 		return c?.categoryName || 'Kategori';
 	}
@@ -185,7 +186,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#FDEBEC] bg-white px-3 py-2 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDEBEC] active:scale-98"
 		>
 			<Trash class="size-3.5" weight="bold" />
-			<span>Hapus</span>
+			<span>{t('common.delete')}</span>
 		</button>
 
 		<button
@@ -194,7 +195,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#333333] active:scale-98"
 		>
 			<PencilSimple class="size-3.5" weight="bold" />
-			<span>Edit Transaksi</span>
+			<span>{t('common.edit')}</span>
 		</button>
 	</div>
 </div>
@@ -213,7 +214,7 @@
 			<div class="flex items-center gap-2 text-[#9F2F2D]">
 				<WarningCircle class="size-5" weight="bold" />
 				<h3 id="delete-dialog-title" class="text-sm font-semibold text-[#111111]">
-					Hapus Transaksi Ini?
+					{t('common.delete')}?
 				</h3>
 			</div>
 
@@ -238,7 +239,7 @@
 					disabled={isDeleting}
 					class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] disabled:opacity-50"
 				>
-					Batal
+					{t('common.cancel')}
 				</button>
 
 				<button
@@ -251,9 +252,9 @@
 						<span
 							class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
 						></span>
-						<span>Menghapus...</span>
+						<span>{t('common.deleting')}</span>
 					{:else}
-						<span>Hapus Transaksi</span>
+						<span>{t('common.yesDelete')}</span>
 					{/if}
 				</button>
 			</div>

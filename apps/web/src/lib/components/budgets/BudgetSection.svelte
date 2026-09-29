@@ -2,6 +2,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import BudgetCard from './BudgetCard.svelte';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 
 	const budgets = $derived(reedrichStore.activeBudgets);
 </script>
@@ -13,17 +14,17 @@
 		<div>
 			<h2 class="serif flex items-center gap-2 text-xl font-medium text-[#111111] md:text-2xl">
 				<ChartPieSlice class="size-5 text-[#111111]" weight="bold" />
-				<span>Batas Belanja Aktif (Budgets)</span>
+				<span>{t('planning.budgets.title')}</span>
 			</h2>
 			<div class="mt-0.5 text-xs text-[#787774]">
-				Realisasi pengeluaran terhadap pagu bulanan. Klik untuk riwayat transaksi.
+				{i18nStore.locale === 'id' ? 'Realisasi pengeluaran terhadap pagu bulanan. Klik untuk riwayat transaksi.' : 'Spending vs monthly allowances. Click to inspect transactions.'}
 			</div>
 		</div>
 
 		<span
 			class="rounded-full border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-0.5 font-mono text-[11px] text-[#787774] uppercase"
 		>
-			{budgets.length} budget
+			{budgets.length} {i18nStore.locale === 'id' ? 'pagu' : 'budgets'}
 		</span>
 	</div>
 
@@ -32,7 +33,7 @@
 			<BudgetCard {budget} />
 		{:else}
 			<div class="py-6 text-center font-mono text-xs text-[#787774]">
-				Tidak ada batas belanja aktif saat ini.
+				{t('common.empty')}
 			</div>
 		{/each}
 	</div>

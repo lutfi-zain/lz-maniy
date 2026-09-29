@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 	let firstName = $state(authStore.user?.firstName || '');
 	let lastName = $state(authStore.user?.lastName || '');
@@ -67,7 +68,7 @@
 	<div class="grid grid-cols-2 gap-3">
 		<div>
 			<label for="prof-first" class="mb-1 block font-medium text-[#111111]">
-				Nama Depan <span class="text-[#9F2F2D]">*</span>
+				First Name <span class="text-[#9F2F2D]">*</span>
 			</label>
 			<input
 				id="prof-first"
@@ -81,7 +82,7 @@
 
 		<div>
 			<label for="prof-last" class="mb-1 block font-medium text-[#111111]">
-				Nama Belakang
+				Last Name
 			</label>
 			<input
 				id="prof-last"
@@ -96,7 +97,7 @@
 	<!-- WhatsApp Number -->
 	<div>
 		<label for="prof-wa" class="mb-1 block font-medium text-[#111111]">
-			Nomor WhatsApp
+			{t('forms.profile.whatsappNumber')}
 		</label>
 		<input
 			id="prof-wa"
@@ -117,7 +118,7 @@
 			onclick={() => reedrichStore.closeDrawer()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -125,7 +126,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : 'Simpan Profil'}</span>
+			<span>{isSubmitting ? t('common.saving') : t('forms.profile.submit')}</span>
 		</button>
 	</div>
 </form>

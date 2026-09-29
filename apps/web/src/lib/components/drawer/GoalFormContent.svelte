@@ -3,6 +3,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import SingleDatePicker from '$lib/components/ui/SingleDatePicker.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 
 	let isSubmitting = $state(false);
@@ -72,7 +73,7 @@
 	<!-- Name -->
 	<div>
 		<label for="goal-name" class="mb-1 block font-medium text-[#111111]">
-			Nama Target Sasaran <span class="text-[#9F2F2D]">*</span>
+			{t('forms.goal.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="goal-name"
@@ -88,7 +89,7 @@
 	<div class="grid grid-cols-3 gap-3">
 		<div class="col-span-2">
 			<label for="goal-target" class="mb-1 block font-medium text-[#111111]">
-				Jumlah Sasaran Target <span class="text-[#9F2F2D]">*</span>
+				{t('forms.goal.targetLabel')} <span class="text-[#9F2F2D]">*</span>
 			</label>
 			<input
 				id="goal-target"
@@ -103,7 +104,7 @@
 		</div>
 
 		<div>
-			<label for="goal-curr" class="mb-1 block font-medium text-[#111111]"> Mata Uang </label>
+			<label for="goal-curr" class="mb-1 block font-medium text-[#111111]"> {t('forms.wallet.currencyLabel')} </label>
 			<input
 				id="goal-curr"
 				type="text"
@@ -118,7 +119,7 @@
 	<!-- Target Date -->
 	<div>
 		<label for="goal-date" class="mb-1 block font-medium text-[#111111]">
-			Tenggat Waktu Sasaran (Opsional)
+			{t('forms.goal.deadlineLabel')}
 		</label>
 		<SingleDatePicker
 			bind:value={goalFormStore.targetDate}
@@ -129,10 +130,10 @@
 	<!-- Linked Wallets (for Derived Balance Calculation) -->
 	<div>
 		<div class="mb-1.5 flex items-center justify-between">
-			<span class="font-medium text-[#111111]">Dompet Terhubung (Derived Goal)</span>
+			<span class="font-medium text-[#111111]">{t('forms.goal.linkedWalletsLabel')}</span>
 			{#if isDerived}
 				<span class="rounded bg-[#EDF3EC] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#346538]">
-					Saldo Otomatis Terhitung
+					{i18nStore.locale === 'id' ? 'Saldo Otomatis Terhitung' : 'Derived Balance'}
 				</span>
 			{/if}
 		</div>
@@ -217,7 +218,7 @@
 			onclick={() => goalFormStore.close()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -225,7 +226,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Perbarui Target' : 'Simpan Target'}</span>
+			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.goal.submitEdit') : t('forms.goal.submitCreate')}</span>
 		</button>
 	</div>
 </form>

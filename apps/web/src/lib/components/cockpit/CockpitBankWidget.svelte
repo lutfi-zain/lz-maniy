@@ -2,6 +2,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
@@ -38,10 +39,10 @@
 	<div class="mb-3 flex items-center justify-between border-b border-[#EAEAEA] pb-2.5">
 		<div class="flex items-center gap-1.5">
 			<Bank class="size-4 text-[#111111]" weight="bold" />
-			<h3 class="text-xs font-semibold text-[#111111]">Saldo per Institusi</h3>
+			<h3 class="text-xs font-semibold text-[#111111]">Balance by Institution</h3>
 		</div>
 		<span class="font-mono text-[10px] text-[#787774] uppercase">
-			{groupedBanks.length} Institusi
+			{groupedBanks.length} Institutions
 		</span>
 	</div>
 
@@ -68,7 +69,7 @@
 						<div class="flex items-center gap-1.5">
 							<span>{inst}</span>
 							<span class="font-mono text-[10px] font-normal text-[#787774]">
-								({data.items.length} akun)
+								({data.items.length} accounts)
 							</span>
 						</div>
 						<span class="font-mono text-xs text-[#111111] tabular-nums">
@@ -103,7 +104,7 @@
 		href="/accounts"
 		class="mt-3 flex items-center justify-center gap-1.5 rounded border border-[#EAEAEA] bg-white py-1.5 text-center text-[11px] font-medium text-[#111111] no-underline transition-colors hover:bg-[#F9F9F8]"
 	>
-		<span>Kelola Akun & Bank</span>
+		<span>{t('accounts.title')}</span>
 		<ArrowRight class="size-3" weight="bold" />
 	</a>
 </div>
@@ -113,13 +114,13 @@
 	<div class="mb-2 flex items-center justify-between">
 		<div class="flex items-center gap-1.5">
 			<Bank class="size-3.5 text-[#111111]" weight="bold" />
-			<h3 class="text-xs font-semibold text-[#111111]">Likuiditas Akun</h3>
+			<h3 class="text-xs font-semibold text-[#111111]">Account Liquidity</h3>
 		</div>
 		<a
 			href="/accounts"
 			class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
 		>
-			<span>Semua Akun</span>
+			<span>{t('accounts.allWallets')}</span>
 			<ArrowRight class="size-3" weight="bold" />
 		</a>
 	</div>

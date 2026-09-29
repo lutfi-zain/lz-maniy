@@ -5,6 +5,7 @@
 	import CaretDown from 'phosphor-svelte/lib/CaretDown';
 	import X from 'phosphor-svelte/lib/X';
 	import { dFmt } from '$lib/utils/dates';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 
 	let {
 		start = $bindable(''),
@@ -235,33 +236,31 @@
 		}
 	}
 
-	const monthNames = [
-		'Januari',
-		'Februari',
-		'Maret',
-		'April',
-		'Mei',
-		'Juni',
-		'Juli',
-		'Agustus',
-		'September',
-		'Oktober',
-		'November',
-		'Desember'
-	];
+	const monthNames = $derived.by(() => {
+		return Array.from({ length: 12 }, (_, i) => {
+			const d = new Date(2026, i, 1);
+			return d.toLocaleDateString(i18nStore.locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' });
+		});
+	});
+
+	const weekDays = $derived.by(() => {
+		return i18nStore.locale === 'id'
+			? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+			: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+	});
 
 	const triggerLabel = $derived.by(() => {
 		if (preset === 'this_month')
-			return 'Bulan Ini' + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
+			return t('date.thisMonth') + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
 		if (preset === 'next_month')
-			return 'Bulan Depan' + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
+			return t('date.nextMonth') + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
 		if (preset === 'last_month')
-			return 'Bulan Lalu' + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
-		if (preset === 'today') return 'Hari Ini' + (start ? ` (${dFmt(start)})` : '');
-		if (preset === 'all') return 'Semua Waktu';
+			return t('date.lastMonth') + (start && end ? ` (${dFmt(start)} - ${dFmt(end)})` : '');
+		if (preset === 'today') return t('date.today') + (start ? ` (${dFmt(start)})` : '');
+		if (preset === 'all') return t('date.allTime');
 		if (start && end) return `${dFmt(start)} - ${dFmt(end)}`;
-		if (start) return `Mulai ${dFmt(start)}...`;
-		return 'Pilih Rentang Tanggal';
+		if (start) return t('date.startingFrom', { date: dFmt(start) });
+		return t('date.selectRange');
 	});
 </script>
 
@@ -307,7 +306,7 @@
 							? 'bg-[#111111] font-semibold text-white'
 							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						Bulan Ini
+						{t('date.thisMonth')}
 					</button>
 					<button
 						type="button"
@@ -317,7 +316,7 @@
 							? 'bg-[#111111] font-semibold text-white'
 							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						Bulan Depan
+						{t('date.nextMonth')}
 					</button>
 					<button
 						type="button"
@@ -327,7 +326,7 @@
 							? 'bg-[#111111] font-semibold text-white'
 							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						Bulan Lalu
+						{t('date.lastMonth')}
 					</button>
 					<button
 						type="button"
@@ -337,7 +336,7 @@
 							? 'bg-[#111111] font-semibold text-white'
 							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						Hari Ini
+						{t('date.today')}
 					</button>
 					<button
 						type="button"
@@ -347,7 +346,7 @@
 							? 'bg-[#111111] font-semibold text-white'
 							: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#EFEFED]'}"
 					>
-						Semua
+						{t('common.all')}
 					</button>
 				</div>
 
@@ -363,7 +362,7 @@
 						class="flex cursor-pointer items-center gap-1 text-[11px] text-[#9F2F2D] hover:underline"
 					>
 						<X class="size-3" />
-						<span>Reset</span>
+						<span>{t('common.reset')}</span>
 					</button>
 				{/if}
 			</div>
@@ -391,13 +390,9 @@
 
 					<!-- Days of week -->
 					<div class="grid grid-cols-7 text-center text-[10px] font-medium text-[#787774]">
-						<span>Min</span>
-						<span>Sen</span>
-						<span>Sel</span>
-						<span>Rab</span>
-						<span>Kam</span>
-						<span>Jum</span>
-						<span>Sab</span>
+						{#each weekDays as day}
+							<span>{day}</span>
+						{/each}
 					</div>
 
 					<!-- Days grid -->
@@ -446,13 +441,9 @@
 
 					<!-- Days of week -->
 					<div class="grid grid-cols-7 text-center text-[10px] font-medium text-[#787774]">
-						<span>Min</span>
-						<span>Sen</span>
-						<span>Sel</span>
-						<span>Rab</span>
-						<span>Kam</span>
-						<span>Jum</span>
-						<span>Sab</span>
+						{#each weekDays as day}
+							<span>{day}</span>
+						{/each}
 					</div>
 
 					<!-- Days grid -->

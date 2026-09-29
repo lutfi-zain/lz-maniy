@@ -7,6 +7,7 @@
 	import { recurringFormStore } from '$lib/stores/recurring-form.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Target from 'phosphor-svelte/lib/Target';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
 	import Handshake from 'phosphor-svelte/lib/Handshake';
@@ -50,8 +51,8 @@
 		reedrichStore.openDrawer({
 			type: 'goal',
 			title: goal.goalName,
-			subtitle: `${goal.daysRemaining !== null ? `${goal.daysRemaining} hari tersisa` : 'Jangka panjang'} ${goal.isDerived ? '· Derived dari dompet terhubung' : ''}`,
-			badge: 'TARGET TABUNGAN',
+			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')} ${goal.isDerived ? '· Derived' : ''}`,
+			badge: i18nStore.locale === 'id' ? 'TARGET TABUNGAN' : 'SAVINGS GOAL',
 			data: { goal }
 		});
 	}
@@ -61,7 +62,7 @@
 			type: 'budget',
 			title: budget.budgetName,
 			subtitle: `Kategori: ${budget.categoryName || 'General'} · Status: ${budget.status}`,
-			badge: 'BUDGET & PAGU',
+			badge: i18nStore.locale === 'id' ? 'BUDGET & PAGU' : 'BUDGET',
 			data: { budget }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ budgetId: budget.budgetId, limit: 50 });
@@ -83,7 +84,7 @@
 					: 'text-[#787774] hover:text-[#111111]'}"
 			>
 				<Target class="size-3.5" weight="bold" />
-				<span>Target Tabungan ({goals.length})</span>
+				<span>{t('planning.tabs.goals')} ({goals.length})</span>
 			</button>
 
 			<button
@@ -95,7 +96,7 @@
 					: 'text-[#787774] hover:text-[#111111]'}"
 			>
 				<ChartPieSlice class="size-3.5" weight="bold" />
-				<span>Pagu Anggaran ({budgets.length})</span>
+				<span>{t('planning.tabs.budgets')} ({budgets.length})</span>
 			</button>
 
 			<button
@@ -107,7 +108,7 @@
 					: 'text-[#787774] hover:text-[#111111]'}"
 			>
 				<Handshake class="size-3.5" weight="bold" />
-				<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
+				<span>{t('planning.tabs.obligations')} ({debts.length + loans.length})</span>
 			</button>
 			<button
 				type="button"
@@ -118,7 +119,7 @@
 					: 'text-[#787774] hover:text-[#111111]'}"
 			>
 				<Tag class="size-3.5" weight="bold" />
-				<span>Kategori ({categories.length})</span>
+				<span>{t('planning.tabs.categories')} ({categories.length})</span>
 			</button>
 		</div>
 
@@ -140,7 +141,7 @@
 					class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 					title="Reset ke Bulan Ini"
 				>
-					Reset
+					{t('common.reset')}
 				</button>
 			{/if}
 
@@ -151,7 +152,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Buat Target</span>
+					<span>{t('planning.goals.addGoal')}</span>
 				</button>
 			{:else if activeSubTab === 'budgets'}
 				<button
@@ -160,7 +161,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Tambah Budget</span>
+					<span>{t('planning.budgets.addBudget')}</span>
 				</button>
 			{:else if activeSubTab === 'obligations'}
 				<button
@@ -169,7 +170,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Tambah Recurring</span>
+					<span>{t('planning.obligations.addRecurring')}</span>
 				</button>
 			{/if}
 		</div>
