@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Tag from 'phosphor-svelte/lib/Tag';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
@@ -30,8 +31,8 @@
 		reedrichStore.openDrawer({
 			type: 'category',
 			title: item.category.categoryName,
-			subtitle: `${isIncome ? 'Pemasukan' : 'Pengeluaran'} · ${item.transactionCount} transaksi`,
-			badge: isProtected ? 'SISTEM' : 'KATEGORI',
+			subtitle: `${isIncome ? (i18nStore.locale === 'id' ? 'Pemasukan' : 'Income') : (i18nStore.locale === 'id' ? 'Pengeluaran' : 'Expense')} · ${item.transactionCount} ${i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}`,
+			badge: isProtected ? (i18nStore.locale === 'id' ? 'SISTEM' : 'SYSTEM') : (i18nStore.locale === 'id' ? 'KATEGORI' : 'CATEGORY'),
 			data: {
 				item: {
 					categoryName: item.category.categoryName,
@@ -108,18 +109,18 @@
 				{#if item.linkedBudget}
 					<span
 						class="hidden rounded bg-[#EFEFED] px-1.5 py-0.2 font-mono text-[9px] text-[#787774] sm:inline-block"
-						title="Pagu Anggaran Terhubung"
+						title="Linked Budget"
 					>
-						Pagu: {item.linkedBudget.budgetName}
+						{t('planning.categories.linkedBudget', { name: item.linkedBudget.budgetName })}
 					</span>
 				{/if}
 			</div>
 
 			<div class="mt-0.5 flex items-center gap-2 text-[11px] text-[#787774]">
-				<span>{item.transactionCount} mutasi</span>
+				<span>{item.transactionCount} {i18nStore.locale === 'id' ? 'mutasi' : 'txns'}</span>
 				{#if item.percentageOfTotal > 0}
 					<span>·</span>
-					<span class="font-mono text-[10px]">{item.percentageOfTotal.toFixed(1)}% alokasi</span>
+					<span class="font-mono text-[10px]">{item.percentageOfTotal.toFixed(1)}% {t('planning.categories.shareOfPeriod')}</span>
 				{/if}
 			</div>
 		</div>

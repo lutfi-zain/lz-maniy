@@ -4,6 +4,7 @@
 	import DrawerTransactionTable from './DrawerTransactionTable.svelte';
 	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import type { WalletItem } from '$lib/types/account-detail';
@@ -83,7 +84,7 @@
 	<!-- Transactions List Table -->
 	<div>
 		<div class="mb-1 text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-			Riwayat Transaksi Dompet
+			{t('accounts.historyTitle')}
 		</div>
 		<DrawerTransactionTable currency={wallet.currency} />
 	</div>
@@ -102,7 +103,7 @@
 				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 			>
 				<PencilSimple class="size-3.5" weight="bold" />
-				<span>Edit Dompet</span>
+				<span>{t('accounts.editAccount')}</span>
 			</button>
 
 			<button
@@ -111,7 +112,7 @@
 				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
 			>
 				<Trash class="size-3.5" weight="bold" />
-				<span>Hapus</span>
+				<span>{t('common.delete')}</span>
 			</button>
 		</div>
 
@@ -120,7 +121,7 @@
 			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
 				{#if !canDelete}
 					<p class="text-xs font-medium text-[#9F2F2D]">
-						Dompet tidak dapat dihapus karena saldo masih tersisa ({fmtCurrency(wallet.balance, wallet.currency)}).
+						{t('accounts.deleteZeroBalanceWarning')} ({fmtCurrency(wallet.balance, wallet.currency)})
 					</p>
 					<p class="mt-0.5 text-[11px] text-[#787774]">
 						Pindahkan atau sesuaikan saldo menjadi 0 terlebih dahulu sebelum menghapus dompet ini.
@@ -131,15 +132,15 @@
 							onclick={() => (showDeleteConfirm = false)}
 							class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
 						>
-							Tutup
+							{t('common.close')}
 						</button>
 					</div>
 				{:else}
 					<p class="text-xs font-medium text-[#9F2F2D]">
-						Yakin ingin menghapus dompet "{wallet.walletName}"?
+						{i18nStore.locale === 'id' ? `Yakin ingin menghapus dompet "${wallet.walletName}"?` : `Are you sure you want to delete "${wallet.walletName}"?`}
 					</p>
 					<p class="mt-0.5 text-[11px] text-[#787774]">
-						Tindakan ini permanen. Pastikan tidak ada target tabungan atau tagihan rutin yang terhubung ke dompet ini.
+						{i18nStore.locale === 'id' ? 'Tindakan ini permanen.' : 'This action is permanent and cannot be undone.'}
 					</p>
 					<div class="mt-2.5 flex items-center justify-end gap-2">
 						<button
@@ -147,7 +148,7 @@
 							onclick={() => (showDeleteConfirm = false)}
 							class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
 						>
-							Batal
+							{t('common.cancel')}
 						</button>
 						<button
 							type="button"
@@ -155,7 +156,7 @@
 							disabled={isDeleting}
 							class="cursor-pointer rounded-md bg-[#9F2F2D] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
 						>
-							{isDeleting ? 'Menghapus...' : 'Ya, Hapus Dompet'}
+							{isDeleting ? t('common.deleting') : t('common.yesDelete')}
 						</button>
 					</div>
 				{/if}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import WalletCard from './WalletCard.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import Wallet from 'phosphor-svelte/lib/Wallet';
 
 	const spendableCount = $derived(reedrichStore.spendableWallets.length);
@@ -15,10 +16,10 @@
 		<div>
 			<h2 class="serif flex items-center gap-2 text-xl font-medium text-[#111111] md:text-2xl">
 				<Wallet class="size-5 text-[#111111]" weight="bold" />
-				<span>Daftar Dompet & Rekening</span>
+				<span>{t('accounts.allWallets')}</span>
 			</h2>
 			<div class="mt-0.5 text-xs text-[#787774]">
-				Klik dompet mana pun untuk membuka rincian dan transaksi lengkap.
+				{t('accounts.clickToInspect')}
 			</div>
 		</div>
 
@@ -33,7 +34,7 @@
 			<span
 				class="rounded-full border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-0.5 font-mono text-[11px] text-[#787774] uppercase"
 			>
-				{reedrichStore.filteredWallets.length} dompet
+				{t('accounts.walletCount', { count: reedrichStore.filteredWallets.length })}
 			</span>
 		</div>
 	</div>
@@ -48,7 +49,7 @@
 				: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#111111] hover:text-white'}"
 			onclick={() => reedrichStore.setTab('all')}
 		>
-			Semua ({allCount})
+			{t('common.all')} ({allCount})
 		</button>
 		<button
 			type="button"
@@ -58,7 +59,7 @@
 				: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#111111] hover:text-white'}"
 			onclick={() => reedrichStore.setTab('spendable')}
 		>
-			Spendable ({spendableCount})
+			{t('ledger.summary.spendable')} ({spendableCount})
 		</button>
 		<button
 			type="button"
@@ -68,7 +69,7 @@
 				: 'bg-[#F9F9F8] text-[#787774] hover:bg-[#111111] hover:text-white'}"
 			onclick={() => reedrichStore.setTab('locked')}
 		>
-			Locked / Cadangan ({lockedCount})
+			{t('ledger.summary.locked')} ({lockedCount})
 		</button>
 	</div>
 
@@ -78,7 +79,7 @@
 			<WalletCard {wallet} />
 		{:else}
 			<div class="py-8 text-center font-mono text-xs text-[#787774]">
-				Tidak ada dompet pada filter ini.
+				{t('common.empty')}
 			</div>
 		{/each}
 	</div>

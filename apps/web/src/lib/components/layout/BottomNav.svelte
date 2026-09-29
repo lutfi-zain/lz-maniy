@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import Compass from 'phosphor-svelte/lib/Compass';
 	import Table from 'phosphor-svelte/lib/Table';
 	import Bank from 'phosphor-svelte/lib/Bank';
@@ -20,7 +21,7 @@
 <nav
 	id="bottomNav"
 	class="fixed right-0 bottom-0 left-0 z-40 flex h-14 items-center justify-around border-t border-[#EAEAEA] bg-white/95 px-2 backdrop-blur-xs md:hidden"
-	aria-label="Navigasi Utama Mobile"
+	aria-label="Mobile Main Navigation"
 >
 	<!-- Cockpit -->
 	<a
@@ -34,7 +35,7 @@
 	>
 		<Compass class="size-4.5" weight="bold" />
 		<span class="text-[10px] tracking-tight {isActive('/') ? 'font-semibold' : 'font-medium'}">
-			Cockpit
+			{t('nav.cockpit')}
 		</span>
 		{#if isActive('/')}
 			<span class="absolute bottom-1 size-1 rounded-full bg-[#111111]"></span>
@@ -62,27 +63,27 @@
 		<span
 			class="text-[10px] tracking-tight {isActive('/ledger') ? 'font-semibold' : 'font-medium'}"
 		>
-			Ledger
+			{t('nav.ledger')}
 		</span>
 		{#if isActive('/ledger')}
 			<span class="absolute bottom-1 size-1 rounded-full bg-[#111111]"></span>
 		{/if}
 	</a>
 
-	<!-- Center Action: Catat Transaksi Baru -->
+	<!-- Center Action: Record New Transaction -->
 	<div class="flex items-center justify-center px-1">
 		<button
 			type="button"
 			onclick={() => transactionFormStore.openCreate()}
 			class="-mt-3.5 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-[#111111] text-white shadow-md transition-transform hover:bg-[#333333] active:scale-95"
-			title="Catat Transaksi Baru"
-			aria-label="Catat Transaksi Baru"
+			title={t('nav.recordTitle')}
+			aria-label={t('nav.recordTitle')}
 		>
 			<Plus class="size-5" weight="bold" />
 		</button>
 	</div>
 
-	<!-- Akun & Bank -->
+	<!-- Accounts & Banking -->
 	<a
 		href="/accounts"
 		class="relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 no-underline transition-colors {isActive(
@@ -103,14 +104,14 @@
 		<span
 			class="text-[10px] tracking-tight {isActive('/accounts') ? 'font-semibold' : 'font-medium'}"
 		>
-			Akun
+			{t('nav.accounts')}
 		</span>
 		{#if isActive('/accounts')}
 			<span class="absolute bottom-1 size-1 rounded-full bg-[#111111]"></span>
 		{/if}
 	</a>
 
-	<!-- Perencanaan -->
+	<!-- Planning -->
 	<a
 		href="/planning"
 		class="relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 no-underline transition-colors {isActive(
@@ -124,7 +125,7 @@
 		<span
 			class="text-[10px] tracking-tight {isActive('/planning') ? 'font-semibold' : 'font-medium'}"
 		>
-			Planning
+			{t('nav.planning')}
 		</span>
 		{#if isActive('/planning')}
 			<span class="absolute bottom-1 size-1 rounded-full bg-[#111111]"></span>

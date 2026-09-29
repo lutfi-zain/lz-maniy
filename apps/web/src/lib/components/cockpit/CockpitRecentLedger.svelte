@@ -5,6 +5,7 @@
 	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
+	import { t } from '$lib/i18n/index.svelte';
 	import Table from 'phosphor-svelte/lib/Table';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
@@ -68,7 +69,7 @@
 	>
 		<div class="flex items-center gap-1.5">
 			<Table class="size-4 text-[#111111]" weight="bold" />
-			<h3 class="text-xs font-semibold text-[#111111]">Mutasi Terkini</h3>
+			<h3 class="text-xs font-semibold text-[#111111]">{t('cockpit.recentTransactions')}</h3>
 		</div>
 
 		<div class="flex items-center gap-2">
@@ -92,7 +93,7 @@
 						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 						title="Reset ke Bulan Ini"
 					>
-						Reset
+						{t('common.reset')}
 					</button>
 				{/if}
 			</div>
@@ -101,7 +102,7 @@
 				href="/ledger"
 				class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
 			>
-				<span>Semua</span>
+				<span>{t('common.viewAll')}</span>
 				<ArrowRight class="size-3" weight="bold" />
 			</a>
 		</div>
@@ -123,7 +124,7 @@
 	{:else}
 		{#if recentTransactions.length === 0}
 			<div class="py-8 text-center font-mono text-xs text-[#787774]">
-				Tidak ada transaksi pada rentang tanggal ini.
+				{t('common.empty')}
 			</div>
 		{:else}
 			<!-- Desktop: Tabular Grid (>= 768px) -->
@@ -133,10 +134,10 @@
 						class="border-b border-[#EAEAEA] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
 					>
 						<tr>
-							<th class="pb-2 font-medium">Tanggal</th>
-							<th class="pb-2 font-medium">Deskripsi</th>
-							<th class="pb-2 font-medium">Akun</th>
-							<th class="pb-2 text-right font-medium">Nominal</th>
+							<th class="pb-2 font-medium">{t('common.date')}</th>
+							<th class="pb-2 font-medium">{t('common.description')}</th>
+							<th class="pb-2 font-medium">{t('common.account')}</th>
+							<th class="pb-2 text-right font-medium">{t('common.amount')}</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-[#EAEAEA]">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import ChartBar from 'phosphor-svelte/lib/ChartBar';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
@@ -17,9 +18,9 @@
 		<div class="mb-3 flex items-center justify-between border-b border-[#EAEAEA] pb-2">
 			<div class="flex items-center gap-1.5">
 				<ChartBar class="size-4 text-[#111111]" weight="bold" />
-				<h3 class="text-xs font-semibold text-[#111111]">Alokasi Pengeluaran Terbesar</h3>
+				<h3 class="text-xs font-semibold text-[#111111]">{t('cockpit.topExpenses')}</h3>
 			</div>
-			<span class="font-mono text-[10px] text-[#787774]">Top 6</span>
+			<span class="font-mono text-[10px] text-[#787774]">{t('cockpit.topCount', { count: 6 })}</span>
 		</div>
 
 		{#if reedrichStore.isLoading}
@@ -66,13 +67,13 @@
 		<div class="mb-2 flex items-center justify-between pb-2">
 			<div class="flex items-center gap-1.5">
 				<ChartPieSlice class="size-4 text-[#111111]" weight="bold" />
-				<h3 class="text-xs font-semibold text-[#111111]">Pagu Anggaran</h3>
+				<h3 class="text-xs font-semibold text-[#111111]">{t('cockpit.budgets')}</h3>
 			</div>
 			<a
 				href="/planning"
 				class="flex items-center gap-1 text-[11px] font-medium text-[#787774] no-underline transition-colors hover:text-[#111111]"
 			>
-				<span>Kelola</span>
+				<span>{t('common.viewAll')}</span>
 				<ArrowRight class="size-3" weight="bold" />
 			</a>
 		</div>

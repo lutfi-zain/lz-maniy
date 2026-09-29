@@ -4,6 +4,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
+	import { i18nStore, t } from '$lib/i18n/index.svelte';
 	import ShieldCheck from 'phosphor-svelte/lib/ShieldCheck';
 	import ArrowsClockwise from 'phosphor-svelte/lib/ArrowsClockwise';
 	import Table from 'phosphor-svelte/lib/Table';
@@ -58,7 +59,7 @@
 				class="flex shrink-0 items-center gap-1.5 font-semibold text-[#111111] no-underline"
 			>
 				<ShieldCheck class="size-5 text-[#111111]" weight="bold" />
-				<span class="text-sm font-semibold tracking-tight">Maniyy</span>
+				<span class="text-sm font-semibold tracking-tight">{t('nav.brand')}</span>
 			</a>
 
 			<nav class="hidden shrink-0 items-center gap-1 md:flex">
@@ -71,7 +72,7 @@
 						: 'text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]'}"
 				>
 					<Compass class="size-3.5" weight="bold" />
-					<span>Cockpit</span>
+					<span>{t('nav.cockpit')}</span>
 				</a>
 
 				<a
@@ -83,7 +84,7 @@
 						: 'text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]'}"
 				>
 					<Table class="size-3.5" weight="bold" />
-					<span>Ledger</span>
+					<span>{t('nav.ledger')}</span>
 					<span
 						class="py-0.2 rounded-full px-1.5 font-mono text-[10px] {isActive('/ledger')
 							? 'bg-white/20 text-white'
@@ -102,7 +103,7 @@
 						: 'text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]'}"
 				>
 					<Bank class="size-3.5" weight="bold" />
-					<span>Akun & Bank</span>
+					<span>{t('nav.accounts')}</span>
 					<span
 						class="py-0.2 rounded-full px-1.5 font-mono text-[10px] {isActive('/accounts')
 							? 'bg-white/20 text-white'
@@ -121,7 +122,7 @@
 						: 'text-[#787774] hover:bg-[#F9F9F8] hover:text-[#111111]'}"
 				>
 					<Target class="size-3.5" weight="bold" />
-					<span>Perencanaan</span>
+					<span>{t('nav.planning')}</span>
 				</a>
 			</nav>
 		</div>
@@ -134,13 +135,13 @@
 				onclick={() => reedrichStore.fetchSnapshot()}
 				disabled={reedrichStore.isLoading}
 				class="flex cursor-pointer items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs font-medium text-[#111111] transition-transform hover:bg-[#EFEFED] active:scale-98 disabled:opacity-50"
-				title="Sinkronkan data live"
+				title={t('nav.syncTitle')}
 			>
 				<ArrowsClockwise
 					class="size-3 {reedrichStore.isLoading ? 'animate-spin' : ''}"
 					weight="bold"
 				/>
-				<span class="hidden sm:inline">Sync</span>
+				<span class="hidden sm:inline">{t('nav.sync')}</span>
 			</button>
 
 			{#if authStore.isAuthenticated}
@@ -148,10 +149,10 @@
 					type="button"
 					onclick={() => transactionFormStore.openCreate()}
 					class="hidden cursor-pointer items-center gap-1.5 rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs font-medium text-[#111111] transition-transform hover:bg-[#F9F9F8] active:scale-98 md:flex"
-					title="Catat transaksi baru (N)"
+					title={t('nav.recordTitle')}
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Catat</span>
+					<span>{t('nav.record')}</span>
 				</button>
 			{/if}
 
@@ -161,7 +162,7 @@
 					title={reedrichStore.isLive ? 'Live API Connected' : 'Offline / Mock Cache'}
 				></span>
 				<span class="font-mono text-[11px] text-[#787774]">
-					{reedrichStore.isLive ? 'LIVE' : 'MOCK'}
+					{reedrichStore.isLive ? t('nav.live') : t('nav.mock')}
 				</span>
 			</div>
 
@@ -172,8 +173,8 @@
 						type="button"
 						onclick={() => (isUserMenuOpen = !isUserMenuOpen)}
 						class="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#EAEAEA] bg-[#F9F9F8] p-1 text-xs font-medium text-[#111111] transition-colors hover:border-[#111111]"
-						title={authStore.user?.email || 'Profil Pengguna'}
-						aria-label="Profil Pengguna"
+						title={authStore.user?.email || t('nav.profile')}
+						aria-label={t('nav.profile')}
 					>
 						<span
 							class="flex size-6 items-center justify-center rounded-full bg-[#111111] font-mono text-[10px] font-semibold text-white"
@@ -189,23 +190,45 @@
 						>
 							<div class="border-b border-[#EAEAEA] px-2.5 py-2">
 								<p class="font-semibold text-[#111111]">
-									{authStore.user?.fullName || authStore.user?.name || 'Pengguna'}
+									{authStore.user?.fullName || authStore.user?.name || 'User'}
 								</p>
 								<p class="truncate text-[11px] text-[#787774]">
-									{authStore.user?.email || 'Akun Aktif'}
+									{authStore.user?.email || t('nav.activeAccount')}
 								</p>
 								{#if authStore.user?.whatsappNumber}
-									<p class="mt-1 flex items-center gap-1 font-mono text-[10px] text-[#787774]">
-										<DeviceMobile class="size-3 text-[#346538]" weight="bold" />
+									<p class="mt-1 flex items-center gap-1 font-mono text-[10px] text-[#346538]">
+										<DeviceMobile class="size-3" weight="bold" />
 										<span>{authStore.user.whatsappNumber}</span>
 									</p>
 								{/if}
 								{#if authStore.user?.createdAt}
 									<p class="mt-1 font-mono text-[9px] text-[#A8A29E]">
-										Anggota sejak {dFmt(authStore.user.createdAt)}
+										{t('nav.memberSince', { date: dFmt(authStore.user.createdAt) })}
 									</p>
 								{/if}
 							</div>
+
+							<!-- Language Switcher Bar -->
+							<div class="flex items-center justify-between border-b border-[#EAEAEA] px-2.5 py-2">
+								<span class="text-[11px] font-medium text-[#787774]">{t('nav.language')}</span>
+								<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 text-[10px] font-semibold">
+									<button
+										type="button"
+										onclick={() => i18nStore.setLocale('en')}
+										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale === 'en' ? 'bg-[#111111] text-white' : 'text-[#787774] hover:text-[#111111]'}"
+									>
+										EN
+									</button>
+									<button
+										type="button"
+										onclick={() => i18nStore.setLocale('id')}
+										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale === 'id' ? 'bg-[#111111] text-white' : 'text-[#787774] hover:text-[#111111]'}"
+									>
+										ID
+									</button>
+								</div>
+							</div>
+
 							<div class="space-y-0.5 pt-1.5">
 								<button
 									type="button"
@@ -213,8 +236,8 @@
 										isUserMenuOpen = false;
 										reedrichStore.openDrawer({
 											type: 'profile-form',
-											title: 'Edit Profil Pengguna',
-											subtitle: 'Perbarui nama lengkap dan kontak WhatsApp',
+											title: t('forms.profile.title'),
+											subtitle: t('forms.profile.subtitle'),
 											badge: 'PROFIL',
 											data: {}
 										});
@@ -222,14 +245,14 @@
 									class="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 								>
 									<UserCircle class="size-3.5" weight="bold" />
-									<span>Edit Profil</span>
+									<span>{t('nav.editProfile')}</span>
 								</button>
 								<button
 									onclick={handleLogout}
 									class="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDEBEC]"
 								>
 									<SignOut class="size-3.5" weight="bold" />
-									<span>Keluar (Logout)</span>
+									<span>{t('nav.logout')}</span>
 								</button>
 							</div>
 						</div>
@@ -240,7 +263,7 @@
 						class="flex items-center gap-1 rounded bg-[#111111] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#333333]"
 					>
 						<UserCircle class="size-3.5" weight="bold" />
-						<span>Masuk</span>
+						<span>{t('nav.login')}</span>
 					</a>
 				{/if}
 			</div>

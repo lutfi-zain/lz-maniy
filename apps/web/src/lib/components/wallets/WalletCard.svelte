@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtCurrency, fmtIDR } from '$lib/utils/currency';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import type { WalletItem } from '$lib/types/account-detail';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import DeviceMobile from 'phosphor-svelte/lib/DeviceMobile';
@@ -19,7 +20,9 @@
 			type: 'wallet',
 			title: wallet.walletName,
 			subtitle: `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`,
-			badge: isLocked ? 'DOMPET TERKUNCI' : 'DOMPET SPENDABLE',
+			badge: isLocked
+				? (i18nStore.locale === 'id' ? 'DOMPET TERKUNCI' : 'COMMITTED ACCOUNT')
+				: (i18nStore.locale === 'id' ? 'DOMPET SPENDABLE' : 'SPENDABLE ACCOUNT'),
 			data: { wallet }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ walletId: wallet.walletId, limit: 50 });
@@ -90,7 +93,7 @@
 			<div
 				class="mt-3 rounded-md border border-black/5 bg-[#F9F9F8] px-2.5 py-1.5 text-xs text-[#787774]"
 			>
-				Belum ada mutasi baru
+				{t('ledger.noTransactions')}
 			</div>
 		{/if}
 	</div>
@@ -99,6 +102,6 @@
 		class="mt-3 flex items-center gap-1 text-[11px] text-[#787774] transition-colors group-hover:text-[#111111]"
 	>
 		<ArrowRight class="size-3" weight="bold" />
-		<span>Buka riwayat mutasi dompet</span>
+		<span>{t('accounts.clickToInspect')}</span>
 	</div>
 </div>

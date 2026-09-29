@@ -3,7 +3,8 @@
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte.js';
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
 	import { fmtIDR, getConvertedBalanceInIDR } from '$lib/utils/currency';
-	import { dFmt } from '$lib/utils/dates';
+	import { dFmt, mLabel } from '$lib/utils/dates';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
@@ -36,14 +37,9 @@
 	} = $props();
 
 	// Format title: "YYYY-MM" -> "Oktober 2026"
+	// Format title: "YYYY-MM" -> "October 2026" / "Oktober 2026"
 	const periodTitle = $derived.by(() => {
-		const [y, m] = periodKey.split('-');
-		const monthNames = [
-			'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-			'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-		];
-		const idx = parseInt(m, 10) - 1;
-		return `${monthNames[idx] || m} ${y}`;
+		return mLabel(periodKey, i18nStore.locale);
 	});
 
 	const allTxs = $derived(reedrichStore.allTransactions);
@@ -137,7 +133,7 @@
 		<div>
 			<h2 class="text-xs font-semibold text-[#111111]">{periodTitle}</h2>
 			<span class="text-[10px] text-[#787774] font-mono">
-				{periodTransactions.length} transaksi
+				{periodTransactions.length} {i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}
 			</span>
 		</div>
 
@@ -146,8 +142,8 @@
 				type="button"
 				onclick={handleQuickAdd}
 				class="flex size-6 cursor-pointer items-center justify-center rounded bg-[#111111] text-white transition-colors hover:bg-[#333333] active:scale-95"
-				title="Catat transaksi di bulan ini"
-				aria-label="Catat transaksi di bulan ini"
+				title={t('ledger.planTransaction')}
+				aria-label={t('ledger.planTransaction')}
 			>
 				<Plus class="size-3.5" weight="bold" />
 			</button>
@@ -157,8 +153,8 @@
 					type="button"
 					onclick={() => settingsStore.removePeriod(periodKey)}
 					class="flex size-6 cursor-pointer items-center justify-center rounded text-[#787774] transition-colors hover:bg-[#F0EFEC] hover:text-[#9F2F2D] active:scale-95"
-					title="Hapus periode dari board"
-					aria-label="Hapus periode dari board"
+					title={i18nStore.locale === 'id' ? 'Hapus periode dari board' : 'Remove period from board'}
+					aria-label={i18nStore.locale === 'id' ? 'Hapus periode dari board' : 'Remove period from board'}
 				>
 					<Trash class="size-3.5" weight="bold" />
 				</button>
@@ -186,13 +182,13 @@
 			</div>
 		{:else if periodTransactions.length === 0}
 			<div class="flex h-full flex-col items-center justify-center p-4 text-center">
-				<p class="text-[11px] text-[#787774]">Belum ada transaksi di periode ini.</p>
+				<p class="text-[11px] text-[#787774]">{t('ledger.noTransactions')}</p>
 				<button
 					type="button"
 					onclick={handleQuickAdd}
 					class="mt-2 cursor-pointer text-[11px] font-medium text-[#111111] underline hover:text-[#787774]"
 				>
-					+ Rencanakan Transaksi
+					+ {t('ledger.planTransaction')}
 				</button>
 			</div>
 		{:else}

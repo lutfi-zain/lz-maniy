@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { budgetFormStore } from '$lib/stores/budget-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import SingleDatePicker from '$lib/components/ui/SingleDatePicker.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 
@@ -60,7 +61,7 @@
 	<!-- Name -->
 	<div>
 		<label for="budget-name" class="mb-1 block font-medium text-[#111111]">
-			Nama Pagu Anggaran <span class="text-[#9F2F2D]">*</span>
+			{t('forms.budget.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="budget-name"
@@ -75,7 +76,7 @@
 	<!-- Amount -->
 	<div>
 		<label for="budget-amount" class="mb-1 block font-medium text-[#111111]">
-			Batas Nominal (IDR) <span class="text-[#9F2F2D]">*</span>
+			{t('forms.budget.amountLabel')} (IDR) <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="budget-amount"
@@ -92,7 +93,7 @@
 	<!-- Category Association -->
 	<div>
 		<label for="budget-cat" class="mb-1 block font-medium text-[#111111]">
-			Kategori Pengeluaran (Opsional)
+			{t('forms.budget.categoryLabel')}
 		</label>
 		<select
 			id="budget-cat"
@@ -136,7 +137,7 @@
 			onclick={() => budgetFormStore.close()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -144,7 +145,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Perbarui Pagu' : 'Simpan Pagu'}</span>
+			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.budget.submitEdit') : t('forms.budget.submitCreate')}</span>
 		</button>
 	</div>
 </form>

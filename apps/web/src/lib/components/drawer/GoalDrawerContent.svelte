@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
@@ -32,7 +33,9 @@
 			type: 'wallet',
 			title: wallet.walletName,
 			subtitle: `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`,
-			badge: wallet.isLocked === 1 ? 'DOMPET TERKUNCI' : 'DOMPET SPENDABLE',
+			badge: wallet.isLocked === 1
+				? (i18nStore.locale === 'id' ? 'DOMPET TERKUNCI' : 'COMMITTED ACCOUNT')
+				: (i18nStore.locale === 'id' ? 'DOMPET SPENDABLE' : 'SPENDABLE ACCOUNT'),
 			data: { wallet }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ walletId: wallet.walletId, limit: 50 });
@@ -121,10 +124,10 @@
 	{#if linked.length > 0}
 		<div>
 			<div class="mb-2 text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-				Dompet Terhubung (Derived Allocation)
+				{t('planning.goals.linkedAccounts')}
 			</div>
 			<p class="mb-3 text-xs text-[#787774]">
-				Nilai tabungan goal ini dikonsolidasikan otomatis secara live dari dompet di bawah ini:
+				{t('planning.goals.derivedNotice')}
 			</p>
 			<div class="space-y-2">
 				{#each linked as lw (lw.walletId)}
@@ -194,7 +197,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#346538] transition-colors hover:bg-[#EDF3EC]"
 				>
 					<PlusCircle class="size-3.5" weight="bold" />
-					<span>Setor Dana</span>
+					<span>{t('planning.goals.contribute')}</span>
 				</button>
 			{/if}
 
@@ -204,7 +207,7 @@
 				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 			>
 				<PencilSimple class="size-3.5" weight="bold" />
-				<span>Edit Target</span>
+				<span>{t('common.edit')}</span>
 			</button>
 
 			<button
@@ -213,7 +216,7 @@
 				class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
 			>
 				<Trash class="size-3.5" weight="bold" />
-				<span>Hapus</span>
+				<span>{t('common.delete')}</span>
 			</button>
 		</div>
 
@@ -223,7 +226,7 @@
 				<div class="font-medium text-[#111111]">Setor Tabungan ke "{goal.goalName}"</div>
 				<div class="grid grid-cols-2 gap-2">
 					<div>
-						<label for="contrib-amt" class="mb-1 block text-[10px] text-[#787774]">Nominal (IDR) *</label>
+						<label for="contrib-amt" class="mb-1 block text-[10px] text-[#787774]">{t('common.amount')} ({goal.currency || 'IDR'}) *</label>
 						<input
 							id="contrib-amt"
 							type="number"
@@ -235,13 +238,13 @@
 						/>
 					</div>
 					<div>
-						<label for="contrib-wallet" class="mb-1 block text-[10px] text-[#787774]">Dompet Sumber (Opsional)</label>
+						<label for="contrib-wallet" class="mb-1 block text-[10px] text-[#787774]">{t('planning.goals.sourceAccount')}</label>
 						<select
 							id="contrib-wallet"
 							bind:value={contributeWalletId}
 							class="w-full rounded border border-[#EAEAEA] bg-white px-2 py-1.5 text-xs focus:border-[#111111] focus:outline-none"
 						>
-							<option value="">Tanpa Dompet (Catat Saja)</option>
+							<option value="">{i18nStore.locale === 'id' ? 'Tanpa Dompet (Catat Saja)' : 'No Account (Record Only)'}</option>
 							{#each allWallets as w (w.walletId)}
 								<option value={w.walletId}>{w.walletName} ({fmtIDR(w.balance)})</option>
 							{/each}
@@ -254,7 +257,7 @@
 						onclick={() => (showContribute = false)}
 						class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#787774]"
 					>
-						Batal
+						{t('common.cancel')}
 					</button>
 					<button
 						type="submit"

@@ -2,6 +2,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import type { BudgetSnapshot } from '$lib/types/account-detail';
 
 	let { budget }: { budget: BudgetSnapshot } = $props();
@@ -12,8 +13,8 @@
 		reedrichStore.openDrawer({
 			type: 'budget',
 			title: budget.budgetName,
-			subtitle: `Kategori: ${budget.categoryName || 'General'} · Status: ${budget.status}`,
-			badge: 'BUDGET & PAGU',
+			subtitle: `${i18nStore.locale === 'id' ? 'Kategori' : 'Category'}: ${budget.categoryName || 'General'} · Status: ${budget.status}`,
+			badge: i18nStore.locale === 'id' ? 'BUDGET & PAGU' : 'BUDGET',
 			data: { budget }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ budgetId: budget.budgetId, limit: 50 });
@@ -34,7 +35,7 @@
 					<span>{budget.budgetName}</span>
 				</div>
 				<div class="mt-1 text-xs text-[#787774]">
-					Kategori: {budget.categoryName || 'General'}
+					{i18nStore.locale === 'id' ? 'Kategori' : 'Category'}: {budget.categoryName || 'General'}
 				</div>
 			</div>
 
@@ -53,8 +54,8 @@
 		</div>
 
 		<div class="flex items-center justify-between text-xs">
-			<span class="text-[#787774]">Terpakai {p}% ({fmtIDR(budget.spent)})</span>
-			<span class="font-mono font-semibold text-[#111111]">Pagu {fmtIDR(budget.amount)}</span>
+			<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'Terpakai' : 'Spent'} {p}% ({fmtIDR(budget.spent)})</span>
+			<span class="font-mono font-semibold text-[#111111]">{t('planning.budgets.limit')} {fmtIDR(budget.amount)}</span>
 		</div>
 	</div>
 </div>

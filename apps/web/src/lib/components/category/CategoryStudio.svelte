@@ -10,6 +10,7 @@
 		type CategoryMetricItem
 	} from '$lib/utils/category-metrics';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import CategoryKpiStrip from './CategoryKpiStrip.svelte';
 	import CategoryControlsBar from './CategoryControlsBar.svelte';
 	import CategoryRowItem from './CategoryRowItem.svelte';
@@ -189,9 +190,9 @@
 							<div class="flex size-5 items-center justify-center rounded bg-[#FDEBEC] text-[#9F2F2D]">
 								<ArrowDown class="size-3" weight="bold" />
 							</div>
-							<h3 class="text-sm font-semibold text-[#111111]">Kategori Pengeluaran</h3>
+							<h3 class="text-sm font-semibold text-[#111111]">{t('planning.categories.expenseTitle')}</h3>
 							<span class="rounded bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] text-[#787774]">
-								{groupedExpenseItems.length} kategori
+								{t('planning.categories.countLabel', { count: groupedExpenseItems.length })}
 							</span>
 						</div>
 
@@ -203,7 +204,7 @@
 					<!-- List -->
 					{#if groupedExpenseItems.length === 0}
 						<div class="p-4 text-center text-xs text-[#787774]">
-							Tidak ada kategori pengeluaran yang cocok.
+							{t('common.empty')}
 						</div>
 					{:else}
 						<div class="divide-y divide-[#EAEAEA]">
@@ -224,9 +225,9 @@
 							<div class="flex size-5 items-center justify-center rounded bg-[#EDF3EC] text-[#346538]">
 								<ArrowUp class="size-3" weight="bold" />
 							</div>
-							<h3 class="text-sm font-semibold text-[#111111]">Kategori Pemasukan</h3>
+							<h3 class="text-sm font-semibold text-[#111111]">{t('planning.categories.incomeTitle')}</h3>
 							<span class="rounded bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] text-[#787774]">
-								{groupedIncomeItems.length} kategori
+								{t('planning.categories.countLabel', { count: groupedIncomeItems.length })}
 							</span>
 						</div>
 
@@ -238,7 +239,7 @@
 					<!-- List -->
 					{#if groupedIncomeItems.length === 0}
 						<div class="p-4 text-center text-xs text-[#787774]">
-							Tidak ada kategori pemasukan yang cocok.
+							{t('common.empty')}
 						</div>
 					{:else}
 						<div class="divide-y divide-[#EAEAEA]">

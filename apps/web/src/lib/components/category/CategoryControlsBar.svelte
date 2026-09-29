@@ -5,6 +5,7 @@
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { CategorySortOption } from '$lib/utils/category-metrics';
 
 	interface Props {
@@ -88,7 +89,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Semua
+					{t('common.all')}
 				</button>
 				<button
 					type="button"
@@ -98,7 +99,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Pengeluaran
+					{t('forms.transaction.typeExpense')}
 				</button>
 				<button
 					type="button"
@@ -108,7 +109,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Pemasukan
+					{t('forms.transaction.typeIncome')}
 				</button>
 			</div>
 
@@ -119,7 +120,7 @@
 					bind:checked={onlyActive}
 					class="size-3.5 rounded border-[#EAEAEA] accent-[#111111]"
 				/>
-				<span>Hanya Ada Mutasi</span>
+				<span>{t('planning.categories.withActivityOnly')}</span>
 			</label>
 		</div>
 		<!-- Right: Sort Dropdown & View Mode Toggle -->
@@ -131,10 +132,10 @@
 					bind:value={sortBy}
 					class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
 				>
-					<option value="balance_desc">Nominal Terbesar</option>
-					<option value="balance_asc">Nominal Terkecil</option>
-					<option value="count_desc">Frekuensi Transaksi</option>
-					<option value="name_asc">Nama A-Z</option>
+					<option value="balance_desc">{t('planning.categories.sortHighest')}</option>
+					<option value="balance_asc">{t('planning.categories.sortLowest')}</option>
+					<option value="count_desc">{t('planning.categories.sortFrequency')}</option>
+					<option value="name_asc">{t('planning.categories.sortName')}</option>
 				</select>
 			</div>
 
@@ -148,7 +149,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Grup
+					{t('planning.categories.viewGrouped')}
 				</button>
 				<button
 					type="button"
@@ -158,7 +159,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Flat
+					{t('planning.categories.viewFlat')}
 				</button>
 			</div>
 		</div>

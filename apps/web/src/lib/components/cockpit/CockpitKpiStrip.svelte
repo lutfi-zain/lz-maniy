@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import Vault from 'phosphor-svelte/lib/Vault';
 	import Wallet from 'phosphor-svelte/lib/Wallet';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
@@ -18,7 +19,7 @@
 			<div class="space-y-2.5 rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-2xs sm:p-3.5">
 				<div class="flex items-center justify-between">
 					<Skeleton class="h-3 w-20" />
-					<Skeleton class="size-4 rounded-full" />
+					<Skeleton class="size-3.5 rounded-full" />
 				</div>
 				<Skeleton class="h-6 w-32" />
 				<Skeleton class="h-2.5 w-24" />
@@ -34,9 +35,9 @@
 			>
 				<span class="flex items-center gap-1.5">
 					<Vault class="size-3.5 text-[#111111]" weight="bold" />
-					Kekayaan Bersih
+					{t('cockpit.netWorth')}
 				</span>
-				<span class="font-mono text-[10px] text-[#787774]">Live FX</span>
+				<span class="font-mono text-[10px] text-[#787774]">{t('cockpit.liveFx')}</span>
 			</div>
 			<div
 				class="mt-1 font-mono text-base font-semibold tracking-tight text-[#111111] tabular-nums sm:text-xl"
@@ -58,7 +59,7 @@
 			>
 				<span class="flex items-center gap-1.5">
 					<Wallet class="size-3.5 text-[#346538]" weight="bold" />
-					Kas Siap Pakai
+					{t('cockpit.safeToSpend')}
 				</span>
 				<span class="size-1.5 rounded-full bg-[#346538]"></span>
 			</div>
@@ -68,7 +69,7 @@
 				{fmtIDR(wl?.spendable.total)}
 			</div>
 			<div class="mt-1 truncate text-[10px] text-[#787774] sm:text-[11px]">
-				{wl?.spendable.items.length ?? 0} dompet operasional
+				{wl?.spendable.items.length ?? 0} {t('accounts.walletCount', { count: wl?.spendable.items.length ?? 0 })}
 			</div>
 		</a>
 
@@ -82,7 +83,7 @@
 			>
 				<span class="flex items-center gap-1.5">
 					<LockKey class="size-3.5 text-[#956400]" weight="bold" />
-					Dana Cadangan
+					{t('cockpit.committedFunds')}
 				</span>
 				<span class="size-1.5 rounded-full bg-[#956400]"></span>
 			</div>
@@ -92,7 +93,7 @@
 				{fmtIDR(wl?.locked.total)}
 			</div>
 			<div class="mt-1 truncate text-[10px] text-[#787774] sm:text-[11px]">
-				{wl?.locked.items.length ?? 0} dompet cadangan
+				{wl?.locked.items.length ?? 0} {t('accounts.walletCount', { count: wl?.locked.items.length ?? 0 })}
 			</div>
 		</a>
 
@@ -106,7 +107,7 @@
 			>
 				<span class="flex items-center gap-1.5">
 					<Scales class="size-3.5 text-[#111111]" weight="bold" />
-					Tabungan Bulan Ini
+					{t('cockpit.netCashflow')}
 				</span>
 				<span class="size-1.5 rounded-full {netSav >= 0 ? 'bg-[#346538]' : 'bg-[#9F2F2D]'}"></span>
 			</div>

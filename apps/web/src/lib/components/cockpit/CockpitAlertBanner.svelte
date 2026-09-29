@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import WarningCircle from 'phosphor-svelte/lib/WarningCircle';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 
@@ -34,7 +35,7 @@
 			href="/planning"
 			class="flex items-center gap-1 text-xs font-medium text-[#956400] no-underline transition-colors hover:text-[#111111]"
 		>
-			<span>Lihat Alokasi Dompet</span>
+			<span>{t('cockpit.viewAccountAllocation')}</span>
 			<ArrowRight class="size-3" weight="bold" />
 		</a>
 	</div>

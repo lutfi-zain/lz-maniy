@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { recurringFormStore } from '$lib/stores/recurring-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import SingleDatePicker from '$lib/components/ui/SingleDatePicker.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
 
@@ -85,7 +86,7 @@
 	<!-- Name -->
 	<div>
 		<label for="rec-name" class="mb-1 block font-medium text-[#111111]">
-			Nama Tagihan / Template <span class="text-[#9F2F2D]">*</span>
+			{t('forms.recurring.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<input
 			id="rec-name"
@@ -99,7 +100,7 @@
 
 	<!-- Type Switcher -->
 	<div>
-		<label for="rec-type" class="mb-1 block font-medium text-[#111111]"> Tipe Transaksi </label>
+		<label for="rec-type" class="mb-1 block font-medium text-[#111111]"> {t('common.type')} </label>
 		<div class="grid grid-cols-3 gap-2">
 			<button
 				type="button"
@@ -109,7 +110,7 @@
 					? 'border-[#111111] bg-[#111111] text-white'
 					: 'border-[#EAEAEA] bg-white text-[#787774] hover:bg-[#F9F9F8]'}"
 			>
-				Pengeluaran
+				{t('forms.transaction.typeExpense')}
 			</button>
 			<button
 				type="button"
@@ -119,7 +120,7 @@
 					? 'border-[#111111] bg-[#111111] text-white'
 					: 'border-[#EAEAEA] bg-white text-[#787774] hover:bg-[#F9F9F8]'}"
 			>
-				Pemasukan
+				{t('forms.transaction.typeIncome')}
 			</button>
 			<button
 				type="button"
@@ -129,7 +130,7 @@
 					? 'border-[#111111] bg-[#111111] text-white'
 					: 'border-[#EAEAEA] bg-white text-[#787774] hover:bg-[#F9F9F8]'}"
 			>
-				Transfer
+				{t('forms.transaction.typeTransfer')}
 			</button>
 		</div>
 	</div>
@@ -137,7 +138,7 @@
 	<!-- Source Wallet -->
 	<div>
 		<label for="rec-wallet" class="mb-1 block font-medium text-[#111111]">
-			Dompet {recurringFormStore.type === 'transfer' ? 'Sumber' : 'Terkait'} <span class="text-[#9F2F2D]">*</span>
+			{recurringFormStore.type === 'transfer' ? t('forms.transaction.sourceAccount') : t('common.account')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<select
 			id="rec-wallet"
@@ -155,7 +156,7 @@
 	{#if recurringFormStore.type === 'transfer'}
 		<div>
 			<label for="rec-target-wallet" class="mb-1 block font-medium text-[#111111]">
-				Dompet Tujuan <span class="text-[#9F2F2D]">*</span>
+				{t('forms.transaction.targetAccount')} <span class="text-[#9F2F2D]">*</span>
 			</label>
 			<select
 				id="rec-target-wallet"
@@ -310,7 +311,7 @@
 			onclick={() => recurringFormStore.close()}
 			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
 		>
-			Batal
+			{t('common.cancel')}
 		</button>
 		<button
 			type="submit"
@@ -318,7 +319,7 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Perbarui Tagihan' : 'Simpan Tagihan'}</span>
+			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.recurring.submitEdit') : t('forms.recurring.submitCreate')}</span>
 		</button>
 	</div>
 </form>

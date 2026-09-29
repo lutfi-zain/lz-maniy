@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
+	import { t } from '$lib/i18n/index.svelte';
 	import KpiCard from './KpiCard.svelte';
 	import Vault from 'phosphor-svelte/lib/Vault';
 	import Wallet from 'phosphor-svelte/lib/Wallet';
@@ -15,9 +16,9 @@
 		if (!nw) return;
 		reedrichStore.openDrawer({
 			type: 'networth',
-			title: 'Distribusi Portofolio Kekayaan',
-			subtitle: 'Rincian saldo terdistribusi menurut mata uang dan institusi keuangan',
-			badge: 'KONSOLIDASI',
+			title: t('cockpit.consolidatedNetWorth'),
+			subtitle: 'Portfolio distribution across currencies and institutions',
+			badge: 'NET WORTH',
 			data: { netWorth: nw }
 		});
 	}
@@ -43,9 +44,9 @@
 <section id="kpis" class="my-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
 	<!-- Net Worth Card -->
 	<KpiCard
-		label="Kekayaan Bersih Konsolidasi"
+		label={t('cockpit.consolidatedNetWorth')}
 		value={fmtIDR(nw?.consolidated.total)}
-		subtext={nw?.consolidated.isEstimated ? 'Valuasi kurs live (USDT/IDR)' : 'Nilai pasti'}
+		subtext={nw?.consolidated.isEstimated ? t('cockpit.livePegRate') : t('cockpit.exactValue')}
 		onclick={openNetWorth}
 	>
 		{#snippet icon()}
@@ -75,9 +76,9 @@
 
 	<!-- Spendable Cash Card -->
 	<KpiCard
-		label="Spendable (Tak Terkunci)"
+		label={t('cockpit.safeToSpend')}
 		value={fmtIDR(wl?.spendable.total)}
-		subtext="{wl?.spendable.items.length ?? 0} dompet aktif siap transaksi"
+		subtext="{wl?.spendable.items.length ?? 0} active accounts"
 		onclick={handleSpendableClick}
 	>
 		{#snippet icon()}
@@ -87,9 +88,9 @@
 
 	<!-- Locked Cash Card -->
 	<KpiCard
-		label="Locked (Cadangan)"
+		label={t('cockpit.committedFunds')}
 		value={fmtIDR(wl?.locked.total)}
-		subtext="{wl?.locked.items.length ?? 0} dompet sewa rumah & cadangan"
+		subtext="{wl?.locked.items.length ?? 0} committed accounts"
 		onclick={handleLockedClick}
 	>
 		{#snippet icon()}
@@ -99,11 +100,11 @@
 
 	<!-- Net Savings Card -->
 	<KpiCard
-		label="Tabungan Bersih Bulan Ini"
+		label={t('cockpit.netCashflow')}
 		value={(cf?.netSavings ?? 0) >= 0
 			? '+' + fmtIDR(cf?.netSavings)
 			: '−' + fmtIDR(Math.abs(cf?.netSavings ?? 0))}
-		subtext="Masuk {fmtIDR(cf?.totalIncome)} · Keluar {fmtIDR(cf?.totalExpense)}"
+		subtext="In {fmtIDR(cf?.totalIncome)} · Out {fmtIDR(cf?.totalExpense)}"
 		valueColor={(cf?.netSavings ?? 0) >= 0 ? 'text-[#346538]' : 'text-[#9F2F2D]'}
 		onclick={handleCashflowClick}
 	>

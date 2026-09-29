@@ -2,6 +2,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
 	import Target from 'phosphor-svelte/lib/Target';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import type { GoalSnapshot } from '$lib/types/account-detail';
 
@@ -14,8 +15,8 @@
 		reedrichStore.openDrawer({
 			type: 'goal',
 			title: goal.goalName,
-			subtitle: `${goal.daysRemaining !== null ? `${goal.daysRemaining} hari tersisa` : 'Jangka panjang'} ${goal.isDerived ? '· Derived dari dompet terhubung' : ''}`,
-			badge: 'TARGET TABUNGAN',
+			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')} ${goal.isDerived ? '· Derived' : ''}`,
+			badge: i18nStore.locale === 'id' ? 'TARGET TABUNGAN' : 'SAVINGS GOAL',
 			data: { goal }
 		});
 	}
@@ -35,10 +36,10 @@
 					<span>{goal.goalName}</span>
 				</div>
 				<div class="mt-1 text-xs text-[#787774]">
-					{goal.daysRemaining !== null ? `${goal.daysRemaining} hari tersisa` : 'Jangka panjang'}
+					{goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')}
 					{#if goal.isDerived}
 						· <span class="font-mono text-[10px] text-[#787774] uppercase"
-							>Derived ({linked.length} dompet)</span
+							>Derived ({linked.length} {i18nStore.locale === 'id' ? 'dompet' : 'accounts'})</span
 						>
 					{/if}
 				</div>
@@ -60,7 +61,7 @@
 
 		<div class="flex items-center justify-between text-xs">
 			<span class="font-mono font-semibold text-[#346538]">{fmtIDR(goal.currentAmount)}</span>
-			<span class="font-mono text-[#787774]">Target {fmtIDR(goal.targetAmount)}</span>
+			<span class="font-mono text-[#787774]">{t('planning.goals.target')} {fmtIDR(goal.targetAmount)}</span>
 		</div>
 
 		<!-- Linked Wallets Mini Breakdown -->
@@ -89,6 +90,6 @@
 		class="mt-3 flex items-center gap-1 text-[11px] text-[#787774] transition-colors group-hover:text-[#111111]"
 	>
 		<ArrowRight class="size-3" weight="bold" />
-		<span>Klik untuk melihat rincian & mutasi goal</span>
+		<span>{i18nStore.locale === 'id' ? 'Klik untuk melihat rincian & mutasi goal' : 'Click to inspect goal details & transactions'}</span>
 	</div>
 </div>

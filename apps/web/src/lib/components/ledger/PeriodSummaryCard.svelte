@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
 	import Target from 'phosphor-svelte/lib/Target';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 
@@ -69,7 +70,7 @@
 		<!-- Layer 1: Cashflow Metrics -->
 		<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
 			<div class="flex items-center justify-between text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-				<span>Net Arus Kas</span>
+				<span>{t('cockpit.netCashflow')}</span>
 				<span
 					class="font-mono text-xs font-bold {summary.net >= 0
 						? 'text-[#346538]'
@@ -80,11 +81,11 @@
 			</div>
 
 			<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
-				<span>Pemasukan</span>
+				<span>{t('ledger.summary.inflow')}</span>
 				<span class="font-medium text-[#346538] tabular-nums">+{fmtIDR(summary.income)}</span>
 			</div>
 			<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
-				<span>Pengeluaran</span>
+				<span>{t('ledger.summary.outflow')}</span>
 				<span class="font-medium text-[#111111] tabular-nums">−{fmtIDR(summary.expense)}</span>
 			</div>
 		</div>
@@ -103,14 +104,14 @@
 			<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
 				<span class="flex items-center gap-1.5">
 					<span class="size-1.5 rounded-full bg-[#346538]"></span>
-					<span>Operasional (Bebas)</span>
+					<span>{t('ledger.summary.spendable')}</span>
 				</span>
 				<span class="font-medium text-[#346538] tabular-nums">{fmtIDR(summary.spendable)}</span>
 			</div>
 			<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
 				<span class="flex items-center gap-1.5">
 					<span class="size-1.5 rounded-full bg-[#956400]"></span>
-					<span>Cadangan (Locked)</span>
+					<span>{t('ledger.summary.locked')}</span>
 				</span>
 				<span class="font-medium text-[#956400] tabular-nums">{fmtIDR(summary.locked)}</span>
 			</div>
@@ -120,12 +121,12 @@
 	<div class="space-y-2">
 		<div class="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 			<Target class="size-3 text-[#787774]" weight="bold" />
-			<span>Snapshot Goals</span>
+			<span>{t('ledger.summary.goalsProgress')}</span>
 		</div>
 
 		{#if summary.goalSnapshots.length === 0}
 			<div class="py-1 text-[11px] text-[#787774]">
-				Tidak ada target tabungan aktif.
+				{t('ledger.summary.noGoals')}
 			</div>
 		{:else}
 			<div class="space-y-1.5">
@@ -136,7 +137,7 @@
 							<span class="truncate font-medium text-[#111111]">{goal.goalName}</span>
 							{#if goal.isMilestone}
 								<span class="shrink-0 rounded bg-[#EDF3EC] px-1 py-0.2 font-mono text-[9px] font-bold text-[#346538]">
-									Tercapai!
+									{i18nStore.locale === 'id' ? 'Tercapai!' : 'Reached!'}
 								</span>
 							{:else}
 								<span class="shrink-0 font-mono text-[10px] font-semibold text-[#787774]">

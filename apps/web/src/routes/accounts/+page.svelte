@@ -5,6 +5,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmtTime } from '$lib/utils/dates';
+	import { t } from '$lib/i18n/index.svelte';
 	import Bank from 'phosphor-svelte/lib/Bank';
 	import Wallet from 'phosphor-svelte/lib/Wallet';
 	import CurrencyBtc from 'phosphor-svelte/lib/CurrencyBtc';
@@ -202,7 +203,7 @@
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
 			<div class="flex items-center justify-between">
 				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-					Total Seluruh Aset
+					{t('accounts.totalAssets')}
 				</span>
 				<span
 					class="py-0.2 rounded bg-[#F0EFEC] px-1.5 font-mono text-[9px] text-[#787774] uppercase"
@@ -214,14 +215,14 @@
 				{fmtIDR(timelineNetWorth.amount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
-				{allWallets.length} akun terdaftar di 6 institusi
+				{allWallets.length} accounts
 			</span>
 		</div>
 
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
 			<div class="flex items-center justify-between">
 				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-					Kas Siap Pakai (Operasional)
+					{t('accounts.spendableBalance')}
 				</span>
 				<span class="size-1.5 rounded-full bg-[#346538]"></span>
 			</div>
@@ -229,14 +230,14 @@
 				{fmtIDR(timelineNetWorth.spendableAmount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
-				{wl?.spendable.items.length ?? 0} akun tanpa gembok
+				{wl?.spendable.items.length ?? 0} active accounts
 			</span>
 		</div>
 
 		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
 			<div class="flex items-center justify-between">
 				<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-					Dana Cadangan & Sewa (Locked)
+					{t('accounts.committedCapital')}
 				</span>
 				<span class="size-1.5 rounded-full bg-[#956400]"></span>
 			</div>
@@ -244,7 +245,7 @@
 				{fmtIDR(timelineNetWorth.lockedAmount)}
 			</span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
-				{wl?.locked.items.length ?? 0} akun alokasi khusus
+				{wl?.locked.items.length ?? 0} committed accounts
 			</span>
 		</div>
 	</div>
@@ -263,7 +264,7 @@
 				<input
 					type="search"
 					bind:value={searchQuery}
-					placeholder="Cari nama akun atau bank..."
+					placeholder="Search account or bank name..."
 					class="w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] py-2 pr-3 pl-8 text-xs text-[#111111] placeholder:text-[#787774] focus:border-[#111111] focus:outline-hidden sm:py-1.5"
 				/>
 			</div>
@@ -283,7 +284,7 @@
 					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
 				>
 					<Plus class="size-3.5" weight="bold" />
-					<span>Tambah Dompet</span>
+					<span>{t('accounts.addAccount')}</span>
 				</button>
 				{#if dateFilterStore.preset !== 'this_month'}
 					<button
@@ -292,7 +293,7 @@
 						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 						title="Reset ke Bulan Ini"
 					>
-						Reset
+						{t('common.reset')}
 					</button>
 				{/if}
 			</div>
@@ -312,7 +313,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Semua
+					{t('common.all')}
 				</button>
 				<button
 					type="button"
@@ -322,7 +323,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Operasional
+					{t('ledger.summary.spendable')}
 				</button>
 				<button
 					type="button"
@@ -332,7 +333,7 @@
 						? 'bg-white text-[#111111] shadow-2xs'
 						: 'text-[#787774]'}"
 				>
-					Cadangan
+					{t('ledger.summary.locked')}
 				</button>
 			</div>
 
@@ -345,10 +346,10 @@
 						bind:value={sortBy}
 						class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
 					>
-						<option value="balance_desc">Saldo Terbesar</option>
-						<option value="balance_asc">Saldo Terkecil</option>
-						<option value="name">Nama A-Z</option>
-						<option value="last_tx">Mutasi Terkini</option>
+						<option value="balance_desc">{t('planning.categories.sortHighest')}</option>
+						<option value="balance_asc">{t('planning.categories.sortLowest')}</option>
+						<option value="name">{t('planning.categories.sortName')}</option>
+						<option value="last_tx">{t('cockpit.recentTransactions')}</option>
 					</select>
 				</div>
 
@@ -362,7 +363,7 @@
 							? 'bg-white text-[#111111] shadow-2xs'
 							: 'text-[#787774]'}"
 					>
-						Grup Bank
+						{t('planning.categories.viewGrouped')}
 					</button>
 					<button
 						type="button"
@@ -372,7 +373,7 @@
 							? 'bg-white text-[#111111] shadow-2xs'
 							: 'text-[#787774]'}"
 					>
-						Tabel Rata
+						{t('planning.categories.viewFlat')}
 					</button>
 				</div>
 			</div>

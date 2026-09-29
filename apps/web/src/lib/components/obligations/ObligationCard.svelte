@@ -2,6 +2,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import type { ActiveDebt, ActiveLoan } from '$lib/types/account-detail';
 
@@ -19,8 +20,10 @@
 		reedrichStore.openDrawer({
 			type: 'obligation',
 			title: item.personName,
-			subtitle: `Jatuh tempo: ${dFmt(item.dueDate)} · Status: ${item.status}`,
-			badge: isDebt ? 'KEWAJIBAN UTANG' : 'PIUTANG / TALANGAN',
+			subtitle: `${i18nStore.locale === 'id' ? 'Jatuh tempo' : 'Due'}: ${dFmt(item.dueDate)} · Status: ${item.status}`,
+			badge: isDebt
+				? (i18nStore.locale === 'id' ? 'KEWAJIBAN UTANG' : 'DEBT / PAYABLE')
+				: (i18nStore.locale === 'id' ? 'PIUTANG / TALANGAN' : 'LOAN / RECEIVABLE'),
 			data: { item, type }
 		});
 	}
@@ -37,7 +40,7 @@
 			{item.personName}
 		</div>
 		<div class="mt-0.5 text-xs text-[#787774]">
-			Jatuh tempo: {dFmt(item.dueDate)} · <span class="capitalize">{item.status}</span>
+			{i18nStore.locale === 'id' ? 'Jatuh tempo' : 'Due'}: {dFmt(item.dueDate)} · <span class="capitalize">{item.status}</span>
 		</div>
 	</div>
 

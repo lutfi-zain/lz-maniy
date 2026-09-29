@@ -3,6 +3,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import X from 'phosphor-svelte/lib/X';
 	import Check from 'phosphor-svelte/lib/Check';
 	import TransactionDetailView from './TransactionDetailView.svelte';
@@ -226,22 +227,22 @@
 				class="rounded-full bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-[#111111] uppercase"
 			>
 				{mode === 'view'
-					? 'Detail Transaksi'
+					? (i18nStore.locale === 'id' ? 'Detail Transaksi' : 'Transaction Details')
 					: mode === 'edit'
-						? 'Edit Transaksi'
-						: 'Transaksi Baru'}
+						? t('forms.transaction.titleEdit')
+						: t('forms.transaction.titleCreate')}
 			</span>
 			<h2 id="transaction-drawer-title" class="serif mt-1 text-2xl font-medium text-[#111111]">
 				{mode === 'view'
-					? existingTxn?.transactionDescription || 'Rincian Transaksi'
+					? existingTxn?.transactionDescription || (i18nStore.locale === 'id' ? 'Rincian Transaksi' : 'Transaction Details')
 					: mode === 'edit'
-						? 'Ubah Transaksi'
-						: 'Catat Transaksi'}
+						? t('forms.transaction.titleEdit')
+						: t('forms.transaction.titleCreate')}
 			</h2>
 			<p class="mt-0.5 text-xs text-[#787774]">
 				{mode === 'view'
-					? 'Lihat metadata dan riwayat perubahan transaksi'
-					: 'Isi informasi transaksi untuk sinkronisasi live'}
+					? (i18nStore.locale === 'id' ? 'Lihat metadata dan riwayat perubahan transaksi' : 'View transaction metadata and audit trail')
+					: (i18nStore.locale === 'id' ? 'Isi informasi transaksi untuk sinkronisasi live' : 'Enter transaction details for live sync')}
 			</p>
 		</div>
 
@@ -266,13 +267,13 @@
 				<!-- Three-Way Type Switcher (ToggleGroup pattern) -->
 				<div>
 					<label for="txn-type-label" class="mb-1.5 block font-medium text-[#111111]">
-						Tipe Transaksi
+						{t('common.type')}
 					</label>
 					<div
 						id="txn-type-label"
 						class="grid grid-cols-3 gap-1 rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-1"
 					>
-						{#each [{ id: 'expense', label: 'Pengeluaran' }, { id: 'income', label: 'Pemasukan' }, { id: 'transfer', label: 'Transfer' }] as tab (tab.id)}
+						{#each [{ id: 'expense', label: t('forms.transaction.typeExpense') }, { id: 'income', label: t('forms.transaction.typeIncome') }, { id: 'transfer', label: t('forms.transaction.typeTransfer') }] as tab (tab.id)}
 							{@const isSelected = transactionType === tab.id}
 							{@const isLocked =
 								mode === 'edit' &&
@@ -308,7 +309,7 @@
 					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						<div>
 							<label for="sourceWalletId" class="mb-1 block font-medium text-[#111111]">
-								Dari Akun <span class="text-[#9F2F2D]">*</span>
+								{t('forms.transaction.sourceAccount')} <span class="text-[#9F2F2D]">*</span>
 							</label>
 							<ComboboxSingleSelect
 								options={sourceWalletOptions}
@@ -324,7 +325,7 @@
 
 						<div>
 							<label for="targetWalletId" class="mb-1 block font-medium text-[#111111]">
-								Ke Akun <span class="text-[#9F2F2D]">*</span>
+								{t('forms.transaction.targetAccount')} <span class="text-[#9F2F2D]">*</span>
 							</label>
 							<ComboboxSingleSelect
 								options={targetWalletOptions}
@@ -342,7 +343,7 @@
 					<!-- Single Wallet (Expense or Income) -->
 					<div>
 						<label for="walletId" class="mb-1 block font-medium text-[#111111]">
-							{transactionType === 'income' ? 'Ke Akun' : 'Dari Akun'}
+							{transactionType === 'income' ? t('forms.transaction.targetAccount') : t('forms.transaction.sourceAccount')}
 							<span class="text-[#9F2F2D]">*</span>
 						</label>
 						<ComboboxSingleSelect
@@ -363,7 +364,7 @@
 					<div>
 						<div class="mb-1 flex items-center justify-between">
 							<label for="categoryId" class="block font-medium text-[#111111]">
-								Kategori <span class="text-[#9F2F2D]">*</span>
+								{t('common.category')} <span class="text-[#9F2F2D]">*</span>
 							</label>
 							<button
 								type="button"
@@ -373,7 +374,7 @@
 									)}
 								class="cursor-pointer text-[11px] font-medium text-[#787774] underline hover:text-[#111111]"
 							>
-								+ Tambah Kategori Baru
+								{t('forms.transaction.addCategoryQuick')}
 							</button>
 						</div>
 						<ComboboxSingleSelect
@@ -393,7 +394,7 @@
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<div>
 						<label for="amount" class="mb-1 block font-medium text-[#111111]">
-							Nominal (IDR) <span class="text-[#9F2F2D]">*</span>
+							{t('forms.transaction.amountLabel')} (IDR) <span class="text-[#9F2F2D]">*</span>
 						</label>
 						<div class="relative">
 							<span
@@ -420,7 +421,7 @@
 
 					<div>
 						<label for="adminFee" class="mb-1 block font-medium text-[#111111]">
-							Biaya Admin (Opsional)
+							{i18nStore.locale === 'id' ? 'Biaya Admin (Opsional)' : 'Admin Fee (Optional)'}
 						</label>
 						<div class="relative">
 							<span
@@ -444,7 +445,7 @@
 				<!-- Tanggal Transaksi -->
 				<div>
 					<label for="date" class="mb-1 block font-medium text-[#111111]">
-						Tanggal Transaksi <span class="text-[#9F2F2D]">*</span>
+						{t('forms.transaction.dateLabel')} <span class="text-[#9F2F2D]">*</span>
 					</label>
 					<SingleDatePicker
 						bind:value={transactionFormStore.date}
@@ -459,7 +460,7 @@
 				<!-- Description Textarea -->
 				<div>
 					<label for="description" class="mb-1 block font-medium text-[#111111]">
-						Deskripsi Transaksi
+						{t('forms.transaction.descriptionLabel')}
 					</label>
 					<textarea
 						id="description"
@@ -479,9 +480,9 @@
 								class="size-4 cursor-pointer rounded border-[#EAEAEA] text-[#111111] accent-[#111111]"
 							/>
 							<div class="flex flex-col">
-								<span class="font-medium text-[#111111]">Rencana (Belum Terealisasi)</span>
+								<span class="font-medium text-[#111111]">{t('forms.transaction.plannedLabel')}</span>
 								<span class="text-[11px] text-[#787774]">
-									Transaksi rencana tidak langsung memotong/menambah saldo akun Anda.
+									{t('forms.transaction.plannedDescription')}
 								</span>
 							</div>
 						</label>
@@ -491,7 +492,7 @@
 				{#if transactionType === 'expense' && reedrichStore.activeBudgets.length > 0}
 					<div>
 						<label for="budgetId" class="mb-1 block font-medium text-[#111111]">
-							Hubungkan ke Budget (Opsional)
+							{t('forms.transaction.budgetLabel')}
 						</label>
 						<ComboboxSingleSelect
 							options={budgetOptions}
@@ -523,7 +524,7 @@
 						disabled={transactionFormStore.isSaving}
 						class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] disabled:opacity-50"
 					>
-						Batal
+						{t('common.cancel')}
 					</button>
 
 					<button
@@ -535,10 +536,10 @@
 							<span
 								class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
 							></span>
-							<span>Menyimpan...</span>
+							<span>{t('common.saving')}</span>
 						{:else}
 							<Check class="size-3.5" weight="bold" />
-							<span>{mode === 'edit' ? 'Simpan Perubahan' : 'Catat Transaksi'}</span>
+							<span>{mode === 'edit' ? t('forms.transaction.submitEdit') : t('forms.transaction.submitCreate')}</span>
 						{/if}
 					</button>
 				</div>
