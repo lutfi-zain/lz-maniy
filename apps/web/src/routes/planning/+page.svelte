@@ -10,6 +10,8 @@
 	import Target from 'phosphor-svelte/lib/Target';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
 	import Handshake from 'phosphor-svelte/lib/Handshake';
+	import Tag from 'phosphor-svelte/lib/Tag';
+	import CategoryStudio from '$lib/components/category/CategoryStudio.svelte';
 	import CalendarCheck from 'phosphor-svelte/lib/CalendarCheck';
 	import LockKey from 'phosphor-svelte/lib/LockKey';
 	import Plus from 'phosphor-svelte/lib/Plus';
@@ -19,7 +21,7 @@
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import type { RecurringTemplate, GoalSnapshot, BudgetSnapshot } from '$lib/types/account-detail';
 
-	let activeSubTab = $state<'budgets' | 'goals' | 'obligations'>('goals');
+	let activeSubTab = $state<'budgets' | 'goals' | 'obligations' | 'categories'>('goals');
 
 	onMount(() => {
 		reedrichStore.fetchRecurringTemplates();
@@ -32,6 +34,7 @@
 	const loans = $derived(ob?.activeLoans ?? []);
 	const recurringTemplates = $derived(reedrichStore.recurringTemplates);
 	const isRecurringLoading = $derived(reedrichStore.isRecurringLoading);
+	const categories = $derived(reedrichStore.categories);
 
 	function openRecurringDetail(t: RecurringTemplate) {
 		reedrichStore.openDrawer({
@@ -105,9 +108,21 @@
 				<Handshake class="size-3.5" weight="bold" />
 				<span>Kewajiban & Rutin ({debts.length + loans.length})</span>
 			</button>
+			<button
+				type="button"
+				onclick={() => (activeSubTab = 'categories')}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors {activeSubTab ===
+				'categories'
+					? 'bg-white font-semibold text-[#111111] shadow-2xs'
+					: 'text-[#787774] hover:text-[#111111]'}"
+			>
+				<Tag class="size-3.5" weight="bold" />
+				<span>Kategori ({categories.length})</span>
+			</button>
 		</div>
 
 		<!-- Right: Date Filter & Action Button -->
+		{#if activeSubTab !== 'categories'}
 		<div class="flex items-center gap-2">
 			<DateRangePicker
 				bind:start={dateFilterStore.startDate}
@@ -157,6 +172,7 @@
 				</button>
 			{/if}
 		</div>
+		{/if}
 	</div>
 
 	<!-- SUB-WORKSPACE 1: GOALS & DERIVED PACING -->
@@ -517,5 +533,10 @@
 				</div>
 			</div>
 		</div>
+	{/if}
+
+	<!-- SUB-WORKSPACE 4: CATEGORY STUDIO -->
+	{#if activeSubTab === 'categories'}
+		<CategoryStudio />
 	{/if}
 </div>
