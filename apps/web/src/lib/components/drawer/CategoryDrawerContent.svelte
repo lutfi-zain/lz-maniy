@@ -54,7 +54,7 @@
 				>Porsi Pengeluaran</span
 			>
 			<span class="font-mono text-base font-semibold text-[#111111]">
-				{item.percentage}%
+				{typeof item.percentage === 'number' ? item.percentage.toFixed(1) : item.percentage}%
 			</span>
 		</div>
 	</div>
@@ -80,9 +80,18 @@
 				</div>
 			{/if}
 
-			<div class="flex items-center justify-end gap-2">
-				<button
-					type="button"
+			<div class="flex items-center justify-between gap-2">
+				<a
+					href="/ledger?categoryId={encodeURIComponent(matchedCategory.categoryId)}"
+					onclick={() => reedrichStore.closeDrawer()}
+					class="flex cursor-pointer items-center gap-1 font-mono text-[11px] text-[#787774] hover:text-[#111111]"
+				>
+					Buka di Ledger &rarr;
+				</a>
+
+				<div class="flex items-center gap-2">
+					<button
+						type="button"
 					onclick={handleEdit}
 					class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 				>
@@ -100,6 +109,7 @@
 						<span>Hapus</span>
 					</button>
 				{/if}
+				</div>
 			</div>
 
 			<!-- Inline Delete Confirmation -->

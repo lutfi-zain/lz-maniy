@@ -479,6 +479,10 @@ export class ReedrichStore {
 	}
 
 	async deleteCategory(id: string): Promise<void> {
+		const targetCat = this.categories.find((c) => c.categoryId === id);
+		if (targetCat && targetCat.categoryName.toLowerCase() === 'adjustment') {
+			throw new Error('Kategori sistem "Adjustment" dilindungi dan tidak dapat dihapus.');
+		}
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/categories/${encodeURIComponent(id)}`,
 			{

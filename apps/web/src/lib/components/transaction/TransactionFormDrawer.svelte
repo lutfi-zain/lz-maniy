@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
 	import X from 'phosphor-svelte/lib/X';
 	import Check from 'phosphor-svelte/lib/Check';
@@ -360,9 +361,21 @@
 				<!-- Category (Hidden for transfer) -->
 				{#if transactionType !== 'transfer'}
 					<div>
-						<label for="categoryId" class="mb-1 block font-medium text-[#111111]">
-							Kategori <span class="text-[#9F2F2D]">*</span>
-						</label>
+						<div class="mb-1 flex items-center justify-between">
+							<label for="categoryId" class="block font-medium text-[#111111]">
+								Kategori <span class="text-[#9F2F2D]">*</span>
+							</label>
+							<button
+								type="button"
+								onclick={() =>
+									categoryFormStore.openCreate(
+										transactionType === 'income' ? 'income' : 'expense'
+									)}
+								class="cursor-pointer text-[11px] font-medium text-[#787774] underline hover:text-[#111111]"
+							>
+								+ Tambah Kategori Baru
+							</button>
+						</div>
 						<ComboboxSingleSelect
 							options={categoryOptions}
 							bind:value={transactionFormStore.categoryId}
