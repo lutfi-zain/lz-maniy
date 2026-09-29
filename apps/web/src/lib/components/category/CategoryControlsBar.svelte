@@ -29,7 +29,7 @@
 	class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3 text-xs shadow-2xs"
 >
 	<!-- Row 1: Search input + DateRangePicker + Add Category Button -->
-	<div class="flex w-full flex-wrap items-center gap-2.5">
+	<div class="flex w-full flex-wrap items-center justify-between gap-2.5">
 		<div class="relative w-full sm:w-[260px] sm:flex-none">
 			<MagnifyingGlass
 				class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
@@ -77,49 +77,51 @@
 	<div
 		class="flex w-full flex-wrap items-center justify-between gap-2.5 border-t border-[#EAEAEA] pt-2 sm:border-t-0 sm:pt-0"
 	>
-		<!-- Type Filter Toggle -->
-		<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
-			<button
-				type="button"
-				onclick={() => (typeFilter = 'all')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
-				'all'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Semua
-			</button>
-			<button
-				type="button"
-				onclick={() => (typeFilter = 'expense')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
-				'expense'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Pengeluaran
-			</button>
-			<button
-				type="button"
-				onclick={() => (typeFilter = 'income')}
-				class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
-				'income'
-					? 'bg-white text-[#111111] shadow-2xs'
-					: 'text-[#787774]'}"
-			>
-				Pemasukan
-			</button>
-		</div>
-		<!-- Quick Toggle: Only with transactions -->
-		<label class="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-[#787774] select-none hover:text-[#111111]">
-			<input
-				type="checkbox"
-				bind:checked={onlyActive}
-				class="size-3.5 rounded border-[#EAEAEA] accent-[#111111]"
-			/>
-			<span>Hanya Ada Mutasi</span>
-		</label>
+		<!-- Left: Type Filter Toggle + Only with transactions -->
+		<div class="flex flex-wrap items-center gap-3">
+			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
+				<button
+					type="button"
+					onclick={() => (typeFilter = 'all')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
+					'all'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Semua
+				</button>
+				<button
+					type="button"
+					onclick={() => (typeFilter = 'expense')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
+					'expense'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Pengeluaran
+				</button>
+				<button
+					type="button"
+					onclick={() => (typeFilter = 'income')}
+					class="cursor-pointer rounded px-2.5 py-1 text-[11px] font-medium transition-colors {typeFilter ===
+					'income'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774]'}"
+				>
+					Pemasukan
+				</button>
+			</div>
 
+			<!-- Quick Toggle: Only with transactions -->
+			<label class="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-[#787774] select-none hover:text-[#111111]">
+				<input
+					type="checkbox"
+					bind:checked={onlyActive}
+					class="size-3.5 rounded border-[#EAEAEA] accent-[#111111]"
+				/>
+				<span>Hanya Ada Mutasi</span>
+			</label>
+		</div>
 		<!-- Right: Sort Dropdown & View Mode Toggle -->
 		<div class="flex items-center gap-2.5">
 			<!-- Sort dropdown -->
