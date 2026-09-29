@@ -6,6 +6,7 @@
 	import WarningCircle from 'phosphor-svelte/lib/WarningCircle';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import type { CategoryMetricItem } from '$lib/utils/category-metrics';
 
 	interface Props {
@@ -43,6 +44,8 @@
 
 		reedrichStore.fetchTransactionsForDrawer({
 			categoryId: item.category.categoryId,
+			startDate: dateFilterStore.startDate,
+			endDate: dateFilterStore.endDate,
 			limit: 50
 		});
 	}

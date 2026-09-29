@@ -12,13 +12,15 @@
 		typeFilter: 'all' | 'expense' | 'income';
 		sortBy: CategorySortOption;
 		viewMode: 'grouped' | 'flat';
+		onlyActive?: boolean;
 	}
 
 	let {
 		searchQuery = $bindable(''),
 		typeFilter = $bindable('all'),
 		sortBy = $bindable('balance_desc'),
-		viewMode = $bindable('grouped')
+		viewMode = $bindable('grouped'),
+		onlyActive = $bindable(false)
 	}: Props = $props();
 </script>
 
@@ -28,7 +30,7 @@
 >
 	<!-- Row 1: Search input + DateRangePicker + Add Category Button -->
 	<div class="flex w-full flex-wrap items-center gap-2.5">
-		<div class="relative w-full flex-1 sm:min-w-[200px]">
+		<div class="relative w-full sm:w-[260px] sm:flex-none">
 			<MagnifyingGlass
 				class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
 				weight="bold"
@@ -108,6 +110,15 @@
 				Pemasukan
 			</button>
 		</div>
+		<!-- Quick Toggle: Only with transactions -->
+		<label class="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-[#787774] select-none hover:text-[#111111]">
+			<input
+				type="checkbox"
+				bind:checked={onlyActive}
+				class="size-3.5 rounded border-[#EAEAEA] accent-[#111111]"
+			/>
+			<span>Hanya Ada Mutasi</span>
+		</label>
 
 		<!-- Right: Sort Dropdown & View Mode Toggle -->
 		<div class="flex items-center gap-2.5">

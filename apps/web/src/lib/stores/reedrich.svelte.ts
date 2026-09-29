@@ -216,15 +216,46 @@ export class ReedrichStore {
 		walletId?: string;
 		categoryId?: string;
 		budgetId?: string;
+		startDate?: string;
+		endDate?: string;
 		limit?: number;
 	}) {
 		this.isDrawerLoading = true;
 		const limit = param.limit ?? 50;
+
+		// If allTransactions is already loaded in memory, filter instantly!
+		if (this.allTransactions.length > 0) {
+			const matches = this.allTransactions.filter((t) => {
+				if (
+					param.walletId &&
+					t.transactionWalletId !== param.walletId &&
+					t.transactionTargetWalletId !== param.walletId
+				) {
+					return false;
+				}
+				if (param.categoryId && t.transactionCategoryId !== param.categoryId) {
+					return false;
+				}
+				if (param.budgetId && t.transactionBudgetId !== param.budgetId) {
+					return false;
+				}
+				const d = (t.transactionDate || '').slice(0, 10);
+				if (param.startDate && d < param.startDate) return false;
+				if (param.endDate && d > param.endDate) return false;
+				return true;
+			});
+			this.drawerTransactions = matches.slice(0, limit);
+			this.isDrawerLoading = false;
+			return;
+		}
+
 		const queryParts: string[] = [`limit=${limit}`];
 
 		if (param.walletId) queryParts.push(`walletId=${encodeURIComponent(param.walletId)}`);
 		if (param.categoryId) queryParts.push(`categoryId=${encodeURIComponent(param.categoryId)}`);
 		if (param.budgetId) queryParts.push(`budgetId=${encodeURIComponent(param.budgetId)}`);
+		if (param.startDate) queryParts.push(`startDate=${encodeURIComponent(param.startDate)}`);
+		if (param.endDate) queryParts.push(`endDate=${encodeURIComponent(param.endDate)}`);
 
 		const cacheKey = queryParts.join('&');
 		if (this.transactionCache.has(cacheKey)) {
@@ -246,7 +277,7 @@ export class ReedrichStore {
 			this.transactionCache.set(cacheKey, items);
 			this.drawerTransactions = items;
 		} catch (err) {
-			console.warn('Gagal memuat transaksi detail:', err);
+			console.warn('Gagal memuat transaksi untuk drawer:', err);
 			this.drawerTransactions = [];
 		} finally {
 			this.isDrawerLoading = false;

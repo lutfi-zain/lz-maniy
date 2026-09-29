@@ -255,7 +255,7 @@
 	>
 		<!-- Row 1: Search input + DateRangePicker -->
 		<div class="flex w-full flex-wrap items-center gap-2.5">
-			<div class="relative w-full flex-1 sm:min-w-[200px]">
+			<div class="relative w-full sm:w-[260px] sm:flex-none">
 				<MagnifyingGlass
 					class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
 					weight="bold"

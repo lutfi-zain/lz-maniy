@@ -3,6 +3,7 @@
 	import DrawerTransactionTable from './DrawerTransactionTable.svelte';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import type { CategoryBreakdownItem } from '$lib/types/account-detail';
@@ -42,9 +43,17 @@
 	<!-- Summary Stats Cards -->
 	<div class="grid grid-cols-2 gap-2.5">
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase"
-				>Total Terpakai Bulan Ini</span
-			>
+			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				Total ({dateFilterStore.preset === 'this_month'
+					? 'Bulan Ini'
+					: dateFilterStore.preset === 'today'
+						? 'Hari Ini'
+						: dateFilterStore.preset === 'last_month'
+							? 'Bulan Lalu'
+							: dateFilterStore.preset === 'next_month'
+								? 'Bulan Depan'
+								: 'Periode Terpilih'})
+			</span>
 			<span class="font-mono text-base font-semibold text-[#111111]">
 				{fmtIDR(item.amount)}
 			</span>
