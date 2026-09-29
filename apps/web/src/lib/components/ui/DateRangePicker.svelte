@@ -272,7 +272,7 @@
 		bind:this={triggerBtn}
 		type="button"
 		onclick={toggleOpen}
-		class="flex w-full shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-2 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF] sm:w-[240px] sm:py-1.5"
+		class="flex w-full shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-2 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF] sm:min-w-[280px] sm:w-auto sm:py-1.5"
 		aria-haspopup="dialog"
 		aria-expanded={isOpen}
 	>

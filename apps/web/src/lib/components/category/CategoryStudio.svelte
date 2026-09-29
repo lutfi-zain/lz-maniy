@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
@@ -21,6 +22,11 @@
 	let typeFilter = $state<'all' | 'expense' | 'income'>('all');
 	let sortBy = $state<CategorySortOption>('balance_desc');
 	let viewMode = $state<'grouped' | 'flat'>('grouped');
+	let onlyActive = $state(false);
+
+	onMount(() => {
+		reedrichStore.fetchAllTransactions();
+	});
 
 	const allWallets = $derived(reedrichStore.allWallets);
 	const allTransactions = $derived(reedrichStore.allTransactions);
@@ -52,6 +58,9 @@
 	const filteredItems = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();
 		return stats.items.filter((item) => {
+			if (onlyActive && item.transactionCount === 0 && item.totalAmountIDR === 0) {
+				return false;
+			}
 			if (typeFilter !== 'all' && item.category.categoryType !== typeFilter) {
 				return false;
 			}
@@ -105,6 +114,7 @@
 		bind:typeFilter
 		bind:sortBy
 		bind:viewMode
+		bind:onlyActive
 	/>
 
 	<!-- Content: Skeleton vs List -->

@@ -281,7 +281,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div class="flex flex-1 flex-wrap items-center gap-2.5 min-w-[280px]">
 				<!-- Instant Search with Keyboard Shortcut -->
-				<div class="relative min-w-[200px] flex-1 sm:max-w-[340px]">
+				<div class="relative w-full sm:w-[260px] sm:flex-none">
 					<MagnifyingGlass
 						class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#787774]"
 						weight="bold"

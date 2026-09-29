@@ -25,6 +25,7 @@
 
 	onMount(() => {
 		reedrichStore.fetchRecurringTemplates();
+		reedrichStore.fetchAllTransactions();
 	});
 
 	const budgets = $derived(reedrichStore.activeBudgets);
