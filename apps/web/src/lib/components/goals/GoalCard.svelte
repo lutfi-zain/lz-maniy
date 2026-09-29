@@ -10,6 +10,8 @@
 
 	const p = $derived(Math.round(goal.progressPercentage || 0));
 	const linked = $derived(goal.linkedWalletsBreakdown ?? []);
+	const remainingToTarget = $derived(Math.max(0, goal.targetAmount - goal.currentAmount));
+	const isTargetReached = $derived(goal.currentAmount >= goal.targetAmount);
 
 	function handleClick() {
 		reedrichStore.openDrawer({
@@ -56,12 +58,35 @@
 
 		<!-- Progress Bar -->
 		<div class="my-3 h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-			<div class="h-full bg-[#111111] transition-all" style="width: {Math.min(100, p)}%"></div>
+			<div
+				class="h-full {p >= 100 ? 'bg-[#346538]' : 'bg-[#111111]'} transition-all"
+				style="width: {Math.min(100, p)}%"
+			></div>
 		</div>
 
-		<div class="flex items-center justify-between text-xs">
-			<span class="font-mono font-semibold text-[#346538]">{fmtIDR(goal.currentAmount)}</span>
-			<span class="font-mono text-[#787774]">{t('planning.goals.target')} {fmtIDR(goal.targetAmount)}</span>
+		<!-- Goal Headroom & Pacing Metrics -->
+		<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
+			<div class="space-y-0.5">
+				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+					{t('planning.goals.remainingHeadroom')}
+				</div>
+				<div class="font-mono text-xs font-bold tabular-nums {isTargetReached ? 'text-[#346538]' : 'text-[#111111]'}">
+					{#if isTargetReached}
+						<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
+					{:else}
+						{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })} <span class="font-normal text-[#787774]">({100 - p}%)</span>
+					{/if}
+				</div>
+			</div>
+
+			<div class="space-y-0.5 text-right font-mono tabular-nums">
+				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+					{t('planning.goals.target')}
+				</div>
+				<div class="text-xs font-semibold text-[#111111]">
+					{fmtIDR(goal.targetAmount)}
+				</div>
+			</div>
 		</div>
 
 		<!-- Linked Wallets Mini Breakdown -->
