@@ -28,11 +28,11 @@
 		</span>
 	</div>
 
-	<div class="grid grid-cols-1 gap-2.5">
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		{#each budgets as budget (budget.budgetId)}
 			<BudgetCard {budget} />
 		{:else}
-			<div class="py-6 text-center font-mono text-xs text-[#787774]">
+			<div class="col-span-1 py-6 text-center font-mono text-xs text-[#787774] md:col-span-2">
 				{t('common.empty')}
 			</div>
 		{/each}

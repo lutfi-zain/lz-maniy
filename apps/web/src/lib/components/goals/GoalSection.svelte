@@ -28,11 +28,11 @@
 		</span>
 	</div>
 
-	<div>
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		{#each goals as goal (goal.goalId)}
 			<GoalCard {goal} />
 		{:else}
-			<div class="py-6 text-center font-mono text-xs text-[#787774]">
+			<div class="col-span-1 py-6 text-center font-mono text-xs text-[#787774] md:col-span-2">
 				{t('common.empty')}
 			</div>
 		{/each}

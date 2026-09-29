@@ -20,6 +20,7 @@
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import BudgetCard from '$lib/components/budgets/BudgetCard.svelte';
 	import type { RecurringTemplate, GoalSnapshot, BudgetSnapshot } from '$lib/types/account-detail';
 
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations' | 'categories'>('goals');
@@ -179,7 +180,7 @@
 
 	<!-- SUB-WORKSPACE 1: GOALS & DERIVED PACING -->
 	{#if reedrichStore.isLoading && goals.length === 0}
-		<div class="space-y-4">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			{#each [0, 1] as i (i)}
 				<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs">
 					<div class="flex items-center justify-between">
@@ -192,7 +193,7 @@
 			{/each}
 		</div>
 	{:else if activeSubTab === 'goals'}
-		<div class="space-y-4">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			{#each goals as g (g.goalId)}
 				{@const liveCurrent =
 					g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
@@ -329,6 +330,10 @@
 						</div>
 					{/if}
 				</div>
+			{:else}
+				<div class="col-span-1 py-12 text-center font-mono text-xs text-[#787774] md:col-span-2">
+					{t('common.empty')}
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -338,79 +343,10 @@
 		<div class="space-y-4">
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				{#each budgets as b (b.budgetId)}
-					{@const p = b.percentUsed || 0}
-					{@const isOver = p > 100}
-					{@const isWarning = p >= 80 && p <= 100}
-					<a
-						href="/ledger?budgetId={b.budgetId}&budget={encodeURIComponent(b.budgetName)}"
-						class="group relative block space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-5 no-underline shadow-2xs transition-all hover:border-[#111111] hover:shadow-xs"
-						title="Buka mutasi anggaran {b.budgetName} di Ledger"
-					>
-						<div class="flex items-start justify-between gap-3">
-							<div>
-								<h2
-									class="text-sm font-semibold text-[#111111] transition-colors group-hover:text-[#111111]"
-								>
-									{b.budgetName}
-								</h2>
-								<p class="mt-0.5 text-xs text-[#787774]">Kategori: {b.categoryName || 'General'}</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<button
-									type="button"
-									onclick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										openBudgetDrawer(b);
-									}}
-									class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
-									title="Ubah pagu anggaran"
-									aria-label="Ubah pagu anggaran {b.budgetName}"
-								>
-									<PencilSimple class="size-3.5" weight="bold" />
-								</button>
-								<span
-									class="rounded px-2 py-0.5 font-mono text-[10px] font-semibold uppercase {isOver
-										? 'bg-[#FDEBEC] text-[#9F2F2D]'
-										: isWarning
-											? 'bg-[#FBF3DB] text-[#956400]'
-											: 'bg-[#EDF3EC] text-[#346538]'}"
-								>
-									{b.status}
-								</span>
-							</div>
-						</div>
-
-						<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-							<div
-								class="h-full transition-all {isOver
-									? 'bg-[#9F2F2D]'
-									: isWarning
-										? 'bg-[#956400]'
-										: 'bg-[#111111]'}"
-								style="width: {Math.min(100, p)}%"
-							></div>
-						</div>
-
-						<div class="flex items-center justify-between font-mono text-xs tabular-nums">
-							<span class="text-[#787774]">Terpakai {p}% ({fmtIDR(b.spent)})</span>
-							<span class="font-semibold text-[#111111]">Pagu {fmtIDR(b.amount)}</span>
-						</div>
-
-						<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-xs">
-							<span class="text-[#787774]">Sisa Anggaran:</span>
-							<span
-								class="font-mono font-semibold {b.remaining >= 0
-									? 'text-[#346538]'
-									: 'text-[#9F2F2D]'}"
-							>
-								{fmtIDR(b.remaining)}
-							</span>
-						</div>
-					</a>
+					<BudgetCard budget={b} />
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
-						Belum ada pagu anggaran aktif tercatat.
+						{t('common.empty')}
 					</div>
 				{/each}
 			</div>
