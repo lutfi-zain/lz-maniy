@@ -200,6 +200,8 @@
 						: g.currentAmount}
 				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 				{@const linked = g.linkedWalletsBreakdown ?? []}
+				{@const remainingToTarget = Math.max(0, g.targetAmount - liveCurrent)}
+				{@const isTargetReached = liveCurrent >= g.targetAmount}
 				<div class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]">
 					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div>
@@ -228,8 +230,19 @@
 
 						<div class="flex items-center gap-3">
 							<div class="text-right font-mono tabular-nums">
-								<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
-								<span class="ml-1 text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+								<div class="flex items-baseline justify-end gap-1.5">
+									<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
+									<span class="text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+								</div>
+								<div class="mt-0.5 text-xs font-semibold">
+									{#if isTargetReached}
+										<span class="text-[#346538]">✓ {t('planning.goals.targetReached')}</span>
+									{:else}
+										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'Kurang' : 'Short'}</span>
+										<span class="text-[#111111]">{fmtIDR(remainingToTarget)}</span>
+										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'lagi' : 'left'}</span>
+									{/if}
+								</div>
 							</div>
 
 							<!-- Pencil button on card hover only -->
@@ -248,11 +261,35 @@
 					<!-- Progress Track -->
 					<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
 						<div
-							class="h-full bg-[#111111] transition-all"
+							class="h-full {p >= 100 ? 'bg-[#346538]' : 'bg-[#111111]'} transition-all"
 							style="width: {Math.min(100, p)}%"
 						></div>
 					</div>
 
+					<!-- Goal Headroom & Pacing Metrics -->
+					<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
+						<div class="space-y-0.5">
+							<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+								{t('planning.goals.remainingHeadroom')}
+							</div>
+							<div class="font-mono text-xs font-bold tabular-nums {isTargetReached ? 'text-[#346538]' : 'text-[#111111]'}">
+								{#if isTargetReached}
+									<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
+								{:else}
+									{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })} <span class="font-normal text-[#787774]">({100 - p}%)</span>
+								{/if}
+							</div>
+						</div>
+
+						<div class="space-y-0.5 text-right font-mono tabular-nums">
+							<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+								{t('planning.goals.target')}
+							</div>
+							<div class="text-xs font-semibold text-[#111111]">
+								{fmtIDR(g.targetAmount)}
+							</div>
+						</div>
+					</div>
 					<!-- Derived Linked Wallets Matrix -->
 					{#if linked.length > 0}
 						<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs">
