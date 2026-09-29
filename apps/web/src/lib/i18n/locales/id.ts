@@ -162,7 +162,12 @@ export const id: TranslationSchema = {
 			viewTransactions: 'Lihat Transaksi →',
 			onTrack: 'Terkendali',
 			warning: 'Mendekati Batas',
-			overBudget: 'Melebihi Batas'
+			overBudget: 'Melebihi Batas',
+			headroomLabel: 'Sisa Pagu',
+			overrunLabel: 'Melebihi Batas',
+			remainingToLimit: 'Sisa {amount} lagi',
+			overLimitBy: 'Melebihi batas {amount}',
+			utilizationRatio: 'Realisasi / Batas Pagu'
 		},
 		goals: {
 			title: 'Target Tabungan',

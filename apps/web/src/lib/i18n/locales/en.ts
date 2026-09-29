@@ -160,7 +160,12 @@ export const en = {
 			viewTransactions: 'View Transactions →',
 			onTrack: 'On Track',
 			warning: 'Near Limit',
-			overBudget: 'Over Budget'
+			overBudget: 'Over Budget',
+			headroomLabel: 'Remaining Headroom',
+			overrunLabel: 'Over Limit',
+			remainingToLimit: '{amount} remaining',
+			overLimitBy: 'Over limit by {amount}',
+			utilizationRatio: 'Spent / Allowance'
 		},
 		goals: {
 			title: 'Derived Savings Goals',
