@@ -108,7 +108,7 @@
 	<!-- Full Protected App Shell -->
 	<div
 		class="flex min-h-screen w-full flex-col bg-[#F7F6F3] font-sans text-[#111111]"
-		style={chatStore.panelOpen ? `padding-right: ${chatStore.panelWidth}px; transition: padding-right 0.15s ease-out;` : 'transition: padding-right 0.15s ease-out;'}
+		style={chatStore.panelOpen ? `padding-right: ${chatStore.panelWidth}px;` : undefined}
 	>
 		<Topbar />
 		<main class="mx-auto w-full max-w-[1400px] flex-1 px-3.5 py-4 pb-20 sm:px-6 sm:py-5 sm:pb-6">
