@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
+	import { transactionFormStore, TIME_PATTERN } from '$lib/stores/transaction-form.svelte';
+	import { buildLocalISO } from '$lib/utils/dates';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import X from 'phosphor-svelte/lib/X';
 	import Check from 'phosphor-svelte/lib/Check';
+	import Clock from 'phosphor-svelte/lib/Clock';
 	import TransactionDetailView from './TransactionDetailView.svelte';
 	import ComboboxSingleSelect, {
 		type ComboboxOption
@@ -104,6 +106,10 @@
 			errors.date = 'Pilih tanggal transaksi.';
 		}
 
+		if (!transactionFormStore.time || !TIME_PATTERN.test(transactionFormStore.time.trim())) {
+			errors.time = 'Isi jam transaksi (HH:mm).';
+		}
+
 		return errors;
 	});
 
@@ -133,6 +139,10 @@
 
 		try {
 			if (mode === 'create') {
+				const transactionDateTime = buildLocalISO(
+					transactionFormStore.date,
+					transactionFormStore.time
+				);
 				if (transactionType === 'transfer') {
 					const payload: CreateTransferPayload = {
 						sourceWalletId: transactionFormStore.walletId,
@@ -140,7 +150,7 @@
 						amount: transactionFormStore.amount!,
 						adminFee: transactionFormStore.adminFee || 0,
 						description: transactionFormStore.description.trim() || null,
-						date: transactionFormStore.date,
+						date: transactionDateTime,
 						isPlanned: transactionFormStore.isPlanned
 					};
 					await reedrichStore.createTransfer(payload);
@@ -150,7 +160,7 @@
 						categoryId: transactionFormStore.categoryId,
 						amount: transactionFormStore.amount!,
 						type: transactionType as 'expense' | 'income',
-						date: transactionFormStore.date,
+						date: transactionDateTime,
 						adminFee: transactionFormStore.adminFee || 0,
 						description: transactionFormStore.description.trim() || null,
 						budgetId: transactionFormStore.budgetId || null,
@@ -160,11 +170,12 @@
 				}
 				transactionFormStore.close();
 			} else if (mode === 'edit' && existingTxn) {
+				const editedDateTime = buildLocalISO(transactionFormStore.date, transactionFormStore.time);
 				const delta: UpdateTransactionPayload = {
 					amount: transactionFormStore.amount!,
 					adminFee: transactionFormStore.adminFee || 0,
 					description: transactionFormStore.description.trim() || null,
-					date: transactionFormStore.date,
+					date: editedDateTime,
 					isPlanned: transactionFormStore.isPlanned
 				};
 
@@ -188,7 +199,7 @@
 							? transactionFormStore.targetWalletId
 							: existingTxn.transactionTargetWalletId,
 					transactionDescription: transactionFormStore.description.trim() || null,
-					transactionDate: transactionFormStore.date,
+					transactionDate: editedDateTime,
 					transactionIsPlanned: transactionFormStore.isPlanned ? 1 : 0
 				});
 			}
@@ -462,20 +473,45 @@
 						</div>
 					</div>
 				</div>
-
-				<!-- Tanggal Transaksi -->
-				<div>
-					<label for="date" class="mb-1 block font-medium text-[#111111]">
-						{t('forms.transaction.dateLabel')} <span class="text-[#9F2F2D]">*</span>
-					</label>
-					<SingleDatePicker
-						bind:value={transactionFormStore.date}
-						placeholder="Pilih tanggal transaksi..."
-						hasError={Boolean(fieldErrors.date)}
-					/>
-					{#if fieldErrors.date}
-						<p class="mt-1 text-[11px] text-[#9F2F2D]">{fieldErrors.date}</p>
-					{/if}
+				<!-- Tanggal + Jam Transaksi -->
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_130px]">
+					<div>
+						<label for="date" class="mb-1 block font-medium text-[#111111]">
+							{t('forms.transaction.dateLabel')} <span class="text-[#9F2F2D]">*</span>
+						</label>
+						<SingleDatePicker
+							bind:value={transactionFormStore.date}
+							placeholder="Pilih tanggal transaksi..."
+							hasError={Boolean(fieldErrors.date)}
+						/>
+						{#if fieldErrors.date}
+							<p class="mt-1 text-[11px] text-[#9F2F2D]">{fieldErrors.date}</p>
+						{/if}
+					</div>
+					<div>
+						<label for="txn-time" class="mb-1 block font-medium text-[#111111]">
+							{t('forms.transaction.timeLabel')} <span class="text-[#9F2F2D]">*</span>
+						</label>
+						<div class="relative">
+							<Clock
+								class="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-[#787774]"
+								weight="bold"
+							/>
+							<input
+								id="txn-time"
+								type="time"
+								step="60"
+								bind:value={transactionFormStore.time}
+								aria-invalid={Boolean(fieldErrors.time)}
+								class="w-full rounded-md border bg-white py-2 pr-3 pl-9 font-mono text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none {fieldErrors.time
+									? 'border-[#9F2F2D]'
+									: 'border-[#EAEAEA]'}"
+							/>
+						</div>
+						{#if fieldErrors.time}
+							<p class="mt-1 text-[11px] text-[#9F2F2D]">{fieldErrors.time}</p>
+						{/if}
+					</div>
 				</div>
 
 				<!-- Description Textarea -->

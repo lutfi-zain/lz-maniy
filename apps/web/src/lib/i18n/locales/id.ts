@@ -228,6 +228,7 @@ export const id: TranslationSchema = {
 			categoryLabel: 'Kategori',
 			budgetLabel: 'Pagu Anggaran (Opsional)',
 			dateLabel: 'Tanggal Transaksi',
+			timeLabel: 'Jam',
 			descriptionLabel: 'Deskripsi',
 			plannedLabel: 'Transaksi Terencana / Proyeksi',
 			plannedDescription: 'Tidak mempengaruhi saldo kas riil sampai ditandai terealisasi',
