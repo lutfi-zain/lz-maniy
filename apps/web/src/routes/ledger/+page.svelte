@@ -280,7 +280,7 @@
 	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs">
 		<!-- Row 1: Search + Date Range Picker + Switcher + Actions -->
 		<div class="flex flex-wrap items-center justify-between gap-3">
-			<div class="flex flex-1 flex-wrap items-center gap-2.5 min-w-[280px]">
+			<div class="flex min-w-[280px] flex-1 flex-wrap items-center gap-2.5">
 				<!-- Instant Search with Keyboard Shortcut -->
 				<div class="relative w-full sm:w-[260px] sm:flex-none">
 					<MagnifyingGlass
@@ -534,186 +534,225 @@
 		<HorizonBoard {globalFilters} />
 	{:else}
 		<!-- Dual-Layer Live Summary Strip -->
-	<div
-		class="flex flex-col gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between lg:gap-6"
-	>
-		<!-- Layer 1: Local Filter Scope (Left Zone) -->
-		<div class="flex flex-wrap items-center gap-3 text-xs sm:gap-4">
-			<div
-				class="flex items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1"
-			>
-				<span class="font-mono text-xs font-semibold text-[#111111]">
-					{aggregateStats.count} transaksi
-				</span>
-				<span class="text-[11px] text-[#787774]">dalam filter aktif</span>
+		<div
+			class="flex flex-col gap-3 rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between lg:gap-6"
+		>
+			<!-- Layer 1: Local Filter Scope (Left Zone) -->
+			<div class="flex flex-wrap items-center gap-3 text-xs sm:gap-4">
+				<div
+					class="flex items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1"
+				>
+					<span class="font-mono text-xs font-semibold text-[#111111]">
+						{aggregateStats.count} transaksi
+					</span>
+					<span class="text-[11px] text-[#787774]">dalam filter aktif</span>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-3 font-mono text-xs tabular-nums sm:gap-4">
+					<div>
+						<span class="text-[10px] text-[#787774] uppercase">Masuk:</span>
+						<span class="ml-1 font-semibold text-[#346538]">+{fmtIDR(aggregateStats.income)}</span>
+					</div>
+					<div>
+						<span class="text-[10px] text-[#787774] uppercase">Keluar:</span>
+						<span class="ml-1 font-semibold text-[#111111]">−{fmtIDR(aggregateStats.expense)}</span>
+					</div>
+					<div class="border-l border-[#EAEAEA] pl-3">
+						<span class="text-[10px] text-[#787774] uppercase">Net Terfilter:</span>
+						<span
+							class="ml-1 font-semibold {aggregateStats.net >= 0
+								? 'text-[#346538]'
+								: 'text-[#9F2F2D]'}"
+						>
+							{aggregateStats.net >= 0 ? '+' : '−'}{fmtIDR(Math.abs(aggregateStats.net))}
+						</span>
+					</div>
+				</div>
 			</div>
 
-			<div class="flex flex-wrap items-center gap-3 font-mono text-xs tabular-nums sm:gap-4">
-				<div>
-					<span class="text-[10px] text-[#787774] uppercase">Masuk:</span>
-					<span class="ml-1 font-semibold text-[#346538]">+{fmtIDR(aggregateStats.income)}</span>
-				</div>
-				<div>
-					<span class="text-[10px] text-[#787774] uppercase">Keluar:</span>
-					<span class="ml-1 font-semibold text-[#111111]">−{fmtIDR(aggregateStats.expense)}</span>
-				</div>
-				<div class="border-l border-[#EAEAEA] pl-3">
-					<span class="text-[10px] text-[#787774] uppercase">Net Terfilter:</span>
-					<span
-						class="ml-1 font-semibold {aggregateStats.net >= 0
-							? 'text-[#346538]'
-							: 'text-[#9F2F2D]'}"
-					>
-						{aggregateStats.net >= 0 ? '+' : '−'}{fmtIDR(Math.abs(aggregateStats.net))}
+			<!-- Layer 2: Global Balance Sheet Anchor (Right Zone) -->
+			<div
+				class="flex shrink-0 flex-col gap-1 border-t border-[#EAEAEA] pt-2.5 text-left lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:text-right"
+			>
+				<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
+					{pointInTimeNetWorth.label}
+				</span>
+				<span class="font-mono text-base font-bold text-[#111111] tabular-nums">
+					{fmtIDR(pointInTimeNetWorth.amount)}
+				</span>
+
+				<!-- Spendable vs Locked Breakdown -->
+				<div
+					class="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px] lg:justify-end"
+				>
+					<span class="flex items-center gap-1 text-[#346538]">
+						<span class="size-1.5 rounded-full bg-[#346538]"></span>
+						<span>Bebas: {fmtIDR(pointInTimeNetWorth.spendableAmount)}</span>
+					</span>
+					<span class="text-[#C9C4B8]">·</span>
+					<span class="flex items-center gap-1 text-[#956400]">
+						<span class="size-1.5 rounded-full bg-[#956400]"></span>
+						<span>Cadangan: {fmtIDR(pointInTimeNetWorth.lockedAmount)}</span>
 					</span>
 				</div>
-			</div>
-		</div>
 
-		<!-- Layer 2: Global Balance Sheet Anchor (Right Zone) -->
-		<div
-			class="flex shrink-0 flex-col gap-1 border-t border-[#EAEAEA] pt-2.5 text-left lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:text-right"
-		>
-			<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-				{pointInTimeNetWorth.label}
-			</span>
-			<span class="font-mono text-base font-bold text-[#111111] tabular-nums">
-				{fmtIDR(pointInTimeNetWorth.amount)}
-			</span>
-
-			<!-- Spendable vs Locked Breakdown -->
-			<div
-				class="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px] lg:justify-end"
-			>
-				<span class="flex items-center gap-1 text-[#346538]">
-					<span class="size-1.5 rounded-full bg-[#346538]"></span>
-					<span>Bebas: {fmtIDR(pointInTimeNetWorth.spendableAmount)}</span>
-				</span>
-				<span class="text-[#C9C4B8]">·</span>
-				<span class="flex items-center gap-1 text-[#956400]">
-					<span class="size-1.5 rounded-full bg-[#956400]"></span>
-					<span>Cadangan: {fmtIDR(pointInTimeNetWorth.lockedAmount)}</span>
-				</span>
-			</div>
-
-			<!-- Subtext and Link to Accounts Timeline -->
-			<div class="flex items-center gap-1 text-[10px] text-[#787774] lg:justify-end">
-				<span>{pointInTimeNetWorth.subtext}</span>
-				<span>·</span>
-				<a
-					href="/accounts?datePreset={encodeURIComponent(
-						dateFilterStore.preset
-					)}&startDate={encodeURIComponent(dateFilterStore.startDate)}&endDate={encodeURIComponent(
-						dateFilterStore.endDate
-					)}"
-					class="font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
-				>
-					Rincian Akun →
-				</a>
-			</div>
-		</div>
-	</div>
-
-	<!-- Full-Width Tabular Transaction Grid -->
-	<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
-		{#if reedrichStore.isLedgerLoading}
-			<div class="divide-y divide-[#EAEAEA] p-4">
-				{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
-					<div class="flex items-center justify-between gap-4 py-2.5">
-						<Skeleton class="h-3.5 w-20 shrink-0" />
-						<Skeleton class="h-3.5 w-48 flex-1" />
-						<Skeleton class="hidden h-3.5 w-24 sm:block" />
-						<Skeleton class="hidden h-3.5 w-16 md:block" />
-						<Skeleton class="h-3.5 w-24 shrink-0 text-right" />
-					</div>
-				{/each}
-			</div>
-		{:else if pagedTransactions.length === 0}
-			<div class="py-16 text-center font-mono text-xs text-[#787774]">
-				Tidak ada transaksi yang cocok dengan kriteria filter Anda.
-			</div>
-		{:else}
-			<!-- Desktop: Full Tabular Grid (>= 768px) -->
-			<div class="hidden overflow-x-auto md:block">
-				<table class="w-full border-collapse text-left text-xs">
-					<thead
-						class="border-b border-[#EAEAEA] bg-[#F9F9F8] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
+				<!-- Subtext and Link to Accounts Timeline -->
+				<div class="flex items-center gap-1 text-[10px] text-[#787774] lg:justify-end">
+					<span>{pointInTimeNetWorth.subtext}</span>
+					<span>·</span>
+					<a
+						href="/accounts?datePreset={encodeURIComponent(
+							dateFilterStore.preset
+						)}&startDate={encodeURIComponent(
+							dateFilterStore.startDate
+						)}&endDate={encodeURIComponent(dateFilterStore.endDate)}"
+						class="font-medium text-[#111111] underline transition-colors hover:text-[#787774]"
 					>
-						<tr>
-							<th class="px-4 py-2.5 font-medium">Tanggal</th>
-							<th class="px-4 py-2.5 font-medium">Deskripsi</th>
-							<th class="px-4 py-2.5 font-medium">Kategori</th>
-							<th class="px-4 py-2.5 font-medium">Tipe</th>
-							<th class="px-4 py-2.5 font-medium">Dari Akun</th>
-							<th class="px-4 py-2.5 font-medium">Ke Akun</th>
-							<th class="px-4 py-2.5 font-medium">Status</th>
-							<th class="px-4 py-2.5 text-right font-medium">Nominal</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-[#EAEAEA]">
-						{#each pagedTransactions as t (t.transactionId)}
-							{@const isInc = t.transactionType === 'income'}
-							{@const isPlan = t.transactionIsPlanned === 1}
-							{@const curr = getWalletCurrency(t.transactionWalletId)}
-							{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
-							<tr
-								class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
-								onclick={() => transactionFormStore.openView(t)}
-							>
-								<td class="px-4 py-2.5 font-mono text-[11px] whitespace-nowrap text-[#787774]">
-									{dFmt(t.transactionDate)}
-								</td>
-								<td class="max-w-[260px] px-4 py-2.5">
-									<div
-										class="truncate font-medium text-[#111111]"
-										title={t.transactionDescription || ''}
-									>
-										{t.transactionDescription || '(tanpa deskripsi)'}
-									</div>
-								</td>
-								<td class="max-w-[140px] px-4 py-2.5 font-medium text-[#111111]">
-									<div class="truncate">
-										{getCategoryName(t.transactionCategoryId)}
-									</div>
-									{#if getBudgetName(t.transactionBudgetId)}
-										<div class="mt-0.5">
-											<span
-												class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
-											>
-												{getBudgetName(t.transactionBudgetId)}
-											</span>
+						Rincian Akun →
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Full-Width Tabular Transaction Grid -->
+		<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
+			{#if reedrichStore.isLedgerLoading}
+				<div class="divide-y divide-[#EAEAEA] p-4">
+					{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
+						<div class="flex items-center justify-between gap-4 py-2.5">
+							<Skeleton class="h-3.5 w-20 shrink-0" />
+							<Skeleton class="h-3.5 w-48 flex-1" />
+							<Skeleton class="hidden h-3.5 w-24 sm:block" />
+							<Skeleton class="hidden h-3.5 w-16 md:block" />
+							<Skeleton class="h-3.5 w-24 shrink-0 text-right" />
+						</div>
+					{/each}
+				</div>
+			{:else if pagedTransactions.length === 0}
+				<div class="py-16 text-center font-mono text-xs text-[#787774]">
+					Tidak ada transaksi yang cocok dengan kriteria filter Anda.
+				</div>
+			{:else}
+				<!-- Desktop: Full Tabular Grid (>= 768px) -->
+				<div class="hidden overflow-x-auto md:block">
+					<table class="w-full border-collapse text-left text-xs">
+						<thead
+							class="border-b border-[#EAEAEA] bg-[#F9F9F8] text-[10px] font-medium tracking-wider text-[#787774] uppercase"
+						>
+							<tr>
+								<th class="px-4 py-2.5 font-medium">Tanggal</th>
+								<th class="px-4 py-2.5 font-medium">Deskripsi</th>
+								<th class="px-4 py-2.5 font-medium">Kategori</th>
+								<th class="px-4 py-2.5 font-medium">Tipe</th>
+								<th class="px-4 py-2.5 font-medium">Dari Akun</th>
+								<th class="px-4 py-2.5 font-medium">Ke Akun</th>
+								<th class="px-4 py-2.5 font-medium">Status</th>
+								<th class="px-4 py-2.5 text-right font-medium">Nominal</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[#EAEAEA]">
+							{#each pagedTransactions as t (t.transactionId)}
+								{@const isInc = t.transactionType === 'income'}
+								{@const isPlan = t.transactionIsPlanned === 1}
+								{@const curr = getWalletCurrency(t.transactionWalletId)}
+								{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
+								<tr
+									class="cursor-pointer transition-colors hover:bg-[#F0EFEC]/60"
+									onclick={() => transactionFormStore.openView(t)}
+								>
+									<td class="px-4 py-2.5 font-mono text-[11px] whitespace-nowrap text-[#787774]">
+										{dFmt(t.transactionDate)}
+									</td>
+									<td class="max-w-[260px] px-4 py-2.5">
+										<div
+											class="truncate font-medium text-[#111111]"
+											title={t.transactionDescription || ''}
+										>
+											{t.transactionDescription || '(tanpa deskripsi)'}
 										</div>
-									{/if}
-								</td>
-								<td class="px-4 py-2.5 whitespace-nowrap">
-									<span
-										class="rounded px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase {t.transactionType ===
-										'income'
-											? 'bg-[#EDF3EC] text-[#346538]'
-											: t.transactionType === 'expense'
-												? 'bg-[#FDEBEC] text-[#9F2F2D]'
-												: 'bg-[#E1F3FE] text-[#1F6C9F]'}"
+									</td>
+									<td class="max-w-[140px] px-4 py-2.5 font-medium text-[#111111]">
+										<div class="truncate">
+											{getCategoryName(t.transactionCategoryId)}
+										</div>
+										{#if getBudgetName(t.transactionBudgetId)}
+											<div class="mt-0.5">
+												<span
+													class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
+												>
+													{getBudgetName(t.transactionBudgetId)}
+												</span>
+											</div>
+										{/if}
+									</td>
+									<td class="px-4 py-2.5 whitespace-nowrap">
+										<span
+											class="rounded px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase {t.transactionType ===
+											'income'
+												? 'bg-[#EDF3EC] text-[#346538]'
+												: t.transactionType === 'expense'
+													? 'bg-[#FDEBEC] text-[#9F2F2D]'
+													: 'bg-[#E1F3FE] text-[#1F6C9F]'}"
+										>
+											{t.transactionType}
+										</span>
+									</td>
+									<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
+										{getWalletName(t.transactionWalletId)}
+									</td>
+									<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
+										{getWalletName(t.transactionTargetWalletId)}
+									</td>
+									<td class="px-4 py-2.5 whitespace-nowrap">
+										<span
+											class="font-mono text-[10px] font-medium uppercase {isPlan
+												? 'text-[#956400]'
+												: 'text-[#787774]'}"
+										>
+											{isPlan ? 'Planned' : 'Realized'}
+										</span>
+									</td>
+									<td
+										class="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap tabular-nums {isInc
+											? 'text-[#346538]'
+											: 'text-[#111111]'}"
 									>
-										{t.transactionType}
-									</span>
-								</td>
-								<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
-									{getWalletName(t.transactionWalletId)}
-								</td>
-								<td class="max-w-[120px] truncate px-4 py-2.5 text-[#787774]">
-									{getWalletName(t.transactionTargetWalletId)}
-								</td>
-								<td class="px-4 py-2.5 whitespace-nowrap">
-									<span
-										class="font-mono text-[10px] font-medium uppercase {isPlan
-											? 'text-[#956400]'
-											: 'text-[#787774]'}"
-									>
-										{isPlan ? 'Planned' : 'Realized'}
-									</span>
-								</td>
-								<td
-									class="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap tabular-nums {isInc
+										<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
+										{#if curr !== 'IDR'}
+											<div class="font-mono text-[9px] font-normal text-[#787774]">
+												({fmtCurrency(t.transactionAmount, curr)})
+											</div>
+										{/if}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Mobile: Dense Document Feed (< 768px, Zero Horizontal Scroll) -->
+				<div class="divide-y divide-[#EAEAEA] md:hidden">
+					{#each pagedTransactions as t (t.transactionId)}
+						{@const isInc = t.transactionType === 'income'}
+						{@const isPlan = t.transactionIsPlanned === 1}
+						{@const curr = getWalletCurrency(t.transactionWalletId)}
+						{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="cursor-pointer p-3.5 transition-colors hover:bg-[#F9F9F8] active:bg-[#F0EFEC]"
+							onclick={() => transactionFormStore.openView(t)}
+						>
+							<!-- Line 1: Description + Amount -->
+							<div class="flex items-start justify-between gap-2.5">
+								<div
+									class="line-clamp-1 text-xs font-medium text-[#111111]"
+									title={t.transactionDescription || ''}
+								>
+									{t.transactionDescription || '(tanpa deskripsi)'}
+								</div>
+								<div
+									class="text-right font-mono text-xs font-bold whitespace-nowrap tabular-nums {isInc
 										? 'text-[#346538]'
 										: 'text-[#111111]'}"
 								>
@@ -723,114 +762,75 @@
 											({fmtCurrency(t.transactionAmount, curr)})
 										</div>
 									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-
-			<!-- Mobile: Dense Document Feed (< 768px, Zero Horizontal Scroll) -->
-			<div class="divide-y divide-[#EAEAEA] md:hidden">
-				{#each pagedTransactions as t (t.transactionId)}
-					{@const isInc = t.transactionType === 'income'}
-					{@const isPlan = t.transactionIsPlanned === 1}
-					{@const curr = getWalletCurrency(t.transactionWalletId)}
-					{@const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr)}
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						class="cursor-pointer p-3.5 transition-colors hover:bg-[#F9F9F8] active:bg-[#F0EFEC]"
-						onclick={() => transactionFormStore.openView(t)}
-					>
-						<!-- Line 1: Description + Amount -->
-						<div class="flex items-start justify-between gap-2.5">
-							<div
-								class="line-clamp-1 text-xs font-medium text-[#111111]"
-								title={t.transactionDescription || ''}
-							>
-								{t.transactionDescription || '(tanpa deskripsi)'}
+								</div>
 							</div>
-							<div
-								class="text-right font-mono text-xs font-bold whitespace-nowrap tabular-nums {isInc
-									? 'text-[#346538]'
-									: 'text-[#111111]'}"
-							>
-								<div>{isInc ? '+' : '−'}{fmtIDR(amtIDR)}</div>
-								{#if curr !== 'IDR'}
-									<div class="font-mono text-[9px] font-normal text-[#787774]">
-										({fmtCurrency(t.transactionAmount, curr)})
-									</div>
-								{/if}
-							</div>
-						</div>
 
-						<!-- Line 2: Date · Category · Routing · Status -->
-						<div
-							class="mt-1.5 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#787774]"
-						>
-							<div class="flex items-center gap-1.5 truncate">
-								<span class="font-mono text-[10px]">{dFmt(t.transactionDate)}</span>
-								<span>·</span>
-								<span
-									class="py-0.2 rounded bg-[#F0EFEC] px-1.5 text-[10px] font-medium text-[#111111]"
-								>
-									{getCategoryName(t.transactionCategoryId)}
-								</span>
-								{#if getBudgetName(t.transactionBudgetId)}
+							<!-- Line 2: Date · Category · Routing · Status -->
+							<div
+								class="mt-1.5 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#787774]"
+							>
+								<div class="flex items-center gap-1.5 truncate">
+									<span class="font-mono text-[10px]">{dFmt(t.transactionDate)}</span>
+									<span>·</span>
 									<span
-										class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
+										class="py-0.2 rounded bg-[#F0EFEC] px-1.5 text-[10px] font-medium text-[#111111]"
 									>
-										{getBudgetName(t.transactionBudgetId)}
+										{getCategoryName(t.transactionCategoryId)}
+									</span>
+									{#if getBudgetName(t.transactionBudgetId)}
+										<span
+											class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-medium text-[#956400]"
+										>
+											{getBudgetName(t.transactionBudgetId)}
+										</span>
+									{/if}
+									<span class="truncate">
+										{getWalletName(t.transactionWalletId)}{t.transactionTargetWalletId
+											? ` → ${getWalletName(t.transactionTargetWalletId)}`
+											: ''}
+									</span>
+								</div>
+								{#if isPlan}
+									<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
+										Planned
 									</span>
 								{/if}
-								<span class="truncate">
-									{getWalletName(t.transactionWalletId)}{t.transactionTargetWalletId
-										? ` → ${getWalletName(t.transactionTargetWalletId)}`
-										: ''}
-								</span>
 							</div>
-							{#if isPlan}
-								<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
-									Planned
-								</span>
-							{/if}
 						</div>
+					{/each}
+				</div>
+
+				<!-- Pagination Footer with Page Size & Stepper -->
+				<div
+					class="flex items-center justify-between border-t border-[#EAEAEA] bg-[#F9F9F8] px-4 py-2.5 text-xs text-[#787774]"
+				>
+					<div>
+						Halaman <strong class="font-mono text-[#111111]">{currentPage}</strong> dari
+						<span class="font-mono">{totalPages}</span> ({filteredTransactions.length} total baris)
 					</div>
-				{/each}
-			</div>
 
-			<!-- Pagination Footer with Page Size & Stepper -->
-			<div
-				class="flex items-center justify-between border-t border-[#EAEAEA] bg-[#F9F9F8] px-4 py-2.5 text-xs text-[#787774]"
-			>
-				<div>
-					Halaman <strong class="font-mono text-[#111111]">{currentPage}</strong> dari
-					<span class="font-mono">{totalPages}</span> ({filteredTransactions.length} total baris)
+					<div class="flex items-center gap-1.5">
+						<button
+							type="button"
+							disabled={currentPage <= 1}
+							onclick={() => (currentPage = Math.max(1, currentPage - 1))}
+							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2 py-1 text-xs text-[#111111] hover:bg-[#F9F9F8] disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<ArrowLeft class="size-3" weight="bold" />
+							<span>Sebelumnya</span>
+						</button>
+						<button
+							type="button"
+							disabled={currentPage >= totalPages}
+							onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))}
+							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2 py-1 text-xs text-[#111111] hover:bg-[#F9F9F8] disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<span>Berikutnya</span>
+							<ArrowRight class="size-3" weight="bold" />
+						</button>
+					</div>
 				</div>
-
-				<div class="flex items-center gap-1.5">
-					<button
-						type="button"
-						disabled={currentPage <= 1}
-						onclick={() => (currentPage = Math.max(1, currentPage - 1))}
-						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2 py-1 text-xs text-[#111111] hover:bg-[#F9F9F8] disabled:cursor-not-allowed disabled:opacity-40"
-					>
-						<ArrowLeft class="size-3" weight="bold" />
-						<span>Sebelumnya</span>
-					</button>
-					<button
-						type="button"
-						disabled={currentPage >= totalPages}
-						onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))}
-						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2 py-1 text-xs text-[#111111] hover:bg-[#F9F9F8] disabled:cursor-not-allowed disabled:opacity-40"
-					>
-						<span>Berikutnya</span>
-						<ArrowRight class="size-3" weight="bold" />
-					</button>
-				</div>
-			</div>
-		{/if}
-	</div>
+			{/if}
+		</div>
 	{/if}
 </div>

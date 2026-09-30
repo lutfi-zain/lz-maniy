@@ -124,14 +124,16 @@
 		</div>
 
 		<div>
-			<label for="wallet-curr" class="mb-1 block font-medium text-[#111111]"> {t('forms.wallet.currencyLabel')} </label>
+			<label for="wallet-curr" class="mb-1 block font-medium text-[#111111]">
+				{t('forms.wallet.currencyLabel')}
+			</label>
 			<input
 				id="wallet-curr"
 				type="text"
 				maxlength="5"
 				bind:value={walletFormStore.currency}
 				placeholder="IDR"
-				class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 font-mono text-xs uppercase text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
+				class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 font-mono text-xs text-[#111111] uppercase transition-colors focus:border-[#111111] focus:outline-none"
 			/>
 		</div>
 	</div>
@@ -145,9 +147,15 @@
 				class="mt-0.5 size-4 rounded border-[#EAEAEA] text-[#111111] focus:ring-0"
 			/>
 			<div>
-				<span class="block font-medium text-[#111111]">{i18nStore.locale === 'id' ? 'Kunci sebagai Dana Cadangan (Locked)' : 'Lock as Committed / Reserve Capital'}</span>
+				<span class="block font-medium text-[#111111]"
+					>{i18nStore.locale === 'id'
+						? 'Kunci sebagai Dana Cadangan (Locked)'
+						: 'Lock as Committed / Reserve Capital'}</span
+				>
 				<span class="block text-[11px] text-[#787774]">
-					{i18nStore.locale === 'id' ? 'Saldo dompet ini tidak akan dihitung ke dalam Safe-to-Spend runway harian.' : 'Account balance will be excluded from daily spendable cash runway.'}
+					{i18nStore.locale === 'id'
+						? 'Saldo dompet ini tidak akan dihitung ke dalam Safe-to-Spend runway harian.'
+						: 'Account balance will be excluded from daily spendable cash runway.'}
 				</span>
 			</div>
 		</label>
@@ -168,7 +176,13 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.wallet.submitEdit') : t('forms.wallet.submitCreate')}</span>
+			<span
+				>{isSubmitting
+					? t('common.saving')
+					: mode === 'edit'
+						? t('forms.wallet.submitEdit')
+						: t('forms.wallet.submitCreate')}</span
+			>
 		</button>
 	</div>
 </form>

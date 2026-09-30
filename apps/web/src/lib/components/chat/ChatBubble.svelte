@@ -35,9 +35,7 @@
 <div class="flex {isUser ? 'justify-end' : 'justify-start'} gap-2">
 	<div
 		class="max-w-[88%] rounded-lg px-3.5 py-2.5 text-[13px] leading-relaxed break-words
-			{isUser
-				? 'bg-[#111111] text-white'
-				: 'bg-white border border-[#EAEAEA] text-[#111111]'}"
+			{isUser ? 'bg-[#111111] text-white' : 'border border-[#EAEAEA] bg-white text-[#111111]'}"
 	>
 		{#if isUser}
 			<!-- User text message -->
@@ -66,12 +64,12 @@
 
 			<!-- In-bubble Error Retry Banner -->
 			{#if isErrorMessage}
-				<div class="mt-2.5 flex items-center gap-2 pt-2 border-t border-[#FDEBEC]">
+				<div class="mt-2.5 flex items-center gap-2 border-t border-[#FDEBEC] pt-2">
 					<button
 						type="button"
 						onclick={() => chatStore.retryMessage(message.id)}
 						disabled={chatStore.isStreaming}
-						class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#FDEBEC] text-[#C23934] hover:bg-[#FCD8D7] text-[11px] font-medium transition-colors disabled:opacity-50"
+						class="flex items-center gap-1.5 rounded bg-[#FDEBEC] px-2.5 py-1 text-[11px] font-medium text-[#C23934] transition-colors hover:bg-[#FCD8D7] disabled:opacity-50"
 					>
 						<ArrowClockwise size={12} weight="bold" />
 						<span>Coba Lagi</span>
@@ -81,14 +79,16 @@
 
 			<!-- Footer Actions: Version Pager & Retry Button -->
 			{#if (message.content || (message.toolInvocations && message.toolInvocations.length > 0)) && !chatStore.isStreaming}
-				<div class="mt-2.5 pt-2 border-t border-[#EAEAEA] flex items-center justify-between text-[11px] text-[#787774]">
+				<div
+					class="mt-2.5 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-[11px] text-[#787774]"
+				>
 					{#if variantCount > 1}
 						<div class="flex items-center gap-1">
 							<button
 								type="button"
 								onclick={() => chatStore.switchMessageVariant(message.id, activeIndex - 1)}
 								disabled={activeIndex <= 0 || chatStore.isStreaming}
-								class="p-0.5 rounded hover:bg-[#F7F6F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+								class="rounded p-0.5 transition-colors hover:bg-[#F7F6F3] disabled:pointer-events-none disabled:opacity-30"
 								aria-label="Versi sebelumnya"
 								title="Versi sebelumnya"
 							>
@@ -99,7 +99,7 @@
 								type="button"
 								onclick={() => chatStore.switchMessageVariant(message.id, activeIndex + 1)}
 								disabled={activeIndex >= variantCount - 1 || chatStore.isStreaming}
-								class="p-0.5 rounded hover:bg-[#F7F6F3] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+								class="rounded p-0.5 transition-colors hover:bg-[#F7F6F3] disabled:pointer-events-none disabled:opacity-30"
 								aria-label="Versi berikutnya"
 								title="Versi berikutnya"
 							>
@@ -114,7 +114,7 @@
 						type="button"
 						onclick={() => chatStore.retryMessage(message.id)}
 						disabled={chatStore.isStreaming}
-						class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[#F7F6F3] text-[#787774] hover:text-[#111111] transition-colors disabled:opacity-40"
+						class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[#787774] transition-colors hover:bg-[#F7F6F3] hover:text-[#111111] disabled:opacity-40"
 						title="Ulang jawaban (Retry)"
 						aria-label="Ulang jawaban"
 					>

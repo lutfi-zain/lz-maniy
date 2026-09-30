@@ -281,7 +281,7 @@
 				<button
 					type="button"
 					onclick={() => walletFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+					class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
 				>
 					<Plus class="size-3.5" weight="bold" />
 					<span>{t('accounts.addAccount')}</span>
@@ -491,7 +491,7 @@
 											e.stopPropagation();
 											openWalletDrawer(w);
 										}}
-										class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+										class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
 										title="Ubah & kelola akun"
 										aria-label="Ubah akun {w.walletName}"
 									>
@@ -573,7 +573,7 @@
 								e.stopPropagation();
 								openWalletDrawer(w);
 							}}
-							class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+							class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
 							title="Ubah & kelola akun"
 							aria-label="Ubah akun {w.walletName}"
 						>

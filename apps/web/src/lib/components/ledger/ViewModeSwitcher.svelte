@@ -36,7 +36,10 @@
 		title="Tampilan Kalendar Multi-Periode"
 		aria-pressed={currentMode === 'calendar_board'}
 	>
-		<CalendarBlank class="size-3.5" weight={currentMode === 'calendar_board' ? 'bold' : 'regular'} />
+		<CalendarBlank
+			class="size-3.5"
+			weight={currentMode === 'calendar_board' ? 'bold' : 'regular'}
+		/>
 		<span>Horizon Board</span>
 	</button>
 </div>

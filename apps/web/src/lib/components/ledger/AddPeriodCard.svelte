@@ -54,17 +54,23 @@
 	}
 </script>
 
-<div class="relative flex min-h-[380px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#EAEAEA] bg-[#FDFCFB] p-6 text-center transition-colors hover:border-[#C9C4B8]">
+<div
+	class="relative flex min-h-[380px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#EAEAEA] bg-[#FDFCFB] p-6 text-center transition-colors hover:border-[#C9C4B8]"
+>
 	{#if !isOpen}
 		<div class="flex flex-col items-center gap-3">
-			<div class="flex size-10 items-center justify-center rounded-full bg-[#F0EFEC] text-[#111111]">
+			<div
+				class="flex size-10 items-center justify-center rounded-full bg-[#F0EFEC] text-[#111111]"
+			>
 				<CalendarPlus class="size-5" weight="bold" />
 			</div>
 
 			<div>
 				<h3 class="text-xs font-semibold text-[#111111]">{t('ledger.addPeriod')}</h3>
 				<p class="mt-0.5 text-[11px] text-[#787774]">
-					{i18nStore.locale === 'id' ? 'Perluas horizon perencanaan ke bulan lain.' : 'Extend horizon board to another month.'}
+					{i18nStore.locale === 'id'
+						? 'Perluas horizon perencanaan ke bulan lain.'
+						: 'Extend horizon board to another month.'}
 				</p>
 			</div>
 
@@ -89,9 +95,13 @@
 		</div>
 	{:else}
 		<!-- Custom Month/Year Selector Form -->
-		<div class="w-full max-w-[260px] space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-left shadow-xs">
+		<div
+			class="w-full max-w-[260px] space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-left shadow-xs"
+		>
 			<div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
-				<span class="text-xs font-semibold text-[#111111]">{i18nStore.locale === 'id' ? 'Pilih Periode' : 'Select Period'}</span>
+				<span class="text-xs font-semibold text-[#111111]"
+					>{i18nStore.locale === 'id' ? 'Pilih Periode' : 'Select Period'}</span
+				>
 				<button
 					type="button"
 					onclick={() => (isOpen = false)}
@@ -104,7 +114,9 @@
 
 			<div class="space-y-2 text-xs">
 				<div>
-					<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase">{i18nStore.locale === 'id' ? 'Tahun' : 'Year'}</label>
+					<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase"
+						>{i18nStore.locale === 'id' ? 'Tahun' : 'Year'}</label
+					>
 					<select
 						id="selectYear"
 						bind:value={selectedYear}
@@ -117,7 +129,9 @@
 				</div>
 
 				<div>
-					<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase">{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}</label>
+					<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase"
+						>{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}</label
+					>
 					<select
 						id="selectMonth"
 						bind:value={selectedMonth}
@@ -130,7 +144,7 @@
 				</div>
 			</div>
 
-			<div class="flex items-center justify-end gap-2 pt-2 border-t border-[#EAEAEA]">
+			<div class="flex items-center justify-end gap-2 border-t border-[#EAEAEA] pt-2">
 				<button
 					type="button"
 					onclick={() => (isOpen = false)}

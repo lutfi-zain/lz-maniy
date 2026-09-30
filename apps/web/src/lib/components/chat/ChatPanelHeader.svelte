@@ -6,16 +6,16 @@
 	let { isMobile = false }: { isMobile?: boolean } = $props();
 </script>
 
-<header class="flex items-center gap-2 px-3 py-2 border-b border-[#eaeaea] bg-white shrink-0">
+<header class="flex shrink-0 items-center gap-2 border-b border-[#eaeaea] bg-white px-3 py-2">
 	<button
 		onclick={() => (chatStore.showConversationList = !chatStore.showConversationList)}
-		class="p-1 rounded hover:bg-[#f7f6f3] text-[#787774] transition-colors"
+		class="rounded p-1 text-[#787774] transition-colors hover:bg-[#f7f6f3]"
 		aria-label="Riwayat percakapan"
 	>
 		<List size={16} weight="bold" />
 	</button>
 
-	<span class="flex-1 text-[13px] font-sans text-[#111111] truncate min-w-0">
+	<span class="min-w-0 flex-1 truncate font-sans text-[13px] text-[#111111]">
 		{chatStore.activeConversation?.title ?? 'Percakapan Baru'}
 	</span>
 
@@ -23,7 +23,7 @@
 
 	<button
 		onclick={() => chatStore.newConversation()}
-		class="p-1 rounded hover:bg-[#f7f6f3] text-[#787774] transition-colors"
+		class="rounded p-1 text-[#787774] transition-colors hover:bg-[#f7f6f3]"
 		aria-label="Percakapan baru"
 	>
 		<Plus size={16} weight="bold" />
@@ -31,7 +31,7 @@
 
 	<button
 		onclick={() => chatStore.togglePanel(false)}
-		class="p-1 rounded hover:bg-[#f7f6f3] text-[#787774] transition-colors"
+		class="rounded p-1 text-[#787774] transition-colors hover:bg-[#f7f6f3]"
 		aria-label="Tutup panel"
 	>
 		<X size={16} weight="bold" />

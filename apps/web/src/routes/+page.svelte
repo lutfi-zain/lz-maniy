@@ -6,8 +6,7 @@
 	import CockpitAllocationWidget from '$lib/components/cockpit/CockpitAllocationWidget.svelte';
 </script>
 
-<div class="space-y-4 max-w-full overflow-hidden">
-
+<div class="max-w-full space-y-4 overflow-hidden">
 	<!-- Top Executive KPI Strip -->
 	<CockpitKpiStrip />
 
@@ -15,7 +14,9 @@
 	<CockpitAlertBanner />
 
 	<!-- 3-Column Operational Workbench with min-w-0 on each child to prevent grid blowout -->
-	<div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_1.8fr_1fr] lg:grid-cols-[1fr_1.5fr] min-w-0">
+	<div
+		class="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_1.5fr] xl:grid-cols-[1fr_1.8fr_1fr]"
+	>
 		<!-- Left: Bank Accounts & Subtotals -->
 		<div class="min-w-0">
 			<CockpitBankWidget />

@@ -9,7 +9,7 @@
 	<img
 		{src}
 		{alt}
-		class="max-w-full rounded border border-[#eaeaea] max-h-48 object-contain"
+		class="max-h-48 max-w-full rounded border border-[#eaeaea] object-contain"
 		onerror={() => (failed = true)}
 	/>
 {/if}

@@ -8,9 +8,24 @@ import type { CategoryRecord, TransactionRecord, BudgetSnapshot } from '$lib/typ
 
 describe('category-metrics utility', () => {
 	const mockCategories: CategoryRecord[] = [
-		{ categoryId: 'cat-1', categoryName: 'Makan & Minum', categoryType: 'expense', categoryIcon: '🍔' },
-		{ categoryId: 'cat-2', categoryName: 'Bensin & Transport', categoryType: 'expense', categoryIcon: '🚗' },
-		{ categoryId: 'cat-3', categoryName: 'Gaji & Bonus', categoryType: 'income', categoryIcon: '💼' },
+		{
+			categoryId: 'cat-1',
+			categoryName: 'Makan & Minum',
+			categoryType: 'expense',
+			categoryIcon: '🍔'
+		},
+		{
+			categoryId: 'cat-2',
+			categoryName: 'Bensin & Transport',
+			categoryType: 'expense',
+			categoryIcon: '🚗'
+		},
+		{
+			categoryId: 'cat-3',
+			categoryName: 'Gaji & Bonus',
+			categoryType: 'income',
+			categoryIcon: '💼'
+		},
 		{ categoryId: 'cat-4', categoryName: 'Investasi', categoryType: 'income', categoryIcon: '📈' }
 	];
 

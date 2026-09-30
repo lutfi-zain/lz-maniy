@@ -17,14 +17,17 @@
 				<span>{t('planning.budgets.title')}</span>
 			</h2>
 			<div class="mt-0.5 text-xs text-[#787774]">
-				{i18nStore.locale === 'id' ? 'Realisasi pengeluaran terhadap pagu bulanan. Klik untuk riwayat transaksi.' : 'Spending vs monthly allowances. Click to inspect transactions.'}
+				{i18nStore.locale === 'id'
+					? 'Realisasi pengeluaran terhadap pagu bulanan. Klik untuk riwayat transaksi.'
+					: 'Spending vs monthly allowances. Click to inspect transactions.'}
 			</div>
 		</div>
 
 		<span
 			class="rounded-full border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-0.5 font-mono text-[11px] text-[#787774] uppercase"
 		>
-			{budgets.length} {i18nStore.locale === 'id' ? 'pagu' : 'budgets'}
+			{budgets.length}
+			{i18nStore.locale === 'id' ? 'pagu' : 'budgets'}
 		</span>
 	</div>
 

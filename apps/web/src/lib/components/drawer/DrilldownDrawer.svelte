@@ -49,7 +49,7 @@
 
 <!-- Slide-Over Drawer Container -->
 <div
-	class="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[620px] flex-col border-l border-[#EAEAEA] bg-white shadow-xl transition-all duration-300 ease-out {isOpen
+	class="shadow-minimal fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[620px] flex-col border-l border-[#EAEAEA] bg-white transition-all duration-300 ease-out {isOpen
 		? 'translate-x-0 opacity-100'
 		: 'pointer-events-none invisible translate-x-full opacity-0'}"
 	aria-labelledby="drawer-title"

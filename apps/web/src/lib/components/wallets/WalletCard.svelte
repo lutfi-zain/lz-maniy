@@ -21,8 +21,12 @@
 			title: wallet.walletName,
 			subtitle: `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`,
 			badge: isLocked
-				? (i18nStore.locale === 'id' ? 'DOMPET TERKUNCI' : 'COMMITTED ACCOUNT')
-				: (i18nStore.locale === 'id' ? 'DOMPET SPENDABLE' : 'SPENDABLE ACCOUNT'),
+				? i18nStore.locale === 'id'
+					? 'DOMPET TERKUNCI'
+					: 'COMMITTED ACCOUNT'
+				: i18nStore.locale === 'id'
+					? 'DOMPET SPENDABLE'
+					: 'SPENDABLE ACCOUNT',
 			data: { wallet }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ walletId: wallet.walletId, limit: 50 });

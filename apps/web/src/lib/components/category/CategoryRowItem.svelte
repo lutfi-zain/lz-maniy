@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
-	import Tag from 'phosphor-svelte/lib/Tag';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import WarningCircle from 'phosphor-svelte/lib/WarningCircle';
+	import CategoryIcon from '$lib/components/category/CategoryIcon.svelte';
 	import { categoryFormStore } from '$lib/stores/category-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
@@ -31,8 +31,14 @@
 		reedrichStore.openDrawer({
 			type: 'category',
 			title: item.category.categoryName,
-			subtitle: `${isIncome ? (i18nStore.locale === 'id' ? 'Pemasukan' : 'Income') : (i18nStore.locale === 'id' ? 'Pengeluaran' : 'Expense')} · ${item.transactionCount} ${i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}`,
-			badge: isProtected ? (i18nStore.locale === 'id' ? 'SISTEM' : 'SYSTEM') : (i18nStore.locale === 'id' ? 'KATEGORI' : 'CATEGORY'),
+			subtitle: `${isIncome ? (i18nStore.locale === 'id' ? 'Pemasukan' : 'Income') : i18nStore.locale === 'id' ? 'Pengeluaran' : 'Expense'} · ${item.transactionCount} ${i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}`,
+			badge: isProtected
+				? i18nStore.locale === 'id'
+					? 'SISTEM'
+					: 'SYSTEM'
+				: i18nStore.locale === 'id'
+					? 'KATEGORI'
+					: 'CATEGORY',
 			data: {
 				item: {
 					categoryName: item.category.categoryName,
@@ -85,30 +91,31 @@
 	class="group flex cursor-pointer flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-[#FBFBFA]"
 >
 	<!-- Left: Icon & Info -->
-	<div class="flex items-center gap-3 min-w-0">
+	<div class="flex min-w-0 items-center gap-3">
 		<div
 			class="flex size-9 shrink-0 items-center justify-center rounded-md border border-[#EAEAEA] bg-[#F9F9F8] text-[#787774] transition-colors group-hover:border-[#111111] group-hover:text-[#111111]"
 		>
-			{#if item.category.categoryIcon}
-				<span class="text-sm">{item.category.categoryIcon}</span>
-			{:else}
-				<Tag class="size-4" weight="bold" />
-			{/if}
+			<CategoryIcon icon={item.category.categoryIcon} class="size-4" />
 		</div>
 
 		<div class="min-w-0">
 			<div class="flex items-center gap-2">
-				<span class="truncate text-xs font-semibold text-[#111111]" title={item.category.categoryName}>
+				<span
+					class="truncate text-xs font-semibold text-[#111111]"
+					title={item.category.categoryName}
+				>
 					{item.category.categoryName}
 				</span>
 				{#if isProtected}
-					<span class="rounded bg-[#FBF3DB] px-1.5 py-0.2 font-mono text-[9px] font-semibold text-[#956400]">
+					<span
+						class="py-0.2 rounded bg-[#FBF3DB] px-1.5 font-mono text-[9px] font-semibold text-[#956400]"
+					>
 						Protected
 					</span>
 				{/if}
 				{#if item.linkedBudget}
 					<span
-						class="hidden rounded bg-[#EFEFED] px-1.5 py-0.2 font-mono text-[9px] text-[#787774] sm:inline-block"
+						class="py-0.2 hidden rounded bg-[#EFEFED] px-1.5 font-mono text-[9px] text-[#787774] sm:inline-block"
 						title="Linked Budget"
 					>
 						{t('planning.categories.linkedBudget', { name: item.linkedBudget.budgetName })}
@@ -120,7 +127,9 @@
 				<span>{item.transactionCount} {i18nStore.locale === 'id' ? 'mutasi' : 'txns'}</span>
 				{#if item.percentageOfTotal > 0}
 					<span>·</span>
-					<span class="font-mono text-[10px]">{item.percentageOfTotal.toFixed(1)}% {t('planning.categories.shareOfPeriod')}</span>
+					<span class="font-mono text-[10px]"
+						>{item.percentageOfTotal.toFixed(1)}% {t('planning.categories.shareOfPeriod')}</span
+					>
 				{/if}
 			</div>
 		</div>
@@ -185,14 +194,16 @@
 		role="dialog"
 		aria-modal="true"
 	>
-		<div class="w-full max-w-sm rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-xl">
+		<div class="shadow-minimal w-full max-w-sm rounded-lg border border-[#EAEAEA] bg-white p-5">
 			<div class="flex items-center gap-2 text-[#9F2F2D]">
 				<WarningCircle class="size-5" weight="bold" />
 				<h3 class="text-sm font-semibold text-[#111111]">Hapus Kategori</h3>
 			</div>
 
 			<p class="mt-2 text-xs leading-relaxed text-[#787774]">
-				Apakah Anda yakin ingin menghapus kategori <strong class="text-[#111111]">{item.category.categoryName}</strong>?
+				Apakah Anda yakin ingin menghapus kategori <strong class="text-[#111111]"
+					>{item.category.categoryName}</strong
+				>?
 				{#if item.transactionCount > 0}
 					<br /><br />
 					<span class="rounded bg-[#FDEBEC] px-1.5 py-0.5 text-[11px] font-medium text-[#9F2F2D]">

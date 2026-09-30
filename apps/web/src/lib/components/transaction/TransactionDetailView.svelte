@@ -167,6 +167,51 @@
 			</div>
 		{/if}
 
+		<!-- Asal Recurring Template -->
+		{#if transaction.transactionTemplateId}
+			{@const tpl = reedrichStore.recurringTemplates.find(
+				(r) => r.templateId === transaction.transactionTemplateId
+			)}
+			<div class="flex items-center justify-between gap-4 p-3.5">
+				<span class="text-[#787774]">Asal Tagihan Rutin</span>
+				<span
+					class="rounded bg-[#E1F3FE] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase"
+				>
+					{tpl ? tpl.templateName : 'Template Berulang'}
+				</span>
+			</div>
+		{/if}
+
+		<!-- Scheduled Occurrence Date -->
+		{#if transaction.transactionOccurrenceDate}
+			<div class="flex items-center justify-between gap-4 p-3.5">
+				<span class="text-[#787774]">Jadwal Rencana</span>
+				<span class="font-mono text-[11px] text-[#111111]">
+					{dFmt(transaction.transactionOccurrenceDate)}
+				</span>
+			</div>
+		{/if}
+
+		<!-- Realized Timestamp -->
+		{#if transaction.transactionRealizedAt}
+			<div class="flex items-center justify-between gap-4 p-3.5">
+				<span class="text-[#787774]">Terealisasi Pada</span>
+				<span class="font-mono text-[11px] text-[#346538]">
+					{dFmtTime(transaction.transactionRealizedAt)}
+				</span>
+			</div>
+		{/if}
+
+		<!-- Nominal Rencana Semula -->
+		{#if transaction.transactionPlannedAmount !== null && transaction.transactionPlannedAmount !== undefined && transaction.transactionPlannedAmount !== transaction.transactionAmount}
+			<div class="flex items-center justify-between gap-4 p-3.5">
+				<span class="text-[#787774]">Nominal Rencana Semula</span>
+				<span class="font-mono text-[11px] text-[#787774]">
+					{fmtCurrency(transaction.transactionPlannedAmount, currency)}
+				</span>
+			</div>
+		{/if}
+
 		<!-- ID & Timestamp Meta -->
 		{#if transaction.transactionCreatedAt}
 			<div class="flex items-center justify-between gap-4 p-3.5">
@@ -209,7 +254,7 @@
 		aria-labelledby="delete-dialog-title"
 	>
 		<div
-			class="w-full max-w-[400px] rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-xl transition-all"
+			class="shadow-minimal w-full max-w-[400px] rounded-lg border border-[#EAEAEA] bg-white p-5 transition-all"
 		>
 			<div class="flex items-center gap-2 text-[#9F2F2D]">
 				<WarningCircle class="size-5" weight="bold" />

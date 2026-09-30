@@ -139,22 +139,26 @@
 			Account & Category Details
 		</div>
 
-		<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
+		<div class="flex items-center justify-between border-b border-[#EAEAEA] py-1">
 			<span class="text-[#787774]">{t('forms.transaction.sourceAccount')}</span>
-			<span class="font-medium text-[#111111]">{wallet?.walletName || template.templateWalletId}</span>
+			<span class="font-medium text-[#111111]"
+				>{wallet?.walletName || template.templateWalletId}</span
+			>
 		</div>
 
 		{#if targetWallet}
-			<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
+			<div class="flex items-center justify-between border-b border-[#EAEAEA] py-1">
 				<span class="text-[#787774]">{t('forms.transaction.targetAccount')}</span>
 				<span class="font-medium text-[#111111]">{targetWallet.walletName}</span>
 			</div>
 		{/if}
 
 		{#if category}
-			<div class="flex items-center justify-between py-1 border-b border-[#EAEAEA]">
+			<div class="flex items-center justify-between border-b border-[#EAEAEA] py-1">
 				<span class="text-[#787774]">{t('common.category')}</span>
-				<span class="font-medium text-[#111111]">{category.categoryIcon || '🏷️'} {category.categoryName}</span>
+				<span class="font-medium text-[#111111]"
+					>{category.categoryIcon || '🏷️'} {category.categoryName}</span
+				>
 			</div>
 		{/if}
 
@@ -166,7 +170,7 @@
 
 	{#if template.templateNotes}
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#FDFCFB] p-3">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase mb-1">
+			<span class="mb-1 block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
 				Notes
 			</span>
 			<p class="text-xs text-[#111111]">{template.templateNotes}</p>
@@ -174,14 +178,14 @@
 	{/if}
 
 	<!-- Action Toolbar -->
-	<div class="space-y-2 pt-2 border-t border-[#EAEAEA]">
+	<div class="space-y-2 border-t border-[#EAEAEA] pt-2">
 		<div class="flex items-center gap-2">
 			<!-- Apply button -->
 			<button
 				type="button"
 				onclick={handleApply}
 				disabled={isApplying || !template.templateIsActive}
-				class="flex-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-md bg-[#111111] py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+				class="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-[#111111] py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<CheckCircle class="size-3.5" weight="bold" />
 				<span>{isApplying ? 'Menerapkan...' : 'Terapkan Sekarang'}</span>

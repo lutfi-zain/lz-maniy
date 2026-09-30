@@ -20,7 +20,9 @@
 
 	const geminiModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'gemini'));
 	const groqModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'groq'));
-	const opencodeModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'opencode'));
+	const opencodeModels = $derived(
+		chatStore.availableModels.filter((m) => m.provider === 'opencode')
+	);
 
 	const availableThinkingLevels = $derived<ThinkingLevel[]>(
 		chatStore.selectedModel.thinkingLevels ?? ['off', 'low', 'medium', 'high']
@@ -33,7 +35,7 @@
 		<button
 			type="button"
 			onclick={toggle}
-			class="flex items-center gap-1.5 whitespace-nowrap rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111]"
+			class="flex items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium whitespace-nowrap text-[#111111] transition-colors hover:border-[#111111]"
 			aria-label="Pilih model AI"
 		>
 			{#if chatStore.selectedModel.provider === 'gemini'}
@@ -50,7 +52,7 @@
 		{#if open}
 			<!-- Dropdown Menu -->
 			<div
-				class="absolute right-0 top-full mt-1.5 z-50 flex w-64 flex-col rounded-lg border border-[#EAEAEA] bg-white p-1.5 shadow-lg max-h-80 overflow-y-auto"
+				class="absolute top-full right-0 z-50 mt-1.5 flex max-h-80 w-64 flex-col overflow-y-auto rounded-lg border border-[#EAEAEA] bg-white p-1.5 shadow-lg"
 				role="menu"
 			>
 				<!-- Gemini Section -->
@@ -62,7 +64,10 @@
 						<button
 							type="button"
 							onclick={() => selectModel(model)}
-							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore.selectedModel.model === model.model ? 'bg-[#EDF3EC] font-medium text-[#111111]' : 'text-[#111111]'}"
+							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
+								.selectedModel.model === model.model
+								? 'bg-[#EDF3EC] font-medium text-[#111111]'
+								: 'text-[#111111]'}"
 						>
 							<div class="flex flex-col">
 								<span>{model.displayName}</span>
@@ -87,7 +92,10 @@
 						<button
 							type="button"
 							onclick={() => selectModel(model)}
-							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore.selectedModel.model === model.model ? 'bg-[#EDF3EC] font-medium text-[#111111]' : 'text-[#111111]'}"
+							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
+								.selectedModel.model === model.model
+								? 'bg-[#EDF3EC] font-medium text-[#111111]'
+								: 'text-[#111111]'}"
 						>
 							<div class="flex flex-col">
 								<span>{model.displayName}</span>
@@ -112,7 +120,10 @@
 						<button
 							type="button"
 							onclick={() => selectModel(model)}
-							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore.selectedModel.model === model.model ? 'bg-[#EDF3EC] font-medium text-[#111111]' : 'text-[#111111]'}"
+							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
+								.selectedModel.model === model.model
+								? 'bg-[#EDF3EC] font-medium text-[#111111]'
+								: 'text-[#111111]'}"
 						>
 							<span>{model.displayName}</span>
 							{#if chatStore.selectedModel.model === model.model}
@@ -124,11 +135,7 @@
 			</div>
 
 			<!-- Backdrop to close -->
-			<div
-				class="fixed inset-0 z-40"
-				onclick={() => (open = false)}
-				role="presentation"
-			></div>
+			<div class="fixed inset-0 z-40" onclick={() => (open = false)} role="presentation"></div>
 		{/if}
 	</div>
 
@@ -138,17 +145,23 @@
 			<button
 				type="button"
 				onclick={() => (thinkingOpen = !thinkingOpen)}
-				class="flex items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-1.5 py-1 text-[11px] font-medium text-[#111111] hover:border-[#111111] transition-colors"
+				class="flex items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-1.5 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111]"
 				title="Atur Thinking Level"
 				aria-label="Atur Thinking Level"
 			>
-				<Brain size={12} weight="bold" class={chatStore.thinkingLevel === 'off' ? 'text-[#787774]' : 'text-[#8423BF]'} />
-				<span class="capitalize text-[10px] font-mono">{chatStore.thinkingLevel}</span>
+				<Brain
+					size={12}
+					weight="bold"
+					class={chatStore.thinkingLevel === 'off' ? 'text-[#787774]' : 'text-[#8423BF]'}
+				/>
+				<span class="font-mono text-[10px] capitalize">{chatStore.thinkingLevel}</span>
 				<CaretDown size={8} weight="bold" class="text-[#787774]" />
 			</button>
 
 			{#if thinkingOpen}
-				<div class="absolute right-0 top-full mt-1.5 z-50 flex w-28 flex-col rounded-lg border border-[#EAEAEA] bg-white p-1 shadow-lg">
+				<div
+					class="absolute top-full right-0 z-50 mt-1.5 flex w-28 flex-col rounded-lg border border-[#EAEAEA] bg-white p-1 shadow-lg"
+				>
 					<div class="px-2 py-0.5 text-[9px] font-semibold tracking-wider text-[#787774] uppercase">
 						Thinking
 					</div>
@@ -159,7 +172,10 @@
 								chatStore.setThinkingLevel(level);
 								thinkingOpen = false;
 							}}
-							class="flex items-center justify-between rounded px-2 py-1 text-left text-[11px] transition-colors hover:bg-[#F7F6F3] {chatStore.thinkingLevel === level ? 'bg-[#FBF3DB] font-medium text-[#8423BF]' : 'text-[#111111]'}"
+							class="flex items-center justify-between rounded px-2 py-1 text-left text-[11px] transition-colors hover:bg-[#F7F6F3] {chatStore.thinkingLevel ===
+							level
+								? 'bg-[#FBF3DB] font-medium text-[#8423BF]'
+								: 'text-[#111111]'}"
 						>
 							<span class="capitalize">{level}</span>
 							{#if chatStore.thinkingLevel === level}

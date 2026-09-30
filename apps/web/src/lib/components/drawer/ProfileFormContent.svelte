@@ -52,15 +52,13 @@
 	{/if}
 
 	<div>
-		<label for="prof-email" class="mb-1 block font-medium text-[#111111]">
-			Alamat Email
-		</label>
+		<label for="prof-email" class="mb-1 block font-medium text-[#111111]"> Alamat Email </label>
 		<input
 			id="prof-email"
 			type="text"
 			disabled
 			value={authStore.user?.email || 'testbot@maniyy.dev'}
-			class="w-full rounded-md border border-[#EAEAEA] bg-[#F9F9F8] px-3 py-2 text-xs text-[#787774] cursor-not-allowed"
+			class="w-full cursor-not-allowed rounded-md border border-[#EAEAEA] bg-[#F9F9F8] px-3 py-2 text-xs text-[#787774]"
 		/>
 	</div>
 
@@ -81,9 +79,7 @@
 		</div>
 
 		<div>
-			<label for="prof-last" class="mb-1 block font-medium text-[#111111]">
-				Last Name
-			</label>
+			<label for="prof-last" class="mb-1 block font-medium text-[#111111]"> Last Name </label>
 			<input
 				id="prof-last"
 				type="text"

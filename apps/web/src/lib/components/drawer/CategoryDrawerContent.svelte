@@ -102,23 +102,23 @@
 				<div class="flex items-center gap-2">
 					<button
 						type="button"
-					onclick={handleEdit}
-					class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
-				>
-					<PencilSimple class="size-3.5" weight="bold" />
-					<span>{t('common.edit')}</span>
-				</button>
-
-				{#if !isProtected}
-					<button
-						type="button"
-						onclick={() => (showDeleteConfirm = true)}
-						class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
+						onclick={handleEdit}
+						class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#111111] transition-colors hover:bg-[#F9F9F8]"
 					>
-						<Trash class="size-3.5" weight="bold" />
-						<span>{t('common.delete')}</span>
+						<PencilSimple class="size-3.5" weight="bold" />
+						<span>{t('common.edit')}</span>
 					</button>
-				{/if}
+
+					{#if !isProtected}
+						<button
+							type="button"
+							onclick={() => (showDeleteConfirm = true)}
+							class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#9F2F2D] transition-colors hover:bg-[#FDF2F2]"
+						>
+							<Trash class="size-3.5" weight="bold" />
+							<span>{t('common.delete')}</span>
+						</button>
+					{/if}
 				</div>
 			</div>
 
@@ -126,7 +126,9 @@
 			{#if showDeleteConfirm}
 				<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
 					<p class="text-xs font-medium text-[#9F2F2D]">
-						{i18nStore.locale === 'id' ? `Yakin ingin menghapus kategori "${matchedCategory.categoryName}"?` : `Are you sure you want to delete category "${matchedCategory.categoryName}"?`}
+						{i18nStore.locale === 'id'
+							? `Yakin ingin menghapus kategori "${matchedCategory.categoryName}"?`
+							: `Are you sure you want to delete category "${matchedCategory.categoryName}"?`}
 					</p>
 					<p class="mt-0.5 text-[11px] text-[#787774]">
 						Transaksi lama yang menggunakan kategori ini akan tetap tersimpan tanpa tautan kategori.

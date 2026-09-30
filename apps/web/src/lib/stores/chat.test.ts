@@ -32,7 +32,9 @@ describe('ChatStore', () => {
 
 	it('resets conversation state on newConversation', () => {
 		store.activeConversationId = 'conv-123';
-		store.messages = [{ id: '1', conversationId: 'conv-123', role: 'user', content: 'test', timestamp: 0 }];
+		store.messages = [
+			{ id: '1', conversationId: 'conv-123', role: 'user', content: 'test', timestamp: 0 }
+		];
 		store.newConversation();
 		expect(store.activeConversationId).toBeNull();
 		expect(store.messages).toEqual([]);

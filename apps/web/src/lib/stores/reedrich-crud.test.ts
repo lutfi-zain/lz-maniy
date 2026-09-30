@@ -65,9 +65,11 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 		});
 
 		it('deleteWallet() throws when server responds with 400', async () => {
-			const mockFetch = vi.fn().mockResolvedValue(
-				new Response(JSON.stringify({ message: 'Balance must be 0' }), { status: 400 })
-			);
+			const mockFetch = vi
+				.fn()
+				.mockResolvedValue(
+					new Response(JSON.stringify({ message: 'Balance must be 0' }), { status: 400 })
+				);
 			vi.stubGlobal('fetch', mockFetch);
 
 			await expect(store.deleteWallet('w-non-empty')).rejects.toThrow('Balance must be 0');
@@ -272,9 +274,9 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 	describe('Recurring Templates CRUD', () => {
 		it('fetchRecurringTemplates() fetches and updates store state', async () => {
 			const items = [{ templateId: 't-1', templateName: 'PLN' }];
-			const mockFetch = vi.fn().mockResolvedValue(
-				new Response(JSON.stringify(items), { status: 200 })
-			);
+			const mockFetch = vi
+				.fn()
+				.mockResolvedValue(new Response(JSON.stringify(items), { status: 200 }));
 			vi.stubGlobal('fetch', mockFetch);
 
 			const result = await store.fetchRecurringTemplates();
@@ -286,7 +288,9 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 			const mockTxn = { transactionId: 'txn-applied', transactionAmount: 150000 };
 			const mockFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
 				if (init?.method === 'POST') {
-					return Promise.resolve(new Response(JSON.stringify({ transaction: mockTxn }), { status: 200 }));
+					return Promise.resolve(
+						new Response(JSON.stringify({ transaction: mockTxn }), { status: 200 })
+					);
 				}
 				return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
 			});
@@ -301,9 +305,9 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 	describe('Profile Update', () => {
 		it('updateProfile() sends PATCH to /api/v1/me', async () => {
 			const mockProfile = { userId: 'u-1', firstName: 'Budi', lastName: 'Setiawan' };
-			const mockFetch = vi.fn().mockResolvedValue(
-				new Response(JSON.stringify(mockProfile), { status: 200 })
-			);
+			const mockFetch = vi
+				.fn()
+				.mockResolvedValue(new Response(JSON.stringify(mockProfile), { status: 200 }));
 			vi.stubGlobal('fetch', mockFetch);
 
 			const result = await store.updateProfile({ firstName: 'Budi' });

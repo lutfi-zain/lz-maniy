@@ -69,7 +69,8 @@
 				{fmtIDR(wl?.spendable.total)}
 			</div>
 			<div class="mt-1 truncate text-[10px] text-[#787774] sm:text-[11px]">
-				{wl?.spendable.items.length ?? 0} {t('accounts.walletCount', { count: wl?.spendable.items.length ?? 0 })}
+				{wl?.spendable.items.length ?? 0}
+				{t('accounts.walletCount', { count: wl?.spendable.items.length ?? 0 })}
 			</div>
 		</a>
 
@@ -93,7 +94,8 @@
 				{fmtIDR(wl?.locked.total)}
 			</div>
 			<div class="mt-1 truncate text-[10px] text-[#787774] sm:text-[11px]">
-				{wl?.locked.items.length ?? 0} {t('accounts.walletCount', { count: wl?.locked.items.length ?? 0 })}
+				{wl?.locked.items.length ?? 0}
+				{t('accounts.walletCount', { count: wl?.locked.items.length ?? 0 })}
 			</div>
 		</a>
 

@@ -211,18 +211,26 @@
 							<!-- Language Switcher Bar -->
 							<div class="flex items-center justify-between border-b border-[#EAEAEA] px-2.5 py-2">
 								<span class="text-[11px] font-medium text-[#787774]">{t('nav.language')}</span>
-								<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 text-[10px] font-semibold">
+								<div
+									class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 text-[10px] font-semibold"
+								>
 									<button
 										type="button"
 										onclick={() => i18nStore.setLocale('en')}
-										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale === 'en' ? 'bg-[#111111] text-white' : 'text-[#787774] hover:text-[#111111]'}"
+										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale ===
+										'en'
+											? 'bg-[#111111] text-white'
+											: 'text-[#787774] hover:text-[#111111]'}"
 									>
 										EN
 									</button>
 									<button
 										type="button"
 										onclick={() => i18nStore.setLocale('id')}
-										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale === 'id' ? 'bg-[#111111] text-white' : 'text-[#787774] hover:text-[#111111]'}"
+										class="cursor-pointer rounded px-1.5 py-0.5 transition-colors {i18nStore.locale ===
+										'id'
+											? 'bg-[#111111] text-white'
+											: 'text-[#787774] hover:text-[#111111]'}"
 									>
 										ID
 									</button>

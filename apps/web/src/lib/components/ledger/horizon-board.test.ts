@@ -239,7 +239,10 @@ describe('HorizonBoard Goal Snapshot Point-in-Time Derivation', () => {
 			endDate: '2026-10-31',
 			referenceDate: '2026-09-28'
 		});
-		const octGoalAmt = goal.linkedWalletsBreakdown.reduce((sum, lw) => sum + (octBalances.get(lw.walletId) ?? lw.balance), 0);
+		const octGoalAmt = goal.linkedWalletsBreakdown.reduce(
+			(sum, lw) => sum + (octBalances.get(lw.walletId) ?? lw.balance),
+			0
+		);
 		expect(octGoalAmt).toBe(7_500_000);
 		expect(octGoalAmt / goal.targetAmount).toBe(0.75);
 
@@ -250,7 +253,10 @@ describe('HorizonBoard Goal Snapshot Point-in-Time Derivation', () => {
 			endDate: '2026-11-30',
 			referenceDate: '2026-09-28'
 		});
-		const novGoalAmt = goal.linkedWalletsBreakdown.reduce((sum, lw) => sum + (novBalances.get(lw.walletId) ?? lw.balance), 0);
+		const novGoalAmt = goal.linkedWalletsBreakdown.reduce(
+			(sum, lw) => sum + (novBalances.get(lw.walletId) ?? lw.balance),
+			0
+		);
 		expect(novGoalAmt).toBe(6_500_000);
 		expect(novGoalAmt / goal.targetAmount).toBe(0.65);
 
@@ -261,7 +267,10 @@ describe('HorizonBoard Goal Snapshot Point-in-Time Derivation', () => {
 			endDate: '2026-12-31',
 			referenceDate: '2026-09-28'
 		});
-		const decGoalAmt = goal.linkedWalletsBreakdown.reduce((sum, lw) => sum + (decBalances.get(lw.walletId) ?? lw.balance), 0);
+		const decGoalAmt = goal.linkedWalletsBreakdown.reduce(
+			(sum, lw) => sum + (decBalances.get(lw.walletId) ?? lw.balance),
+			0
+		);
 		expect(decGoalAmt).toBe(10_500_000);
 		expect(decGoalAmt / goal.targetAmount).toBe(1.05);
 	});

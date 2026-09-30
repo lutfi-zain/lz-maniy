@@ -130,7 +130,7 @@
 		<div class="fixed inset-0 z-30" onclick={() => (isOpen = false)}></div>
 
 		<div
-			class="absolute top-full left-0 z-40 mt-1.5 flex max-h-[360px] w-[280px] flex-col overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-lg"
+			class="shadow-minimal absolute top-full left-0 z-40 mt-1.5 flex max-h-[360px] w-[280px] flex-col overflow-hidden rounded-lg border border-[#EAEAEA] bg-white"
 		>
 			<!-- Search Header Input -->
 			<div class="flex items-center gap-1.5 border-b border-[#EAEAEA] bg-[#F9F9F8] p-2">

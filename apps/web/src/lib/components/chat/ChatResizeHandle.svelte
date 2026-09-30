@@ -24,7 +24,9 @@
 </script>
 
 <div
-	class="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-[#eaeaea] active:bg-[#111111] transition-colors z-10 {dragging ? 'bg-[#111111]' : ''}"
+	class="absolute top-0 left-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-[#eaeaea] active:bg-[#111111] {dragging
+		? 'bg-[#111111]'
+		: ''}"
 	role="separator"
 	aria-label="Ubah lebar panel"
 	onpointerdown={onPointerDown}

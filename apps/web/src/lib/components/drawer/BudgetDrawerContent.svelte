@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
+	import { dFmt } from '$lib/utils/dates';
+	import { resolveBudgetPeriod } from '$lib/utils/lifecycle';
 	import DrawerTransactionTable from './DrawerTransactionTable.svelte';
 	import { budgetFormStore } from '$lib/stores/budget-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
@@ -14,7 +16,7 @@
 	let deleteError = $state<string | null>(null);
 
 	const p = $derived(budget.percentUsed || 0);
-
+	const periodStatus = $derived(resolveBudgetPeriod(budget));
 	function handleEdit() {
 		budgetFormStore.openEdit(budget);
 	}
@@ -30,7 +32,6 @@
 			isDeleting = false;
 		}
 	}
-
 </script>
 
 <div class="space-y-4">
@@ -64,6 +65,51 @@
 			<div class="h-full bg-[#111111]" style="width: {Math.min(100, p)}%"></div>
 		</div>
 	</div>
+
+	<!-- Budget Period & Category Metadata Card -->
+	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-xs">
+		<div class="flex items-center justify-between">
+			<span class="text-[#787774]">Status Periode</span>
+			<span
+				class="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider uppercase {periodStatus.status ===
+				'active_period'
+					? 'bg-[#EDF3EC] text-[#346538]'
+					: periodStatus.status === 'upcoming_period'
+						? 'bg-[#E1F3FE] text-[#1F6C9F]'
+						: 'bg-[#F0EFEC] text-[#787774]'}"
+			>
+				{periodStatus.periodLabel}
+			</span>
+		</div>
+
+		<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2.5">
+			<span class="text-[#787774]">Rentang Waktu</span>
+			<span class="font-medium text-[#111111]">
+				{#if budget.periodStart && budget.periodEnd}
+					{dFmt(budget.periodStart)} – {dFmt(budget.periodEnd)}
+				{:else}
+					Periode Bulanan Terbuka
+				{/if}
+			</span>
+		</div>
+
+		<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2.5">
+			<span class="text-[#787774]">Kategori Terkait</span>
+			<span class="font-medium text-[#111111]">
+				{budget.categoryName || 'Semua Kategori (Pagu Umum)'}
+			</span>
+		</div>
+	</div>
+
+	<!-- Notes Card -->
+	{#if budget.notes}
+		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 text-xs">
+			<span class="mb-1 block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				Catatan Anggaran
+			</span>
+			<p class="leading-relaxed whitespace-pre-wrap text-[#111111]">{budget.notes}</p>
+		</div>
+	{/if}
 
 	<!-- Transactions List Table -->
 	<div>

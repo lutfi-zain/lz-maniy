@@ -11,6 +11,7 @@
 		type ComboboxOption
 	} from '$lib/components/ui/ComboboxSingleSelect.svelte';
 	import SingleDatePicker from '$lib/components/ui/SingleDatePicker.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import type {
 		CreateTransactionPayload,
 		CreateTransferPayload,
@@ -22,6 +23,7 @@
 	const mode = $derived(transactionFormStore.mode);
 	const transactionType = $derived(transactionFormStore.transactionType);
 	const existingTxn = $derived(transactionFormStore.existingTransaction);
+	const isHydrating = $derived(transactionFormStore.isHydrating);
 
 	// Filter categories by transaction type
 	const availableCategories = $derived.by(() => {
@@ -213,7 +215,7 @@
 
 <!-- Slide-Over Drawer Container -->
 <div
-	class="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[620px] flex-col border-l border-[#EAEAEA] bg-white shadow-xl transition-all duration-300 ease-out {isOpen
+	class="shadow-minimal fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[620px] flex-col border-l border-[#EAEAEA] bg-white transition-all duration-300 ease-out {isOpen
 		? 'translate-x-0 opacity-100'
 		: 'pointer-events-none invisible translate-x-full opacity-0'}"
 	aria-labelledby="transaction-drawer-title"
@@ -227,22 +229,29 @@
 				class="rounded-full bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-[#111111] uppercase"
 			>
 				{mode === 'view'
-					? (i18nStore.locale === 'id' ? 'Detail Transaksi' : 'Transaction Details')
+					? i18nStore.locale === 'id'
+						? 'Detail Transaksi'
+						: 'Transaction Details'
 					: mode === 'edit'
 						? t('forms.transaction.titleEdit')
 						: t('forms.transaction.titleCreate')}
 			</span>
 			<h2 id="transaction-drawer-title" class="serif mt-1 text-2xl font-medium text-[#111111]">
 				{mode === 'view'
-					? existingTxn?.transactionDescription || (i18nStore.locale === 'id' ? 'Rincian Transaksi' : 'Transaction Details')
+					? existingTxn?.transactionDescription ||
+						(i18nStore.locale === 'id' ? 'Rincian Transaksi' : 'Transaction Details')
 					: mode === 'edit'
 						? t('forms.transaction.titleEdit')
 						: t('forms.transaction.titleCreate')}
 			</h2>
 			<p class="mt-0.5 text-xs text-[#787774]">
 				{mode === 'view'
-					? (i18nStore.locale === 'id' ? 'Lihat metadata dan riwayat perubahan transaksi' : 'View transaction metadata and audit trail')
-					: (i18nStore.locale === 'id' ? 'Isi informasi transaksi untuk sinkronisasi live' : 'Enter transaction details for live sync')}
+					? i18nStore.locale === 'id'
+						? 'Lihat metadata dan riwayat perubahan transaksi'
+						: 'View transaction metadata and audit trail'
+					: i18nStore.locale === 'id'
+						? 'Isi informasi transaksi untuk sinkronisasi live'
+						: 'Enter transaction details for live sync'}
 			</p>
 		</div>
 
@@ -259,7 +268,19 @@
 
 	<!-- Drawer Body Content -->
 	<div class="flex-1 overflow-y-auto px-6 py-5">
-		{#if mode === 'view' && existingTxn}
+		{#if isHydrating}
+			<div class="flex flex-col gap-4 py-2">
+				<div class="h-28 space-y-3 rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-5">
+					<Skeleton class="h-4 w-28" />
+					<Skeleton class="h-8 w-44" />
+				</div>
+				<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4">
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-3/4" />
+				</div>
+			</div>
+		{:else if mode === 'view' && existingTxn}
 			<TransactionDetailView transaction={existingTxn} />
 		{:else}
 			<!-- Create or Edit Form -->
@@ -343,7 +364,9 @@
 					<!-- Single Wallet (Expense or Income) -->
 					<div>
 						<label for="walletId" class="mb-1 block font-medium text-[#111111]">
-							{transactionType === 'income' ? t('forms.transaction.targetAccount') : t('forms.transaction.sourceAccount')}
+							{transactionType === 'income'
+								? t('forms.transaction.targetAccount')
+								: t('forms.transaction.sourceAccount')}
 							<span class="text-[#9F2F2D]">*</span>
 						</label>
 						<ComboboxSingleSelect
@@ -369,9 +392,7 @@
 							<button
 								type="button"
 								onclick={() =>
-									categoryFormStore.openCreate(
-										transactionType === 'income' ? 'income' : 'expense'
-									)}
+									categoryFormStore.openCreate(transactionType === 'income' ? 'income' : 'expense')}
 								class="cursor-pointer text-[11px] font-medium text-[#787774] underline hover:text-[#111111]"
 							>
 								{t('forms.transaction.addCategoryQuick')}
@@ -472,21 +493,21 @@
 				</div>
 
 				<!-- Planned Checkbox -->
-					<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
-						<label class="flex cursor-pointer items-center gap-2.5">
-							<input
-								type="checkbox"
-								bind:checked={transactionFormStore.isPlanned}
-								class="size-4 cursor-pointer rounded border-[#EAEAEA] text-[#111111] accent-[#111111]"
-							/>
-							<div class="flex flex-col">
-								<span class="font-medium text-[#111111]">{t('forms.transaction.plannedLabel')}</span>
-								<span class="text-[11px] text-[#787774]">
-									{t('forms.transaction.plannedDescription')}
-								</span>
-							</div>
-						</label>
-					</div>
+				<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
+					<label class="flex cursor-pointer items-center gap-2.5">
+						<input
+							type="checkbox"
+							bind:checked={transactionFormStore.isPlanned}
+							class="size-4 cursor-pointer rounded border-[#EAEAEA] text-[#111111] accent-[#111111]"
+						/>
+						<div class="flex flex-col">
+							<span class="font-medium text-[#111111]">{t('forms.transaction.plannedLabel')}</span>
+							<span class="text-[11px] text-[#787774]">
+								{t('forms.transaction.plannedDescription')}
+							</span>
+						</div>
+					</label>
+				</div>
 
 				<!-- Budget Linked (Visible only for Expense if budgets exist) -->
 				{#if transactionType === 'expense' && reedrichStore.activeBudgets.length > 0}
@@ -539,7 +560,11 @@
 							<span>{t('common.saving')}</span>
 						{:else}
 							<Check class="size-3.5" weight="bold" />
-							<span>{mode === 'edit' ? t('forms.transaction.submitEdit') : t('forms.transaction.submitCreate')}</span>
+							<span
+								>{mode === 'edit'
+									? t('forms.transaction.submitEdit')
+									: t('forms.transaction.submitCreate')}</span
+							>
 						{/if}
 					</button>
 				</div>

@@ -1,30 +1,50 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
+	import { dFmt } from '$lib/utils/dates';
+	import { resolveGoalLifecycle } from '$lib/utils/lifecycle';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
-	import PlusCircle from 'phosphor-svelte/lib/PlusCircle';
 	import X from 'phosphor-svelte/lib/X';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import Check from 'phosphor-svelte/lib/Check';
 	import { goalFormStore } from '$lib/stores/goal-form.svelte';
 	import type { GoalSnapshot } from '$lib/types/account-detail';
 
 	let { goal }: { goal: GoalSnapshot } = $props();
 
+	let fetchedGoal = $state<GoalSnapshot | null>(null);
+
+	$effect(() => {
+		fetchedGoal = null;
+		reedrichStore
+			.fetchGoalById(goal.goalId)
+			.then((fresh) => {
+				fetchedGoal = fresh;
+			})
+			.catch((err) => {
+				console.warn('Gagal memuat detail goal dari server:', err);
+			});
+	});
+
+	const currentGoal = $derived(fetchedGoal ?? goal);
+
 	let showDeleteConfirm = $state(false);
 	let isDeleting = $state(false);
-	let showContribute = $state(false);
-	let contributeAmount = $state<number | null>(null);
-	let contributeWalletId = $state<string>('');
-	let isContributing = $state(false);
+	let showLinkWallet = $state(false);
+	let linkWalletId = $state('');
+	let isLinking = $state(false);
 	let actionError = $state<string | null>(null);
-	let actionSuccess = $state<string | null>(null);
-
-	const p = $derived(Math.round(goal.progressPercentage || 0));
-	const linked = $derived(goal.linkedWalletsBreakdown ?? []);
-	const allWallets = $derived(reedrichStore.allWallets);
+	const p = $derived(Math.round(currentGoal.progressPercentage || 0));
+	const linked = $derived(currentGoal.linkedWalletsBreakdown ?? []);
+	const lifecycle = $derived(resolveGoalLifecycle(currentGoal));
+	const availableWalletsToLink = $derived(
+		reedrichStore.allWallets.filter(
+			(w) => !linked.some((lw) => lw.walletId === w.walletId)
+		)
+	);
 
 	function openWallet(walletId: string) {
 		const wallet = reedrichStore.allWallets.find((w) => w.walletId === walletId);
@@ -33,23 +53,28 @@
 			type: 'wallet',
 			title: wallet.walletName,
 			subtitle: `${wallet.institution} · Tipe: ${wallet.type} · Mata Uang: ${wallet.currency}`,
-			badge: wallet.isLocked === 1
-				? (i18nStore.locale === 'id' ? 'DOMPET TERKUNCI' : 'COMMITTED ACCOUNT')
-				: (i18nStore.locale === 'id' ? 'DOMPET SPENDABLE' : 'SPENDABLE ACCOUNT'),
+			badge:
+				wallet.isLocked === 1
+					? i18nStore.locale === 'id'
+						? 'DOMPET TERKUNCI'
+						: 'COMMITTED ACCOUNT'
+					: i18nStore.locale === 'id'
+						? 'DOMPET SPENDABLE'
+						: 'SPENDABLE ACCOUNT',
 			data: { wallet }
 		});
 		reedrichStore.fetchTransactionsForDrawer({ walletId: wallet.walletId, limit: 50 });
 	}
 
 	function handleEdit() {
-		goalFormStore.openEdit(goal);
+		goalFormStore.openEditWithHydration(currentGoal.goalId, currentGoal);
 	}
 
 	async function handleDelete() {
 		isDeleting = true;
 		actionError = null;
 		try {
-			await reedrichStore.deleteGoal(goal.goalId);
+			await reedrichStore.deleteGoal(currentGoal.goalId);
 			reedrichStore.closeDrawer();
 		} catch (err: unknown) {
 			actionError = err instanceof Error ? err.message : 'Gagal menghapus target';
@@ -57,33 +82,31 @@
 		}
 	}
 
-	async function handleContribute(e: SubmitEvent) {
-		e.preventDefault();
-		if (!contributeAmount || contributeAmount <= 0 || isContributing) return;
-		isContributing = true;
-		actionError = null;
-		actionSuccess = null;
-		try {
-			await reedrichStore.contributeToGoal(goal.goalId, {
-				amount: contributeAmount,
-				walletId: contributeWalletId || null
-			});
-			actionSuccess = `Berhasil menyetor ${fmtIDR(contributeAmount)} ke target!`;
-			contributeAmount = null;
-			showContribute = false;
-		} catch (err: unknown) {
-			actionError = err instanceof Error ? err.message : 'Gagal menyetor dana ke target';
-		} finally {
-			isContributing = false;
-		}
-	}
-
 	async function handleUnlinkWallet(walletId: string) {
 		actionError = null;
 		try {
-			await reedrichStore.unlinkGoalWallet(goal.goalId, walletId);
+			await reedrichStore.unlinkGoalWallet(currentGoal.goalId, walletId);
+			const fresh = await reedrichStore.fetchGoalById(currentGoal.goalId);
+			fetchedGoal = fresh;
 		} catch (err: unknown) {
 			actionError = err instanceof Error ? err.message : 'Gagal memutuskan dompet dari target';
+		}
+	}
+
+	async function handleLinkWallet() {
+		if (!linkWalletId || isLinking) return;
+		isLinking = true;
+		actionError = null;
+		try {
+			await reedrichStore.linkGoalWallet(currentGoal.goalId, linkWalletId);
+			linkWalletId = '';
+			showLinkWallet = false;
+			const fresh = await reedrichStore.fetchGoalById(currentGoal.goalId);
+			fetchedGoal = fresh;
+		} catch (err: unknown) {
+			actionError = err instanceof Error ? err.message : 'Gagal menghubungkan dompet';
+		} finally {
+			isLinking = false;
 		}
 	}
 </script>
@@ -92,19 +115,19 @@
 	<!-- Summary Stats Cards -->
 	<div class="grid grid-cols-2 gap-2.5">
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase"
-				>Target Sasaran</span
-			>
+			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				Target Sasaran
+			</span>
 			<span class="font-mono text-base font-semibold text-[#111111]">
-				{fmtIDR(goal.targetAmount)}
+				{fmtIDR(currentGoal.targetAmount)}
 			</span>
 		</div>
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
-			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase"
-				>Terkumpul Saat Ini</span
-			>
+			<span class="block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				Terkumpul Saat Ini
+			</span>
 			<span class="font-mono text-base font-semibold text-[#346538]">
-				{fmtIDR(goal.currentAmount)}
+				{fmtIDR(currentGoal.currentAmount)}
 			</span>
 		</div>
 	</div>
@@ -116,16 +139,131 @@
 			<span class="font-mono font-semibold">{p}%</span>
 		</div>
 		<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-			<div class="h-full bg-[#111111]" style="width: {Math.min(100, p)}%"></div>
+			<div
+				class="h-full {lifecycle.status === 'completed'
+					? 'bg-[#346538]'
+					: lifecycle.status === 'overdue'
+						? 'bg-[#9F2F2D]'
+						: 'bg-[#111111]'} transition-all"
+				style="width: {Math.min(100, p)}%"
+			></div>
 		</div>
 	</div>
 
-	<!-- Linked Wallets Detail -->
-	{#if linked.length > 0}
-		<div>
-			<div class="mb-2 text-[10px] font-medium tracking-wider text-[#787774] uppercase">
-				{t('planning.goals.linkedAccounts')}
+	<!-- Deadline & Pacing Information Card -->
+	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-xs">
+		<div class="flex items-center justify-between">
+			<span class="text-[#787774]">Status Target</span>
+			<span
+				class="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider uppercase {lifecycle.status ===
+				'completed'
+					? 'bg-[#EDF3EC] text-[#346538]'
+					: lifecycle.status === 'overdue'
+						? 'bg-[#FDEBEC] text-[#9F2F2D]'
+						: 'bg-[#F0EFEC] text-[#111111]'}"
+			>
+				{lifecycle.status === 'completed'
+					? '✓ TERCAPAI'
+					: lifecycle.status === 'overdue'
+						? '⚠️ LEWAT TENGGAT'
+						: lifecycle.status === 'long_term'
+							? 'JANGKA PANJANG'
+							: 'BERJALAN'}
+			</span>
+		</div>
+
+		<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2.5">
+			<span class="text-[#787774]">Tenggat Tanggal</span>
+			<span class="font-medium text-[#111111]">
+				{currentGoal.targetDate ? dFmt(currentGoal.targetDate) : 'Jangka Panjang (Tanpa Tenggat)'}
+				{#if lifecycle.isOverdue}
+					<span class="ml-1 text-[11px] font-semibold text-[#9F2F2D]"
+						>({lifecycle.overdueDays} hari lewat)</span
+					>
+				{:else if lifecycle.daysRemaining !== null && !lifecycle.isCompleted}
+					<span class="ml-1 text-[11px] text-[#787774]"
+						>({lifecycle.daysRemaining} hari tersisa)</span
+					>
+				{/if}
+			</span>
+		</div>
+
+		{#if currentGoal.pacing?.requiredDailySavings || currentGoal.pacing?.requiredMonthlySavings}
+			<div class="grid grid-cols-2 gap-2 border-t border-[#EAEAEA] pt-2.5">
+				{#if currentGoal.pacing?.requiredDailySavings}
+					<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2">
+						<span class="block text-[10px] text-[#787774] uppercase">Simpan / Hari</span>
+						<span class="font-mono text-xs font-semibold text-[#111111]">
+							{fmtIDR(currentGoal.pacing.requiredDailySavings)}
+						</span>
+					</div>
+				{/if}
+				{#if currentGoal.pacing?.requiredMonthlySavings}
+					<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2">
+						<span class="block text-[10px] text-[#787774] uppercase">Simpan / Bulan</span>
+						<span class="font-mono text-xs font-semibold text-[#111111]">
+							{fmtIDR(currentGoal.pacing.requiredMonthlySavings)}
+						</span>
+					</div>
+				{/if}
 			</div>
+		{/if}
+	</div>
+
+	<!-- Target Notes Card -->
+	{#if currentGoal.notes}
+		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3.5 text-xs">
+			<span class="mb-1 block text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				Catatan Target
+			</span>
+			<p class="leading-relaxed whitespace-pre-wrap text-[#111111]">{currentGoal.notes}</p>
+		</div>
+	{/if}
+
+	<!-- Linked Wallets Detail -->
+	<div>
+		<div class="mb-2 flex items-center justify-between">
+			<span class="text-[10px] font-medium tracking-wider text-[#787774] uppercase">
+				{t('planning.goals.linkedAccounts')} ({linked.length})
+			</span>
+			{#if availableWalletsToLink.length > 0}
+				<button
+					type="button"
+					onclick={() => (showLinkWallet = !showLinkWallet)}
+					class="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-[#111111] hover:underline"
+				>
+					<Plus class="size-3" weight="bold" />
+					<span>Hubungkan Dompet</span>
+				</button>
+			{/if}
+		</div>
+
+		{#if showLinkWallet}
+			<div class="mb-3 space-y-2 rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
+				<span class="block text-[11px] font-medium text-[#111111]">Pilih Rekening untuk Dihubungkan</span>
+				<div class="flex items-center gap-2">
+					<select
+						bind:value={linkWalletId}
+						class="flex-1 rounded border border-[#EAEAEA] bg-white px-2 py-1.5 text-xs text-[#111111] focus:border-[#111111] focus:outline-none"
+					>
+						<option value="">Pilih Dompet...</option>
+						{#each availableWalletsToLink as w (w.walletId)}
+							<option value={w.walletId}>{w.walletName} ({fmtIDR(w.balance)})</option>
+						{/each}
+					</select>
+					<button
+						type="button"
+						onclick={handleLinkWallet}
+						disabled={!linkWalletId || isLinking}
+						class="cursor-pointer rounded bg-[#111111] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{isLinking ? 'Menyimpan...' : 'Hubungkan'}
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if linked.length > 0}
 			<p class="mb-3 text-xs text-[#787774]">
 				{t('planning.goals.derivedNotice')}
 			</p>
@@ -173,8 +311,13 @@
 					</div>
 				{/each}
 			</div>
-		</div>
-	{/if}
+		{:else}
+			<div class="rounded-lg border border-dashed border-[#EAEAEA] p-4 text-center text-xs text-[#787774]">
+				Belum ada dompet yang terhubung ke target ini.
+			</div>
+		{/if}
+	</div>
+
 	<!-- Action Toolbar -->
 	<div class="space-y-3 border-t border-[#EAEAEA] pt-3 text-xs">
 		{#if actionError}
@@ -183,24 +326,7 @@
 			</div>
 		{/if}
 
-		{#if actionSuccess}
-			<div class="rounded-md border border-[#EDF3EC] bg-[#F3FAF2] p-2.5 text-xs text-[#346538]">
-				{actionSuccess}
-			</div>
-		{/if}
-
 		<div class="flex items-center justify-end gap-2">
-			{#if !goal.isDerived}
-				<button
-					type="button"
-					onclick={() => (showContribute = !showContribute)}
-					class="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs font-medium text-[#346538] transition-colors hover:bg-[#EDF3EC]"
-				>
-					<PlusCircle class="size-3.5" weight="bold" />
-					<span>{t('planning.goals.contribute')}</span>
-				</button>
-			{/if}
-
 			<button
 				type="button"
 				onclick={handleEdit}
@@ -220,81 +346,29 @@
 			</button>
 		</div>
 
-		<!-- Contribute Inline Form -->
-		{#if showContribute}
-			<form onsubmit={handleContribute} class="rounded-lg border border-[#EAEAEA] bg-[#FDFCFB] p-3 space-y-2.5">
-				<div class="font-medium text-[#111111]">Setor Tabungan ke "{goal.goalName}"</div>
-				<div class="grid grid-cols-2 gap-2">
-					<div>
-						<label for="contrib-amt" class="mb-1 block text-[10px] text-[#787774]">{t('common.amount')} ({goal.currency || 'IDR'}) *</label>
-						<input
-							id="contrib-amt"
-							type="number"
-							required
-							min="1"
-							bind:value={contributeAmount}
-							placeholder="Contoh: 500000"
-							class="w-full rounded border border-[#EAEAEA] bg-white px-2.5 py-1.5 font-mono text-xs focus:border-[#111111] focus:outline-none"
-						/>
-					</div>
-					<div>
-						<label for="contrib-wallet" class="mb-1 block text-[10px] text-[#787774]">{t('planning.goals.sourceAccount')}</label>
-						<select
-							id="contrib-wallet"
-							bind:value={contributeWalletId}
-							class="w-full rounded border border-[#EAEAEA] bg-white px-2 py-1.5 text-xs focus:border-[#111111] focus:outline-none"
-						>
-							<option value="">{i18nStore.locale === 'id' ? 'Tanpa Dompet (Catat Saja)' : 'No Account (Record Only)'}</option>
-							{#each allWallets as w (w.walletId)}
-								<option value={w.walletId}>{w.walletName} ({fmtIDR(w.balance)})</option>
-							{/each}
-						</select>
-					</div>
-				</div>
-				<div class="flex items-center justify-end gap-2 pt-1">
-					<button
-						type="button"
-						onclick={() => (showContribute = false)}
-						class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#787774]"
-					>
-						{t('common.cancel')}
-					</button>
-					<button
-						type="submit"
-						disabled={!contributeAmount || contributeAmount <= 0 || isContributing}
-						class="flex cursor-pointer items-center gap-1 rounded bg-[#111111] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
-					>
-						<Check class="size-3" weight="bold" />
-						<span>{isContributing ? 'Menyetor...' : 'Konfirmasi Setor'}</span>
-					</button>
-				</div>
-			</form>
-		{/if}
-
 		<!-- Inline Delete Confirmation -->
 		{#if showDeleteConfirm}
-			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
-				<p class="text-xs font-medium text-[#9F2F2D]">
-					Yakin ingin menghapus target tabungan "{goal.goalName}"?
-				</p>
-				<p class="mt-0.5 text-[11px] text-[#787774]">
-					Saldo dan mutasi pada dompet yang terhubung tidak akan terhapus.
+			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3 text-xs text-[#9F2F2D]">
+				<p class="font-medium">Hapus target "{currentGoal.goalName}"?</p>
+				<p class="mt-1 text-[11px] text-[#787774]">
+					Saldo dompet yang terhubung tidak akan terhapus, hanya asosiasi target yang dihapus.
 				</p>
 				<div class="mt-2.5 flex items-center justify-end gap-2">
 					<button
 						type="button"
 						onclick={() => (showDeleteConfirm = false)}
-						class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F9F9F8]"
+						class="cursor-pointer rounded border border-[#EAEAEA] bg-white px-2.5 py-1 text-xs text-[#787774]"
 					>
-						Batal
+						{t('common.cancel')}
 					</button>
 					<button
 						type="button"
 						onclick={handleDelete}
 						disabled={isDeleting}
-						class="cursor-pointer rounded-md bg-[#9F2F2D] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+						class="flex cursor-pointer items-center gap-1 rounded bg-[#9F2F2D] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
 					>
-						{isDeleting ? 'Menghapus...' : 'Ya, Hapus Target'}
+						<Trash class="size-3" weight="bold" />
+						<span>{isDeleting ? t('common.deleting') : t('common.delete')}</span>
 					</button>
 				</div>
 			</div>

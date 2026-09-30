@@ -75,7 +75,7 @@
 		<button
 			type="button"
 			onclick={() => transactionFormStore.openCreate()}
-			class="-mt-3.5 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-[#111111] text-white shadow-md transition-transform hover:bg-[#333333] active:scale-95"
+			class="shadow-minimal -mt-3.5 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-[#111111] text-white transition-transform hover:bg-[#333333] active:scale-95"
 			title={t('nav.recordTitle')}
 			aria-label={t('nav.recordTitle')}
 		>

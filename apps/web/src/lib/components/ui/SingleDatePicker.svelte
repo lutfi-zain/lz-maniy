@@ -174,7 +174,7 @@
 		<div class="fixed inset-0 z-50" onclick={() => (isOpen = false)}></div>
 
 		<div
-			class="absolute top-full left-0 z-50 mt-1.5 w-[280px] rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-xl"
+			class="shadow-minimal absolute top-full left-0 z-50 mt-1.5 w-[280px] rounded-lg border border-[#EAEAEA] bg-white p-3"
 		>
 			<!-- Month Header Navigation -->
 			<div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
