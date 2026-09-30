@@ -330,6 +330,239 @@ export class ReedrichStore {
 	/**
 	 * Invalidate transaction caches and refresh global snapshot and transaction list.
 	 */
+	/**
+	 * Standalone fetch of single goal by ID.
+	 */
+	async fetchGoalById(goalId: string): Promise<GoalSnapshot> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(goalId)}`);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat target (HTTP ${res.status})`);
+		}
+		const data = await res.json();
+		return {
+			goalId: data.goalId,
+			goalName: data.goalName,
+			targetAmount: data.goalTargetAmount ?? data.targetAmount,
+			currentAmount: data.goalCurrentAmount ?? data.currentAmount ?? 0,
+			currency: data.goalCurrency ?? data.currency ?? 'IDR',
+			targetDate: data.goalTargetDate ?? data.targetDate ?? null,
+			categoryId: data.goalCategoryId ?? data.categoryId ?? null,
+			notes: data.goalNotes ?? data.notes ?? null,
+			status: data.goalStatus ?? data.status ?? 'in_progress',
+			progressPercentage: data.pacing?.progressPercentage ?? data.progressPercentage ?? 0,
+			isDerived:
+				data.isDerived ??
+				(data.linkedWallets?.length ?? data.linkedWalletsBreakdown?.length ?? 0) > 0,
+			daysRemaining: data.pacing?.daysRemaining ?? data.daysRemaining ?? null,
+			pacing: data.pacing,
+			linkedWalletsBreakdown: data.linkedWallets ?? data.linkedWalletsBreakdown ?? []
+		};
+	}
+
+	/**
+	 * Standalone fetch of all goals, with optional status filter.
+	 */
+	async fetchGoals(status?: 'in_progress' | 'completed' | 'cancelled'): Promise<GoalSnapshot[]> {
+		const query = status ? `?status=${encodeURIComponent(status)}` : '';
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals${query}`);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat daftar target (HTTP ${res.status})`);
+		}
+		const json = (await res.json()) as Record<string, unknown>;
+		const itemsRaw = (
+			Array.isArray(json) ? json : ((json.items ?? json.data ?? []) as unknown[])
+		) as Array<Record<string, unknown>>;
+		const items: GoalSnapshot[] = itemsRaw.map((data) => {
+			const pacing = data.pacing as Record<string, unknown> | undefined;
+			const linked = (data.linkedWallets ?? data.linkedWalletsBreakdown) as
+				Array<Record<string, unknown>> | undefined;
+			return {
+				goalId: String(data.goalId),
+				goalName: String(data.goalName),
+				targetAmount: Number(data.goalTargetAmount ?? data.targetAmount),
+				currentAmount: Number(data.goalCurrentAmount ?? data.currentAmount ?? 0),
+				currency: String(data.goalCurrency ?? data.currency ?? 'IDR'),
+				targetDate: data.goalTargetDate
+					? String(data.goalTargetDate)
+					: data.targetDate
+						? String(data.targetDate)
+						: null,
+				categoryId: data.goalCategoryId
+					? String(data.goalCategoryId)
+					: data.categoryId
+						? String(data.categoryId)
+						: null,
+				notes: data.goalNotes ? String(data.goalNotes) : data.notes ? String(data.notes) : null,
+				status: (data.goalStatus ?? data.status ?? 'in_progress') as
+					'in_progress' | 'completed' | 'cancelled',
+				progressPercentage: Number(pacing?.progressPercentage ?? data.progressPercentage ?? 0),
+				isDerived: Boolean(data.isDerived ?? (linked?.length ?? 0) > 0),
+				daysRemaining:
+					pacing?.daysRemaining !== undefined && pacing.daysRemaining !== null
+						? Number(pacing.daysRemaining)
+						: data.daysRemaining !== undefined && data.daysRemaining !== null
+							? Number(data.daysRemaining)
+							: null,
+				pacing: pacing as GoalSnapshot['pacing'],
+				linkedWalletsBreakdown: linked as GoalSnapshot['linkedWalletsBreakdown']
+			};
+		});
+		if (this.snapshot && !status) {
+			this.snapshot.goals = items;
+		}
+		return items;
+	}
+
+	/**
+	 * Standalone fetch of single budget by ID.
+	 */
+	async fetchBudgetById(budgetId: string): Promise<BudgetSnapshot> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/budgets/${encodeURIComponent(budgetId)}`
+		);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat pagu anggaran (HTTP ${res.status})`);
+		}
+		const json = await res.json();
+		const b = json.budget ?? json;
+		const spent = json.spent ?? b.spent ?? 0;
+		const amount = b.budgetAmount ?? b.amount ?? 0;
+		const remaining = json.remaining ?? b.remaining ?? amount - spent;
+		const percentUsed =
+			json.percentUsed ?? b.percentUsed ?? (amount > 0 ? Math.round((spent / amount) * 100) : 0);
+
+		return {
+			budgetId: b.budgetId,
+			budgetName: b.budgetName,
+			categoryId: b.budgetCategoryId ?? b.categoryId ?? null,
+			categoryName: b.categoryName,
+			amount,
+			periodStart: b.budgetPeriodStart ?? b.periodStart,
+			periodEnd: b.budgetPeriodEnd ?? b.periodEnd,
+			notes: b.budgetNotes ?? b.notes ?? null,
+			spent,
+			remaining,
+			percentUsed,
+			status: b.status
+		};
+	}
+
+	/**
+	 * Standalone fetch of all budgets.
+	 */
+	async fetchBudgets(): Promise<BudgetSnapshot[]> {
+		const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets`);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat daftar anggaran (HTTP ${res.status})`);
+		}
+		const json = (await res.json()) as Record<string, unknown>;
+		const itemsRaw = (
+			Array.isArray(json) ? json : ((json.items ?? json.data ?? []) as unknown[])
+		) as Array<Record<string, unknown>>;
+		const items: BudgetSnapshot[] = itemsRaw.map((entry) => {
+			const b = (entry.budget ?? entry) as Record<string, unknown>;
+			const spent = Number(entry.spent ?? b.spent ?? 0);
+			const amount = Number(b.budgetAmount ?? b.amount ?? 0);
+			const remaining = Number(entry.remaining ?? b.remaining ?? amount - spent);
+			const percentUsed = Number(
+				entry.percentUsed ?? b.percentUsed ?? (amount > 0 ? Math.round((spent / amount) * 100) : 0)
+			);
+
+			return {
+				budgetId: String(b.budgetId),
+				budgetName: String(b.budgetName),
+				categoryId: b.budgetCategoryId
+					? String(b.budgetCategoryId)
+					: b.categoryId
+						? String(b.categoryId)
+						: null,
+				categoryName: b.categoryName ? String(b.categoryName) : undefined,
+				amount,
+				periodStart: b.budgetPeriodStart
+					? String(b.budgetPeriodStart)
+					: b.periodStart
+						? String(b.periodStart)
+						: undefined,
+				periodEnd: b.budgetPeriodEnd
+					? String(b.budgetPeriodEnd)
+					: b.periodEnd
+						? String(b.periodEnd)
+						: undefined,
+				notes: b.budgetNotes ? String(b.budgetNotes) : b.notes ? String(b.notes) : null,
+				spent,
+				remaining,
+				percentUsed,
+				status: b.status as BudgetSnapshot['status']
+			};
+		});
+
+		if (this.snapshot) {
+			this.snapshot.budgets = items;
+		}
+		return items;
+	}
+
+	/**
+	 * Standalone fetch of single wallet by ID.
+	 */
+	async fetchWalletById(walletId: string): Promise<WalletItem> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/wallets/${encodeURIComponent(walletId)}`
+		);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat dompet (HTTP ${res.status})`);
+		}
+		const json = await res.json();
+		return {
+			walletId: json.walletId,
+			walletName: json.walletName,
+			institution: json.walletInstitution ?? json.institution ?? 'General',
+			type: json.walletType ?? json.type ?? 'bank',
+			balance: json.walletBalance ?? json.balance ?? 0,
+			currency: json.walletCurrency ?? json.currency ?? 'IDR',
+			isLocked: json.walletIsLocked ?? json.isLocked ?? 0,
+			lastTransaction: json.lastTransaction ?? null
+		};
+	}
+
+	/**
+	 * Standalone fetch of single transaction by ID.
+	 */
+	async fetchTransactionById(transactionId: string): Promise<TransactionRecord> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(transactionId)}`
+		);
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal memuat transaksi (HTTP ${res.status})`);
+		}
+		const json = await res.json();
+		return {
+			transactionId: json.transactionId,
+			transactionUserId: json.transactionUserId,
+			transactionWalletId: json.transactionWalletId,
+			transactionTargetWalletId: json.transactionTargetWalletId ?? null,
+			transactionCategoryId: json.transactionCategoryId ?? null,
+			transactionBudgetId: json.transactionBudgetId ?? null,
+			transactionAmount: json.transactionAmount,
+			transactionAdminFee: json.transactionAdminFee ?? 0,
+			transactionType: json.transactionType,
+			transactionDescription: json.transactionDescription ?? null,
+			transactionIsPlanned: json.transactionIsPlanned ?? 0,
+			transactionOccurrenceDate: json.transactionOccurrenceDate ?? null,
+			transactionRealizedAt: json.transactionRealizedAt ?? null,
+			transactionPlannedAmount: json.transactionPlannedAmount ?? null,
+			transactionTemplateId: json.transactionTemplateId ?? null,
+			transactionDate: json.transactionDate,
+			transactionCreatedAt: json.transactionCreatedAt
+		};
+	}
+
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
 		this.allTransactions = [];
@@ -741,9 +974,7 @@ export class ReedrichStore {
 
 		if (!res.ok) {
 			const errData = await res.json().catch(() => ({}));
-			throw new Error(
-				errData.message || `Gagal menghapus recurring template (HTTP ${res.status})`
-			);
+			throw new Error(errData.message || `Gagal menghapus recurring template (HTTP ${res.status})`);
 		}
 
 		await this.invalidateAndRefresh();

@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
-	import { calculatePointInTimeNetWorth, calculatePointInTimeWalletBalances } from '$lib/utils/networth-timeline.js';
+	import {
+		calculatePointInTimeNetWorth,
+		calculatePointInTimeWalletBalances
+	} from '$lib/utils/networth-timeline.js';
 	import { getConvertedBalanceInIDR } from '$lib/utils/currency.js';
 	import HorizonPeriodColumn, { type GlobalFilters } from './HorizonPeriodColumn.svelte';
 	import AddPeriodCard from './AddPeriodCard.svelte';
@@ -43,7 +46,6 @@
 		const w = allWallets.find((x) => x.walletId === id);
 		return w?.currency ?? 'IDR';
 	}
-
 
 	// Cascading Period Summaries Computation
 	const periodSummaries = $derived.by(() => {
@@ -148,7 +150,9 @@
 		{#each [0, 1, 2] as i (i)}
 			<div class="flex flex-col rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
 				<!-- Header skeleton -->
-				<div class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#FDFCFB] px-3.5 py-2.5">
+				<div
+					class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#FDFCFB] px-3.5 py-2.5"
+				>
 					<div class="space-y-1">
 						<Skeleton class="h-3.5 w-24" />
 						<Skeleton class="h-2.5 w-16" />
@@ -156,12 +160,12 @@
 					<Skeleton class="size-6 rounded" />
 				</div>
 				<!-- Table rows skeleton -->
-				<div class="h-[320px] divide-y divide-[#EAEAEA] p-3 space-y-3">
+				<div class="h-[320px] space-y-3 divide-y divide-[#EAEAEA] p-3">
 					{#each [0, 1, 2, 3, 4] as r (r)}
 						<div class="space-y-1.5 py-1">
 							<div class="flex items-center justify-between gap-2">
 								<Skeleton class="h-3 w-14 shrink-0" />
-								<Skeleton class="h-3 flex-1 max-w-[140px]" />
+								<Skeleton class="h-3 max-w-[140px] flex-1" />
 								<Skeleton class="h-3 w-20 shrink-0 text-right" />
 							</div>
 							<div class="flex items-center justify-between">
@@ -212,19 +216,19 @@
 {:else}
 	<!-- Multi-Period Wrapping Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-	{#each orderedPeriods as periodKey, i (periodKey)}
-		{@const { startDate, endDate } = getMonthDateBounds(periodKey)}
-		<HorizonPeriodColumn
-			{periodKey}
-			{startDate}
-			{endDate}
-			periodSummary={periodSummaries[i]}
-			{globalFilters}
-			canRemove={orderedPeriods.length > 1}
-		/>
-	{/each}
+		{#each orderedPeriods as periodKey, i (periodKey)}
+			{@const { startDate, endDate } = getMonthDateBounds(periodKey)}
+			<HorizonPeriodColumn
+				{periodKey}
+				{startDate}
+				{endDate}
+				periodSummary={periodSummaries[i]}
+				{globalFilters}
+				canRemove={orderedPeriods.length > 1}
+			/>
+		{/each}
 
-	<!-- Add Period Action Card -->
-	<AddPeriodCard />
+		<!-- Add Period Action Card -->
+		<AddPeriodCard />
 	</div>
 {/if}

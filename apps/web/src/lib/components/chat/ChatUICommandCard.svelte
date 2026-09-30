@@ -4,6 +4,6 @@
 </script>
 
 <div class="flex items-center gap-2 text-[12px]">
-	<ArrowRight size={12} weight="bold" class="text-[#787774] shrink-0" />
+	<ArrowRight size={12} weight="bold" class="shrink-0 text-[#787774]" />
 	<span class="text-[#787774]">{command.message}</span>
 </div>

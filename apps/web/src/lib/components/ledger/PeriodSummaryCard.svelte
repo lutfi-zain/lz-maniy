@@ -69,7 +69,9 @@
 	{:else}
 		<!-- Layer 1: Cashflow Metrics -->
 		<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
-			<div class="flex items-center justify-between text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
+			<div
+				class="flex items-center justify-between text-[10px] font-semibold tracking-wider text-[#787774] uppercase"
+			>
 				<span>{t('cockpit.netCashflow')}</span>
 				<span
 					class="font-mono text-xs font-bold {summary.net >= 0
@@ -117,53 +119,57 @@
 			</div>
 		</div>
 
-	<!-- Layer 3: Snapshot Goals -->
-	<div class="space-y-2">
-		<div class="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-			<Target class="size-3 text-[#787774]" weight="bold" />
-			<span>{t('ledger.summary.goalsProgress')}</span>
+		<!-- Layer 3: Snapshot Goals -->
+		<div class="space-y-2">
+			<div
+				class="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-[#787774] uppercase"
+			>
+				<Target class="size-3 text-[#787774]" weight="bold" />
+				<span>{t('ledger.summary.goalsProgress')}</span>
+			</div>
+
+			{#if summary.goalSnapshots.length === 0}
+				<div class="py-1 text-[11px] text-[#787774]">
+					{t('ledger.summary.noGoals')}
+				</div>
+			{:else}
+				<div class="space-y-1.5">
+					{#each summary.goalSnapshots as goal (goal.goalId)}
+						{@const pct = Math.min(100, Math.round(goal.progressPercentage))}
+						<div class="flex flex-col gap-1 rounded border border-[#EAEAEA] bg-white p-2">
+							<div class="flex items-center justify-between gap-1 text-[11px]">
+								<span class="truncate font-medium text-[#111111]">{goal.goalName}</span>
+								{#if goal.isMilestone}
+									<span
+										class="py-0.2 shrink-0 rounded bg-[#EDF3EC] px-1 font-mono text-[9px] font-bold text-[#346538]"
+									>
+										{i18nStore.locale === 'id' ? 'Tercapai!' : 'Reached!'}
+									</span>
+								{:else}
+									<span class="shrink-0 font-mono text-[10px] font-semibold text-[#787774]">
+										{pct}%
+									</span>
+								{/if}
+							</div>
+
+							<!-- Progress track -->
+							<div class="h-1.5 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
+								<div
+									class="h-full rounded-full transition-all duration-300 {goal.isMilestone
+										? 'bg-[#346538]'
+										: 'bg-[#956400]'}"
+									style="width: {pct}%"
+								></div>
+							</div>
+
+							<div class="flex items-center justify-between font-mono text-[9px] text-[#787774]">
+								<span>{fmtIDR(goal.currentAmount)}</span>
+								<span>{fmtIDR(goal.targetAmount)}</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
-
-		{#if summary.goalSnapshots.length === 0}
-			<div class="py-1 text-[11px] text-[#787774]">
-				{t('ledger.summary.noGoals')}
-			</div>
-		{:else}
-			<div class="space-y-1.5">
-				{#each summary.goalSnapshots as goal (goal.goalId)}
-					{@const pct = Math.min(100, Math.round(goal.progressPercentage))}
-					<div class="flex flex-col gap-1 rounded border border-[#EAEAEA] bg-white p-2">
-						<div class="flex items-center justify-between gap-1 text-[11px]">
-							<span class="truncate font-medium text-[#111111]">{goal.goalName}</span>
-							{#if goal.isMilestone}
-								<span class="shrink-0 rounded bg-[#EDF3EC] px-1 py-0.2 font-mono text-[9px] font-bold text-[#346538]">
-									{i18nStore.locale === 'id' ? 'Tercapai!' : 'Reached!'}
-								</span>
-							{:else}
-								<span class="shrink-0 font-mono text-[10px] font-semibold text-[#787774]">
-									{pct}%
-								</span>
-							{/if}
-						</div>
-
-						<!-- Progress track -->
-						<div class="h-1.5 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-							<div
-								class="h-full rounded-full transition-all duration-300 {goal.isMilestone
-									? 'bg-[#346538]'
-									: 'bg-[#956400]'}"
-								style="width: {pct}%"
-							></div>
-						</div>
-
-						<div class="flex items-center justify-between font-mono text-[9px] text-[#787774]">
-							<span>{fmtIDR(goal.currentAmount)}</span>
-							<span>{fmtIDR(goal.targetAmount)}</span>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</div>
 	{/if}
 </div>

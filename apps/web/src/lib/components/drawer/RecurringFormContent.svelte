@@ -138,7 +138,9 @@
 	<!-- Source Wallet -->
 	<div>
 		<label for="rec-wallet" class="mb-1 block font-medium text-[#111111]">
-			{recurringFormStore.type === 'transfer' ? t('forms.transaction.sourceAccount') : t('common.account')} <span class="text-[#9F2F2D]">*</span>
+			{recurringFormStore.type === 'transfer'
+				? t('forms.transaction.sourceAccount')
+				: t('common.account')} <span class="text-[#9F2F2D]">*</span>
 		</label>
 		<select
 			id="rec-wallet"
@@ -266,10 +268,7 @@
 			<label for="rec-end" class="mb-1 block font-medium text-[#111111]">
 				Berakhir Pada (Opsional)
 			</label>
-			<SingleDatePicker
-				bind:value={recurringFormStore.endDate}
-				placeholder="Tidak berakhir..."
-			/>
+			<SingleDatePicker bind:value={recurringFormStore.endDate} placeholder="Tidak berakhir..." />
 		</div>
 	</div>
 
@@ -292,9 +291,7 @@
 
 	<!-- Notes -->
 	<div>
-		<label for="rec-notes" class="mb-1 block font-medium text-[#111111]">
-			Catatan Tambahan
-		</label>
+		<label for="rec-notes" class="mb-1 block font-medium text-[#111111]"> Catatan Tambahan </label>
 		<textarea
 			id="rec-notes"
 			rows="2"
@@ -319,7 +316,13 @@
 			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.recurring.submitEdit') : t('forms.recurring.submitCreate')}</span>
+			<span
+				>{isSubmitting
+					? t('common.saving')
+					: mode === 'edit'
+						? t('forms.recurring.submitEdit')
+						: t('forms.recurring.submitCreate')}</span
+			>
 		</button>
 	</div>
 </form>

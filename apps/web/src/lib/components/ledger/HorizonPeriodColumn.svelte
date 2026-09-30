@@ -91,7 +91,10 @@
 
 			// Category filter
 			if (globalFilters.categoryIds.length > 0) {
-				if (!t.transactionCategoryId || !globalFilters.categoryIds.includes(t.transactionCategoryId)) {
+				if (
+					!t.transactionCategoryId ||
+					!globalFilters.categoryIds.includes(t.transactionCategoryId)
+				) {
 					return false;
 				}
 			}
@@ -129,11 +132,14 @@
 
 <div class="flex flex-col rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
 	<!-- Period Header -->
-	<div class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#FDFCFB] px-3.5 py-2.5">
+	<div
+		class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#FDFCFB] px-3.5 py-2.5"
+	>
 		<div>
 			<h2 class="text-xs font-semibold text-[#111111]">{periodTitle}</h2>
-			<span class="text-[10px] text-[#787774] font-mono">
-				{periodTransactions.length} {i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}
+			<span class="font-mono text-[10px] text-[#787774]">
+				{periodTransactions.length}
+				{i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}
 			</span>
 		</div>
 
@@ -153,8 +159,12 @@
 					type="button"
 					onclick={() => settingsStore.removePeriod(periodKey)}
 					class="flex size-6 cursor-pointer items-center justify-center rounded text-[#787774] transition-colors hover:bg-[#F0EFEC] hover:text-[#9F2F2D] active:scale-95"
-					title={i18nStore.locale === 'id' ? 'Hapus periode dari board' : 'Remove period from board'}
-					aria-label={i18nStore.locale === 'id' ? 'Hapus periode dari board' : 'Remove period from board'}
+					title={i18nStore.locale === 'id'
+						? 'Hapus periode dari board'
+						: 'Remove period from board'}
+					aria-label={i18nStore.locale === 'id'
+						? 'Hapus periode dari board'
+						: 'Remove period from board'}
 				>
 					<Trash class="size-3.5" weight="bold" />
 				</button>
@@ -163,14 +173,14 @@
 	</div>
 
 	<!-- Dense Ledger Table -->
-	<div class="h-[320px] overflow-y-auto divide-y divide-[#EAEAEA] text-xs">
+	<div class="h-[320px] divide-y divide-[#EAEAEA] overflow-y-auto text-xs">
 		{#if reedrichStore.isLedgerLoading && periodTransactions.length === 0}
 			<div class="space-y-3 p-3.5">
 				{#each [0, 1, 2, 3, 4] as i (i)}
 					<div class="space-y-1.5 py-1">
 						<div class="flex items-center justify-between gap-2">
 							<Skeleton class="h-3 w-14 shrink-0" />
-							<Skeleton class="h-3 flex-1 max-w-[140px]" />
+							<Skeleton class="h-3 max-w-[140px] flex-1" />
 							<Skeleton class="h-3 w-20 shrink-0 text-right" />
 						</div>
 						<div class="flex items-center justify-between">
@@ -205,12 +215,12 @@
 				>
 					<!-- Line 1: Date + Description + Amount -->
 					<div class="flex items-center justify-between gap-1.5">
-						<div class="flex items-center gap-1.5 min-w-0">
-							<span class="font-mono text-[10px] text-[#787774] shrink-0">
+						<div class="flex min-w-0 items-center gap-1.5">
+							<span class="shrink-0 font-mono text-[10px] text-[#787774]">
 								{dFmt(t.transactionDate)}
 							</span>
 							<span
-								class="truncate font-medium text-[#111111] text-[11px]"
+								class="truncate text-[11px] font-medium text-[#111111]"
 								title={t.transactionDescription || ''}
 							>
 								{t.transactionDescription || '(tanpa deskripsi)'}
@@ -218,7 +228,7 @@
 						</div>
 
 						<span
-							class="font-mono text-xs font-semibold tabular-nums shrink-0 {isInc
+							class="shrink-0 font-mono text-xs font-semibold tabular-nums {isInc
 								? 'text-[#346538]'
 								: 'text-[#111111]'}"
 						>
@@ -229,17 +239,19 @@
 					<!-- Line 2: Category + Wallet + Status Badge -->
 					<div class="mt-1 flex items-center justify-between gap-1 text-[10px] text-[#787774]">
 						<div class="flex items-center gap-1.5 truncate">
-							<span class="rounded bg-[#F0EFEC] px-1.5 py-0.2 font-medium text-[#111111] truncate max-w-[100px]">
+							<span
+								class="py-0.2 max-w-[100px] truncate rounded bg-[#F0EFEC] px-1.5 font-medium text-[#111111]"
+							>
 								{getCategoryName(t.transactionCategoryId)}
 							</span>
-							<span class="truncate max-w-[110px]">
+							<span class="max-w-[110px] truncate">
 								{getWalletName(t.transactionWalletId)}
 							</span>
 						</div>
 
-						<div class="flex items-center gap-1 shrink-0 font-mono text-[9px] uppercase">
+						<div class="flex shrink-0 items-center gap-1 font-mono text-[9px] uppercase">
 							{#if isPlan}
-								<span class="text-[#956400] font-medium">Planned</span>
+								<span class="font-medium text-[#956400]">Planned</span>
 							{:else}
 								<span>Realized</span>
 							{/if}

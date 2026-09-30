@@ -17,7 +17,7 @@
 		reedrichStore.openDrawer({
 			type: 'goal',
 			title: goal.goalName,
-			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')} ${goal.isDerived ? '· Derived' : ''}`,
+			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term'} ${goal.isDerived ? '· Derived' : ''}`,
 			badge: i18nStore.locale === 'id' ? 'TARGET TABUNGAN' : 'SAVINGS GOAL',
 			data: { goal }
 		});
@@ -38,7 +38,11 @@
 					<span>{goal.goalName}</span>
 				</div>
 				<div class="mt-1 text-xs text-[#787774]">
-					{goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')}
+					{goal.daysRemaining !== null
+						? t('planning.goals.remainingDays', { days: goal.daysRemaining })
+						: i18nStore.locale === 'id'
+							? 'Jangka panjang'
+							: 'Long term'}
 					{#if goal.isDerived}
 						· <span class="font-mono text-[10px] text-[#787774] uppercase"
 							>Derived ({linked.length} {i18nStore.locale === 'id' ? 'dompet' : 'accounts'})</span
@@ -67,20 +71,25 @@
 		<!-- Goal Headroom & Pacing Metrics -->
 		<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
 			<div class="space-y-0.5">
-				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+				<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 					{t('planning.goals.remainingHeadroom')}
 				</div>
-				<div class="font-mono text-xs font-bold tabular-nums {isTargetReached ? 'text-[#346538]' : 'text-[#111111]'}">
+				<div
+					class="font-mono text-xs font-bold tabular-nums {isTargetReached
+						? 'text-[#346538]'
+						: 'text-[#111111]'}"
+				>
 					{#if isTargetReached}
 						<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
 					{:else}
-						{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })} <span class="font-normal text-[#787774]">({100 - p}%)</span>
+						{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })}
+						<span class="font-normal text-[#787774]">({100 - p}%)</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="space-y-0.5 text-right font-mono tabular-nums">
-				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+				<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 					{t('planning.goals.target')}
 				</div>
 				<div class="text-xs font-semibold text-[#111111]">
@@ -115,6 +124,10 @@
 		class="mt-3 flex items-center gap-1 text-[11px] text-[#787774] transition-colors group-hover:text-[#111111]"
 	>
 		<ArrowRight class="size-3" weight="bold" />
-		<span>{i18nStore.locale === 'id' ? 'Klik untuk melihat rincian & mutasi goal' : 'Click to inspect goal details & transactions'}</span>
+		<span
+			>{i18nStore.locale === 'id'
+				? 'Klik untuk melihat rincian & mutasi goal'
+				: 'Click to inspect goal details & transactions'}</span
+		>
 	</div>
 </div>

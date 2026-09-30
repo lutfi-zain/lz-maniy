@@ -225,7 +225,9 @@ export class ChatStore {
 				if (Array.isArray(remoteModels) && remoteModels.length > 0) {
 					const merged = [...remoteModels];
 					for (const def of DEFAULT_MODELS) {
-						const idx = merged.findIndex((m) => m.model === def.model && m.provider === def.provider);
+						const idx = merged.findIndex(
+							(m) => m.model === def.model && m.provider === def.provider
+						);
 						if (idx !== -1) {
 							merged[idx] = {
 								...merged[idx],
@@ -253,7 +255,9 @@ export class ChatStore {
 		const variants: AssistantVariant[] =
 			msg.variants && msg.variants.length > 0
 				? [...msg.variants]
-				: [{ content: msg.content, toolInvocations: msg.toolInvocations, timestamp: msg.timestamp }];
+				: [
+						{ content: msg.content, toolInvocations: msg.toolInvocations, timestamp: msg.timestamp }
+					];
 		const activeIndex = msg.activeVariantIndex ?? variants.length - 1;
 		variants[activeIndex] = {
 			content: msg.content,
@@ -449,10 +453,7 @@ export class ChatStore {
 								if (exists) return m;
 								return {
 									...m,
-									toolInvocations: [
-										...current,
-										{ ...toolCall, state: 'call' as const }
-									]
+									toolInvocations: [...current, { ...toolCall, state: 'call' as const }]
 								};
 							});
 						} catch {
@@ -552,9 +553,7 @@ export class ChatStore {
 					m.id === assistantId
 						? this.syncActiveVariant({
 								...m,
-								content:
-									m.content ||
-									'Koneksi terputus saat menerima jawaban. Silakan coba lagi.'
+								content: m.content || 'Koneksi terputus saat menerima jawaban. Silakan coba lagi.'
 							})
 						: m
 				);

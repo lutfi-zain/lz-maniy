@@ -20,11 +20,7 @@
 {#if chatStore.panelOpen}
 	{#if isMobile}
 		<!-- Mobile: fullscreen overlay -->
-		<div
-			class="fixed inset-0 z-50 flex flex-col bg-white"
-			role="dialog"
-			aria-label="Agent Chat"
-		>
+		<div class="fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-label="Agent Chat">
 			<ChatPanelHeader {isMobile} />
 			{#if chatStore.showConversationList}
 				<ConversationList />
@@ -36,7 +32,7 @@
 	{:else}
 		<!-- Desktop: right-side panel -->
 		<aside
-			class="fixed top-0 right-0 h-full z-40 flex flex-col bg-white border-l border-[#eaeaea] shadow-sm"
+			class="fixed top-0 right-0 z-40 flex h-full flex-col border-l border-[#eaeaea] bg-white shadow-sm"
 			style="width: {chatStore.panelWidth}px; transition: none;"
 			aria-label="Agent Chat"
 		>
@@ -46,7 +42,7 @@
 				{#if chatStore.showConversationList}
 					<ConversationList />
 				{:else}
-					<div class="flex flex-col flex-1 overflow-hidden">
+					<div class="flex flex-1 flex-col overflow-hidden">
 						<ChatMessages />
 						<ChatInput />
 					</div>

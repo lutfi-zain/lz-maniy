@@ -4,12 +4,14 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import SingleDatePicker from '$lib/components/ui/SingleDatePicker.svelte';
 	import Check from 'phosphor-svelte/lib/Check';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
 	let isSubmitting = $state(false);
 	let localError = $state<string | null>(null);
 
 	const mode = $derived(budgetFormStore.mode);
 	const isValid = $derived(budgetFormStore.isValid);
+	const isHydrating = $derived(budgetFormStore.isHydrating);
 	const existingBudget = $derived(budgetFormStore.existingBudget);
 
 	// Expense categories available for budget limit
@@ -51,101 +53,130 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="flex flex-col gap-4 text-xs">
-	{#if localError}
-		<div class="rounded-md border border-[#FDEBEC] bg-[#FDF2F2] p-2.5 text-xs text-[#9F2F2D]">
-			{localError}
+{#if isHydrating}
+	<div class="flex flex-col gap-4 py-2">
+		<div class="space-y-2">
+			<Skeleton class="h-3 w-28" />
+			<Skeleton class="h-9 w-full rounded-md" />
 		</div>
-	{/if}
-
-	<!-- Name -->
-	<div>
-		<label for="budget-name" class="mb-1 block font-medium text-[#111111]">
-			{t('forms.budget.nameLabel')} <span class="text-[#9F2F2D]">*</span>
-		</label>
-		<input
-			id="budget-name"
-			type="text"
-			required
-			bind:value={budgetFormStore.name}
-			placeholder="Contoh: Belanja Bulanan, Transportasi, Makan Siang"
-			class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
-		/>
+		<div class="space-y-2">
+			<Skeleton class="h-3 w-24" />
+			<Skeleton class="h-9 w-full rounded-md" />
+		</div>
+		<div class="grid grid-cols-2 gap-3">
+			<div class="space-y-2">
+				<Skeleton class="h-3 w-20" />
+				<Skeleton class="h-9 w-full rounded-md" />
+			</div>
+			<div class="space-y-2">
+				<Skeleton class="h-3 w-20" />
+				<Skeleton class="h-9 w-full rounded-md" />
+			</div>
+		</div>
 	</div>
+{:else}
+	<form onsubmit={handleSubmit} class="flex flex-col gap-4 text-xs">
+		{#if localError}
+			<div class="rounded-md border border-[#FDEBEC] bg-[#FDF2F2] p-2.5 text-xs text-[#9F2F2D]">
+				{localError}
+			</div>
+		{/if}
 
-	<!-- Amount -->
-	<div>
-		<label for="budget-amount" class="mb-1 block font-medium text-[#111111]">
-			{t('forms.budget.amountLabel')} (IDR) <span class="text-[#9F2F2D]">*</span>
-		</label>
-		<input
-			id="budget-amount"
-			type="number"
-			required
-			min="1"
-			step="any"
-			bind:value={budgetFormStore.amount}
-			placeholder="Contoh: 2500000"
-			class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 font-mono text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
-		/>
-	</div>
-
-	<!-- Category Association -->
-	<div>
-		<label for="budget-cat" class="mb-1 block font-medium text-[#111111]">
-			{t('forms.budget.categoryLabel')}
-		</label>
-		<select
-			id="budget-cat"
-			bind:value={budgetFormStore.categoryId}
-			class="w-full rounded-md border border-[#EAEAEA] bg-white px-2.5 py-2 text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
-		>
-			<option value="">Semua Kategori (Pagu Umum)</option>
-			{#each expenseCategories as c (c.categoryId)}
-				<option value={c.categoryId}>{c.categoryIcon || '🏷️'} {c.categoryName}</option>
-			{/each}
-		</select>
-	</div>
-
-	<!-- Period Date Range -->
-	<div class="grid grid-cols-2 gap-3">
+		<!-- Name -->
 		<div>
-			<label for="budget-start" class="mb-1 block font-medium text-[#111111]">
-				Mulai Periode <span class="text-[#9F2F2D]">*</span>
+			<label for="budget-name" class="mb-1 block font-medium text-[#111111]">
+				{t('forms.budget.nameLabel')} <span class="text-[#9F2F2D]">*</span>
 			</label>
-			<SingleDatePicker
-				bind:value={budgetFormStore.periodStart}
-				placeholder="Pilih tanggal awal..."
+			<input
+				id="budget-name"
+				type="text"
+				required
+				bind:value={budgetFormStore.name}
+				placeholder="Contoh: Belanja Bulanan, Transportasi, Makan Siang"
+				class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
 			/>
 		</div>
 
+		<!-- Amount -->
 		<div>
-			<label for="budget-end" class="mb-1 block font-medium text-[#111111]">
-				Akhir Periode <span class="text-[#9F2F2D]">*</span>
+			<label for="budget-amount" class="mb-1 block font-medium text-[#111111]">
+				{t('forms.budget.amountLabel')} (IDR) <span class="text-[#9F2F2D]">*</span>
 			</label>
-			<SingleDatePicker
-				bind:value={budgetFormStore.periodEnd}
-				placeholder="Pilih tanggal akhir..."
+			<input
+				id="budget-amount"
+				type="number"
+				required
+				min="1"
+				step="any"
+				bind:value={budgetFormStore.amount}
+				placeholder="Contoh: 2500000"
+				class="w-full rounded-md border border-[#EAEAEA] bg-white px-3 py-2 font-mono text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
 			/>
 		</div>
-	</div>
 
-	<!-- Action Buttons -->
-	<div class="mt-2 flex items-center justify-end gap-2 border-t border-[#EAEAEA] pt-4">
-		<button
-			type="button"
-			onclick={() => budgetFormStore.close()}
-			class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
-		>
-			{t('common.cancel')}
-		</button>
-		<button
-			type="submit"
-			disabled={!isValid || isSubmitting}
-			class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			<Check class="size-3.5" weight="bold" />
-			<span>{isSubmitting ? t('common.saving') : mode === 'edit' ? t('forms.budget.submitEdit') : t('forms.budget.submitCreate')}</span>
-		</button>
-	</div>
-</form>
+		<!-- Category Association -->
+		<div>
+			<label for="budget-cat" class="mb-1 block font-medium text-[#111111]">
+				{t('forms.budget.categoryLabel')}
+			</label>
+			<select
+				id="budget-cat"
+				bind:value={budgetFormStore.categoryId}
+				class="w-full rounded-md border border-[#EAEAEA] bg-white px-2.5 py-2 text-xs text-[#111111] transition-colors focus:border-[#111111] focus:outline-none"
+			>
+				<option value="">Semua Kategori (Pagu Umum)</option>
+				{#each expenseCategories as c (c.categoryId)}
+					<option value={c.categoryId}>{c.categoryName}</option>
+				{/each}
+			</select>
+		</div>
+
+		<!-- Period Date Range -->
+		<div class="grid grid-cols-2 gap-3">
+			<div>
+				<label for="budget-start" class="mb-1 block font-medium text-[#111111]">
+					Mulai Periode <span class="text-[#9F2F2D]">*</span>
+				</label>
+				<SingleDatePicker
+					bind:value={budgetFormStore.periodStart}
+					placeholder="Pilih tanggal awal..."
+				/>
+			</div>
+
+			<div>
+				<label for="budget-end" class="mb-1 block font-medium text-[#111111]">
+					Akhir Periode <span class="text-[#9F2F2D]">*</span>
+				</label>
+				<SingleDatePicker
+					bind:value={budgetFormStore.periodEnd}
+					placeholder="Pilih tanggal akhir..."
+				/>
+			</div>
+		</div>
+
+		<!-- Action Buttons -->
+		<div class="mt-2 flex items-center justify-end gap-2 border-t border-[#EAEAEA] pt-4">
+			<button
+				type="button"
+				onclick={() => budgetFormStore.close()}
+				class="cursor-pointer rounded-md border border-[#EAEAEA] bg-white px-4 py-2 text-xs font-medium text-[#787774] transition-colors hover:bg-[#F9F9F8] hover:text-[#111111]"
+			>
+				{t('common.cancel')}
+			</button>
+			<button
+				type="submit"
+				disabled={!isValid || isSubmitting}
+				class="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				<Check class="size-3.5" weight="bold" />
+				<span
+					>{isSubmitting
+						? t('common.saving')
+						: mode === 'edit'
+							? t('forms.budget.submitEdit')
+							: t('forms.budget.submitCreate')}</span
+				>
+			</button>
+		</div>
+	</form>
+{/if}

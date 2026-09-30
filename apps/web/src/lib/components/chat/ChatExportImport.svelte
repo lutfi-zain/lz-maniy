@@ -26,7 +26,7 @@
 <div class="relative">
 	<button
 		onclick={() => (open = !open)}
-		class="p-1 rounded hover:bg-[#eaeaea] text-[#787774] transition-colors"
+		class="rounded p-1 text-[#787774] transition-colors hover:bg-[#eaeaea]"
 		aria-label="Export/Import"
 	>
 		<DownloadSimple size={14} weight="bold" />
@@ -34,17 +34,20 @@
 
 	{#if open}
 		<div
-			class="absolute right-0 top-full mt-1 z-50 bg-white border border-[#eaeaea] rounded shadow-sm min-w-[160px] py-2 px-3 flex flex-col gap-2"
+			class="absolute top-full right-0 z-50 mt-1 flex min-w-[160px] flex-col gap-2 rounded border border-[#eaeaea] bg-white px-3 py-2 shadow-sm"
 			role="menu"
 		>
 			<button
-				class="flex items-center gap-2 text-[12px] text-[#111111] hover:text-[#787774] transition-colors"
-				onclick={async () => { await chatStore.exportConversations(); open = false; }}
+				class="flex items-center gap-2 text-[12px] text-[#111111] transition-colors hover:text-[#787774]"
+				onclick={async () => {
+					await chatStore.exportConversations();
+					open = false;
+				}}
 			>
 				<DownloadSimple size={12} weight="bold" /> Export semua
 			</button>
 			<button
-				class="flex items-center gap-2 text-[12px] text-[#111111] hover:text-[#787774] transition-colors"
+				class="flex items-center gap-2 text-[12px] text-[#111111] transition-colors hover:text-[#787774]"
 				onclick={() => fileInputEl?.click()}
 			>
 				<UploadSimple size={12} weight="bold" /> Import JSON

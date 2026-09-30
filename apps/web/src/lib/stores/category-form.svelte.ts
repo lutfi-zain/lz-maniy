@@ -11,7 +11,7 @@ export class CategoryFormStore {
 	// Form fields
 	name = $state<string>('');
 	type = $state<'expense' | 'income'>('expense');
-	icon = $state<string>('🏷️');
+	icon = $state<string>('Tag');
 
 	isValid = $derived.by(() => {
 		return this.name.trim().length > 0;
@@ -37,7 +37,7 @@ export class CategoryFormStore {
 		this.existingCategory = category;
 		this.name = category.categoryName;
 		this.type = category.categoryType;
-		this.icon = category.categoryIcon || '🏷️';
+		this.icon = category.categoryIcon || 'Tag';
 		this.error = null;
 		this.isOpen = true;
 		reedrichStore.openDrawer({
@@ -58,7 +58,7 @@ export class CategoryFormStore {
 	resetFields() {
 		this.name = '';
 		this.type = 'expense';
-		this.icon = '🏷️';
+		this.icon = 'Tag';
 		this.error = null;
 		this.isSaving = false;
 	}

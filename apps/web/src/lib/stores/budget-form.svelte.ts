@@ -16,6 +16,7 @@ export class BudgetFormStore {
 	mode = $state<'create' | 'edit'>('create');
 	existingBudget = $state<BudgetSnapshot | null>(null);
 	isSaving = $state<boolean>(false);
+	isHydrating = $state<boolean>(false);
 	error = $state<string | null>(null);
 
 	// Form fields
@@ -24,6 +25,7 @@ export class BudgetFormStore {
 	periodStart = $state<string>('');
 	periodEnd = $state<string>('');
 	categoryId = $state<string>('');
+	notes = $state<string>('');
 
 	isValid = $derived.by(() => {
 		if (!this.name.trim()) return false;
@@ -50,23 +52,51 @@ export class BudgetFormStore {
 		});
 	}
 
-	openEdit(budget: BudgetSnapshot) {
-		this.mode = 'edit';
+	populateFields(budget: BudgetSnapshot) {
 		this.existingBudget = budget;
 		this.name = budget.budgetName;
 		this.amount = budget.amount;
 		this.periodStart = budget.periodStart ? budget.periodStart.slice(0, 10) : '';
 		this.periodEnd = budget.periodEnd ? budget.periodEnd.slice(0, 10) : '';
 		this.categoryId = budget.categoryId || '';
+		this.notes = budget.notes || '';
+	}
+
+	async openEditWithHydration(budgetId: string, initialBudget?: BudgetSnapshot) {
+		this.mode = 'edit';
+		if (initialBudget) {
+			this.populateFields(initialBudget);
+		}
 		this.error = null;
+		this.isHydrating = true;
 		this.isOpen = true;
 		reedrichStore.openDrawer({
 			type: 'budget-form',
 			title: 'Edit Pagu Anggaran',
-			subtitle: budget.budgetName,
+			subtitle: initialBudget?.budgetName || 'Memuat data anggaran...',
 			badge: 'EDIT BUDGET',
-			data: { budget }
+			data: { budget: initialBudget }
 		});
+
+		try {
+			const fresh = await reedrichStore.fetchBudgetById(budgetId);
+			this.populateFields(fresh);
+			reedrichStore.openDrawer({
+				type: 'budget-form',
+				title: 'Edit Pagu Anggaran',
+				subtitle: fresh.budgetName,
+				badge: 'EDIT BUDGET',
+				data: { budget: fresh }
+			});
+		} catch (err) {
+			console.warn('Gagal menghidrasi detail anggaran dari server:', err);
+		} finally {
+			this.isHydrating = false;
+		}
+	}
+
+	openEdit(budget: BudgetSnapshot) {
+		this.openEditWithHydration(budget.budgetId, budget);
 	}
 
 	close() {
@@ -81,6 +111,7 @@ export class BudgetFormStore {
 		this.periodStart = '';
 		this.periodEnd = '';
 		this.categoryId = '';
+		this.notes = '';
 		this.error = null;
 		this.isSaving = false;
 	}

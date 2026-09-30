@@ -6,6 +6,7 @@ export class GoalFormStore {
 	mode = $state<'create' | 'edit'>('create');
 	existingGoal = $state<GoalSnapshot | null>(null);
 	isSaving = $state<boolean>(false);
+	isHydrating = $state<boolean>(false);
 	error = $state<string | null>(null);
 
 	// Form fields
@@ -42,27 +43,56 @@ export class GoalFormStore {
 		});
 	}
 
-	openEdit(goal: GoalSnapshot) {
-		this.mode = 'edit';
+	populateFields(goal: GoalSnapshot) {
 		this.existingGoal = goal;
 		this.name = goal.goalName;
 		this.targetAmount = goal.targetAmount;
 		this.currentAmount = goal.currentAmount;
 		this.currency = goal.currency || 'IDR';
 		this.targetDate = goal.targetDate ? goal.targetDate.slice(0, 10) : '';
-		this.walletIds = goal.linkedWalletsBreakdown ? goal.linkedWalletsBreakdown.map((w) => w.walletId) : [];
+		this.walletIds = goal.linkedWalletsBreakdown
+			? goal.linkedWalletsBreakdown.map((w) => w.walletId)
+			: [];
 		this.categoryId = goal.categoryId || '';
 		this.notes = goal.notes || '';
 		this.status = goal.status || 'in_progress';
+	}
+
+	async openEditWithHydration(goalId: string, initialGoal?: GoalSnapshot) {
+		this.mode = 'edit';
+		if (initialGoal) {
+			this.populateFields(initialGoal);
+		}
 		this.error = null;
+		this.isHydrating = true;
 		this.isOpen = true;
 		reedrichStore.openDrawer({
 			type: 'goal-form',
 			title: 'Edit Target Tabungan',
-			subtitle: goal.goalName,
+			subtitle: initialGoal?.goalName || 'Memuat data target...',
 			badge: 'EDIT TARGET',
-			data: { goal }
+			data: { goal: initialGoal }
 		});
+
+		try {
+			const fresh = await reedrichStore.fetchGoalById(goalId);
+			this.populateFields(fresh);
+			reedrichStore.openDrawer({
+				type: 'goal-form',
+				title: 'Edit Target Tabungan',
+				subtitle: fresh.goalName,
+				badge: 'EDIT TARGET',
+				data: { goal: fresh }
+			});
+		} catch (err) {
+			console.warn('Gagal menghidrasi detail target dari server:', err);
+		} finally {
+			this.isHydrating = false;
+		}
+	}
+
+	openEdit(goal: GoalSnapshot) {
+		this.openEditWithHydration(goal.goalId, goal);
 	}
 
 	close() {

@@ -110,13 +110,7 @@
 	/>
 
 	<!-- Controls Bar -->
-	<CategoryControlsBar
-		bind:searchQuery
-		bind:typeFilter
-		bind:sortBy
-		bind:viewMode
-		bind:onlyActive
-	/>
+	<CategoryControlsBar bind:searchQuery bind:typeFilter bind:sortBy bind:viewMode bind:onlyActive />
 
 	<!-- Content: Skeleton vs List -->
 	{#if reedrichStore.isLoading && categories.length === 0}
@@ -147,7 +141,9 @@
 		</div>
 	{:else if filteredItems.length === 0}
 		<!-- Empty Filter State -->
-		<div class="flex flex-col items-center justify-center rounded-lg border border-[#EAEAEA] bg-white p-8 text-center shadow-2xs">
+		<div
+			class="flex flex-col items-center justify-center rounded-lg border border-[#EAEAEA] bg-white p-8 text-center shadow-2xs"
+		>
 			<p class="text-xs font-medium text-[#787774]">
 				Tidak ada kategori yang sesuai dengan filter atau pencarian Anda.
 			</p>
@@ -164,12 +160,18 @@
 	{:else if viewMode === 'flat'}
 		<!-- Flat View: Single Unified Ranked Table -->
 		<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
-			<div class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-2.5">
+			<div
+				class="flex items-center justify-between border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-2.5"
+			>
 				<span class="text-xs font-semibold text-[#111111]">
 					Daftar Seluruh Kategori ({sortedFlatItems.length})
 				</span>
 				<span class="font-mono text-[11px] text-[#787774]">
-					Urut: {sortBy === 'balance_desc' ? 'Nominal Terbesar' : sortBy === 'count_desc' ? 'Frekuensi' : 'Nama'}
+					Urut: {sortBy === 'balance_desc'
+						? 'Nominal Terbesar'
+						: sortBy === 'count_desc'
+							? 'Frekuensi'
+							: 'Nama'}
 				</span>
 			</div>
 			<div class="divide-y divide-[#EAEAEA]">
@@ -185,12 +187,18 @@
 			{#if typeFilter === 'all' || typeFilter === 'expense'}
 				<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
 					<!-- Header with Subtotal -->
-					<div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-3">
+					<div
+						class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-3"
+					>
 						<div class="flex items-center gap-2">
-							<div class="flex size-5 items-center justify-center rounded bg-[#FDEBEC] text-[#9F2F2D]">
+							<div
+								class="flex size-5 items-center justify-center rounded bg-[#FDEBEC] text-[#9F2F2D]"
+							>
 								<ArrowDown class="size-3" weight="bold" />
 							</div>
-							<h3 class="text-sm font-semibold text-[#111111]">{t('planning.categories.expenseTitle')}</h3>
+							<h3 class="text-sm font-semibold text-[#111111]">
+								{t('planning.categories.expenseTitle')}
+							</h3>
 							<span class="rounded bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] text-[#787774]">
 								{t('planning.categories.countLabel', { count: groupedExpenseItems.length })}
 							</span>
@@ -220,12 +228,18 @@
 			{#if typeFilter === 'all' || typeFilter === 'income'}
 				<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
 					<!-- Header with Subtotal -->
-					<div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-3">
+					<div
+						class="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAEAEA] bg-[#F9F9F8] px-4 py-3"
+					>
 						<div class="flex items-center gap-2">
-							<div class="flex size-5 items-center justify-center rounded bg-[#EDF3EC] text-[#346538]">
+							<div
+								class="flex size-5 items-center justify-center rounded bg-[#EDF3EC] text-[#346538]"
+							>
 								<ArrowUp class="size-3" weight="bold" />
 							</div>
-							<h3 class="text-sm font-semibold text-[#111111]">{t('planning.categories.incomeTitle')}</h3>
+							<h3 class="text-sm font-semibold text-[#111111]">
+								{t('planning.categories.incomeTitle')}
+							</h3>
 							<span class="rounded bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] text-[#787774]">
 								{t('planning.categories.countLabel', { count: groupedIncomeItems.length })}
 							</span>

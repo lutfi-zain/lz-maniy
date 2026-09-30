@@ -6,6 +6,7 @@ export class WalletFormStore {
 	mode = $state<'create' | 'edit'>('create');
 	existingWallet = $state<WalletItem | null>(null);
 	isSaving = $state<boolean>(false);
+	isHydrating = $state<boolean>(false);
 	error = $state<string | null>(null);
 
 	// Form fields
@@ -36,8 +37,7 @@ export class WalletFormStore {
 		});
 	}
 
-	openEdit(wallet: WalletItem) {
-		this.mode = 'edit';
+	populateFields(wallet: WalletItem) {
 		this.existingWallet = wallet;
 		this.name = wallet.walletName;
 		this.institution = wallet.institution || 'BCA';
@@ -45,17 +45,44 @@ export class WalletFormStore {
 		this.balance = wallet.balance;
 		this.currency = wallet.currency || 'IDR';
 		this.isLocked = wallet.isLocked === 1;
+	}
+
+	async openEditWithHydration(walletId: string, initialWallet?: WalletItem) {
+		this.mode = 'edit';
+		if (initialWallet) {
+			this.populateFields(initialWallet);
+		}
 		this.error = null;
+		this.isHydrating = true;
 		this.isOpen = true;
 		reedrichStore.openDrawer({
 			type: 'wallet-form',
 			title: 'Edit Dompet',
-			subtitle: wallet.walletName,
+			subtitle: initialWallet?.walletName || 'Memuat data dompet...',
 			badge: 'EDIT',
-			data: { wallet }
+			data: { wallet: initialWallet }
 		});
+
+		try {
+			const fresh = await reedrichStore.fetchWalletById(walletId);
+			this.populateFields(fresh);
+			reedrichStore.openDrawer({
+				type: 'wallet-form',
+				title: 'Edit Dompet',
+				subtitle: fresh.walletName,
+				badge: 'EDIT',
+				data: { wallet: fresh }
+			});
+		} catch (err) {
+			console.warn('Gagal menghidrasi dompet dari server:', err);
+		} finally {
+			this.isHydrating = false;
+		}
 	}
 
+	openEdit(wallet: WalletItem) {
+		this.openEditWithHydration(wallet.walletId, wallet);
+	}
 	close() {
 		this.isOpen = false;
 		this.resetFields();

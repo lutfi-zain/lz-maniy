@@ -1,4 +1,5 @@
 import type { TransactionRecord, TransactionType } from '$lib/types/account-detail';
+import { reedrichStore } from '$lib/stores/reedrich.svelte';
 
 function getTodayString(): string {
 	const now = new Date();
@@ -14,6 +15,7 @@ export class TransactionFormStore {
 	transactionType = $state<TransactionType>('expense');
 	existingTransaction = $state<TransactionRecord | null>(null);
 	isSaving = $state<boolean>(false);
+	isHydrating = $state<boolean>(false);
 	error = $state<string | null>(null);
 	successMessage = $state<string | null>(null);
 
@@ -58,26 +60,61 @@ export class TransactionFormStore {
 		this.isOpen = true;
 	}
 
-	openView(transaction: TransactionRecord) {
-		this.existingTransaction = transaction;
+	async openViewWithHydration(transactionId: string, initialTransaction?: TransactionRecord) {
+		if (initialTransaction) {
+			this.existingTransaction = initialTransaction;
+			this.transactionType = initialTransaction.transactionType;
+			this.populateFromTransaction(initialTransaction);
+		}
 		this.mode = 'view';
-		this.transactionType = transaction.transactionType;
 		this.error = null;
 		this.successMessage = null;
-		this.populateFromTransaction(transaction);
+		this.isHydrating = true;
 		this.isOpen = true;
+
+		try {
+			const fresh = await reedrichStore.fetchTransactionById(transactionId);
+			this.existingTransaction = fresh;
+			this.transactionType = fresh.transactionType;
+			this.populateFromTransaction(fresh);
+		} catch (err) {
+			console.warn('Gagal menghidrasi transaksi dari server:', err);
+		} finally {
+			this.isHydrating = false;
+		}
+	}
+
+	openView(transaction: TransactionRecord) {
+		this.openViewWithHydration(transaction.transactionId, transaction);
+	}
+
+	async openEditWithHydration(transactionId: string, initialTransaction?: TransactionRecord) {
+		if (initialTransaction) {
+			this.existingTransaction = initialTransaction;
+			this.transactionType = initialTransaction.transactionType;
+			this.populateFromTransaction(initialTransaction);
+		}
+		this.mode = 'edit';
+		this.error = null;
+		this.successMessage = null;
+		this.isHydrating = true;
+		this.isOpen = true;
+
+		try {
+			const fresh = await reedrichStore.fetchTransactionById(transactionId);
+			this.existingTransaction = fresh;
+			this.transactionType = fresh.transactionType;
+			this.populateFromTransaction(fresh);
+		} catch (err) {
+			console.warn('Gagal menghidrasi transaksi dari server:', err);
+		} finally {
+			this.isHydrating = false;
+		}
 	}
 
 	openEdit(transaction: TransactionRecord) {
-		this.existingTransaction = transaction;
-		this.mode = 'edit';
-		this.transactionType = transaction.transactionType;
-		this.error = null;
-		this.successMessage = null;
-		this.populateFromTransaction(transaction);
-		this.isOpen = true;
+		this.openEditWithHydration(transaction.transactionId, transaction);
 	}
-
 	setType(type: TransactionType) {
 		this.transactionType = type;
 		// Reset type-specific fields

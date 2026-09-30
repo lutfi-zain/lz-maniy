@@ -44,7 +44,7 @@
 			/>
 		</div>
 
-		<div class="flex items-center gap-1.5 shrink-0">
+		<div class="flex shrink-0 items-center gap-1.5">
 			<DateRangePicker
 				bind:start={dateFilterStore.startDate}
 				bind:end={dateFilterStore.endDate}
@@ -56,7 +56,7 @@
 			<button
 				type="button"
 				onclick={() => categoryFormStore.openCreate(typeFilter === 'income' ? 'income' : 'expense')}
-				class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+				class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
 			>
 				<Plus class="size-3.5" weight="bold" />
 				<span>Tambah Kategori</span>
@@ -114,7 +114,9 @@
 			</div>
 
 			<!-- Quick Toggle: Only with transactions -->
-			<label class="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-[#787774] select-none hover:text-[#111111]">
+			<label
+				class="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-[#787774] select-none hover:text-[#111111]"
+			>
 				<input
 					type="checkbox"
 					bind:checked={onlyActive}

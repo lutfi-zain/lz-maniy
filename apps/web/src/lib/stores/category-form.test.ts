@@ -21,7 +21,7 @@ describe('CategoryFormStore', () => {
 		expect(store.mode).toBe('create');
 		expect(store.name).toBe('');
 		expect(store.type).toBe('expense');
-		expect(store.icon).toBe('🏷️');
+		expect(store.icon).toBe('Tag');
 	});
 
 	it('openCreate() resets and sets default type', () => {

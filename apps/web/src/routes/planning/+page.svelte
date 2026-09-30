@@ -21,17 +21,71 @@
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import BudgetCard from '$lib/components/budgets/BudgetCard.svelte';
-	import type { RecurringTemplate, GoalSnapshot, BudgetSnapshot } from '$lib/types/account-detail';
+	import type { RecurringTemplate, GoalSnapshot } from '$lib/types/account-detail';
+	import { resolveGoalLifecycle, resolveBudgetPeriod } from '$lib/utils/lifecycle';
 
 	let activeSubTab = $state<'budgets' | 'goals' | 'obligations' | 'categories'>('goals');
+	let goalFilter = $state<'all' | 'in_progress' | 'overdue' | 'completed'>('all');
+	let budgetFilter = $state<'active' | 'past' | 'all'>('active');
+
+	const budgets = $derived(reedrichStore.activeBudgets);
+	const goals = $derived(reedrichStore.activeGoals);
+	const goalsWithLifecycle = $derived(
+		goals.map((g) => ({
+			goal: g,
+			lifecycle: resolveGoalLifecycle(g)
+		}))
+	);
+
+	const goalCounts = $derived({
+		all: goalsWithLifecycle.length,
+		in_progress: goalsWithLifecycle.filter(
+			(x) => x.lifecycle.status === 'in_progress' || x.lifecycle.status === 'long_term'
+		).length,
+		overdue: goalsWithLifecycle.filter((x) => x.lifecycle.status === 'overdue').length,
+		completed: goalsWithLifecycle.filter((x) => x.lifecycle.status === 'completed').length
+	});
+
+	const filteredGoals = $derived.by(() => {
+		if (goalFilter === 'all') return goalsWithLifecycle;
+		if (goalFilter === 'in_progress') {
+			return goalsWithLifecycle.filter(
+				(x) => x.lifecycle.status === 'in_progress' || x.lifecycle.status === 'long_term'
+			);
+		}
+		if (goalFilter === 'overdue') {
+			return goalsWithLifecycle.filter((x) => x.lifecycle.status === 'overdue');
+		}
+		if (goalFilter === 'completed') {
+			return goalsWithLifecycle.filter((x) => x.lifecycle.status === 'completed');
+		}
+		return goalsWithLifecycle;
+	});
+
+	const budgetsWithPeriod = $derived(
+		budgets.map((b) => ({
+			budget: b,
+			period: resolveBudgetPeriod(b)
+		}))
+	);
+
+	const budgetCounts = $derived({
+		active: budgetsWithPeriod.filter((x) => x.period.isActive).length,
+		past: budgetsWithPeriod.filter((x) => x.period.isPast).length,
+		all: budgetsWithPeriod.length
+	});
+
+	const filteredBudgets = $derived.by(() => {
+		if (budgetFilter === 'active') return budgetsWithPeriod.filter((x) => x.period.isActive);
+		if (budgetFilter === 'past') return budgetsWithPeriod.filter((x) => x.period.isPast);
+		return budgetsWithPeriod;
+	});
 
 	onMount(() => {
 		reedrichStore.fetchRecurringTemplates();
 		reedrichStore.fetchAllTransactions();
 	});
 
-	const budgets = $derived(reedrichStore.activeBudgets);
-	const goals = $derived(reedrichStore.activeGoals);
 	const ob = $derived(reedrichStore.snapshot?.obligations);
 	const debts = $derived(ob?.activeDebts ?? []);
 	const loans = $derived(ob?.activeLoans ?? []);
@@ -48,25 +102,33 @@
 			data: { template: t }
 		});
 	}
-	function openGoalDrawer(goal: GoalSnapshot) {
+	async function openGoalDrawer(goal: GoalSnapshot) {
 		reedrichStore.openDrawer({
 			type: 'goal',
 			title: goal.goalName,
-			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : (i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term')} ${goal.isDerived ? '· Derived' : ''}`,
+			subtitle: `${goal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: goal.daysRemaining }) : i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term'} ${goal.isDerived ? '· Derived' : ''}`,
 			badge: i18nStore.locale === 'id' ? 'TARGET TABUNGAN' : 'SAVINGS GOAL',
 			data: { goal }
 		});
-	}
 
-	function openBudgetDrawer(budget: BudgetSnapshot) {
-		reedrichStore.openDrawer({
-			type: 'budget',
-			title: budget.budgetName,
-			subtitle: `Kategori: ${budget.categoryName || 'General'} · Status: ${budget.status}`,
-			badge: i18nStore.locale === 'id' ? 'BUDGET & PAGU' : 'BUDGET',
-			data: { budget }
-		});
-		reedrichStore.fetchTransactionsForDrawer({ budgetId: budget.budgetId, limit: 50 });
+		try {
+			const freshGoal = await reedrichStore.fetchGoalById(goal.goalId);
+			const currentActive = reedrichStore.activeDrawer;
+			if (
+				currentActive?.type === 'goal' &&
+				(currentActive.data as { goal?: GoalSnapshot })?.goal?.goalId === goal.goalId
+			) {
+				reedrichStore.openDrawer({
+					type: 'goal',
+					title: freshGoal.goalName,
+					subtitle: `${freshGoal.daysRemaining !== null ? t('planning.goals.remainingDays', { days: freshGoal.daysRemaining }) : i18nStore.locale === 'id' ? 'Jangka panjang' : 'Long term'} ${freshGoal.isDerived ? '· Derived' : ''}`,
+					badge: i18nStore.locale === 'id' ? 'TARGET TABUNGAN' : 'SAVINGS GOAL',
+					data: { goal: freshGoal }
+				});
+			}
+		} catch (err) {
+			console.warn('Gagal memuat detail target:', err);
+		}
 	}
 
 </script>
@@ -126,55 +188,55 @@
 
 		<!-- Right: Date Filter & Action Button -->
 		{#if activeSubTab !== 'categories'}
-		<div class="flex items-center gap-2">
-			<DateRangePicker
-				bind:start={dateFilterStore.startDate}
-				bind:end={dateFilterStore.endDate}
-				bind:preset={dateFilterStore.preset}
-				onchange={({ preset, start, end }) => {
-					dateFilterStore.setFilter(preset as DatePreset, start, end);
-				}}
-			/>
-			{#if dateFilterStore.preset !== 'this_month'}
-				<button
-					type="button"
-					onclick={() => dateFilterStore.reset()}
-					class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
-					title="Reset ke Bulan Ini"
-				>
-					{t('common.reset')}
-				</button>
-			{/if}
+			<div class="flex items-center gap-2">
+				<DateRangePicker
+					bind:start={dateFilterStore.startDate}
+					bind:end={dateFilterStore.endDate}
+					bind:preset={dateFilterStore.preset}
+					onchange={({ preset, start, end }) => {
+						dateFilterStore.setFilter(preset as DatePreset, start, end);
+					}}
+				/>
+				{#if dateFilterStore.preset !== 'this_month'}
+					<button
+						type="button"
+						onclick={() => dateFilterStore.reset()}
+						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+						title="Reset ke Bulan Ini"
+					>
+						{t('common.reset')}
+					</button>
+				{/if}
 
-			{#if activeSubTab === 'goals'}
-				<button
-					type="button"
-					onclick={() => goalFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
-				>
-					<Plus class="size-3.5" weight="bold" />
-					<span>{t('planning.goals.addGoal')}</span>
-				</button>
-			{:else if activeSubTab === 'budgets'}
-				<button
-					type="button"
-					onclick={() => budgetFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
-				>
-					<Plus class="size-3.5" weight="bold" />
-					<span>{t('planning.budgets.addBudget')}</span>
-				</button>
-			{:else if activeSubTab === 'obligations'}
-				<button
-					type="button"
-					onclick={() => recurringFormStore.openCreate()}
-					class="flex cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
-				>
-					<Plus class="size-3.5" weight="bold" />
-					<span>{t('planning.obligations.addRecurring')}</span>
-				</button>
-			{/if}
-		</div>
+				{#if activeSubTab === 'goals'}
+					<button
+						type="button"
+						onclick={() => goalFormStore.openCreate()}
+						class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+					>
+						<Plus class="size-3.5" weight="bold" />
+						<span>{t('planning.goals.addGoal')}</span>
+					</button>
+				{:else if activeSubTab === 'budgets'}
+					<button
+						type="button"
+						onclick={() => budgetFormStore.openCreate()}
+						class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+					>
+						<Plus class="size-3.5" weight="bold" />
+						<span>{t('planning.budgets.addBudget')}</span>
+					</button>
+				{:else if activeSubTab === 'obligations'}
+					<button
+						type="button"
+						onclick={() => recurringFormStore.openCreate()}
+						class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-[#111111] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+					>
+						<Plus class="size-3.5" weight="bold" />
+						<span>{t('planning.obligations.addRecurring')}</span>
+					</button>
+				{/if}
+			</div>
 		{/if}
 	</div>
 
@@ -193,8 +255,37 @@
 			{/each}
 		</div>
 	{:else if activeSubTab === 'goals'}
+		<!-- Goals Status Segmented Tabs -->
+		<div
+			class="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#EAEAEA] pb-3"
+		>
+			<div class="flex flex-wrap items-center gap-1.5">
+				{#each [{ id: 'all', label: 'Semua', count: goalCounts.all }, { id: 'in_progress', label: 'Aktif Berjalan', count: goalCounts.in_progress }, { id: 'overdue', label: 'Lewat Tenggat', count: goalCounts.overdue }, { id: 'completed', label: 'Tercapai', count: goalCounts.completed }] as tab (tab.id)}
+					<button
+						type="button"
+						onclick={() => (goalFilter = tab.id as typeof goalFilter)}
+						class="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-medium transition-all {goalFilter ===
+						tab.id
+							? 'bg-[#111111] text-white'
+							: 'bg-[#F0EFEC] text-[#787774] hover:bg-[#EAEAEA] hover:text-[#111111]'}"
+					>
+						<span>{tab.label}</span>
+						<span
+							class="py-0.2 rounded-full px-1.5 text-[10px] {goalFilter === tab.id
+								? 'bg-white/20 text-white'
+								: 'bg-black/5 text-[#787774]'}"
+						>
+							{tab.count}
+						</span>
+					</button>
+				{/each}
+			</div>
+		</div>
+
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-			{#each goals as g (g.goalId)}
+			{#each filteredGoals as item (item.goal.goalId)}
+				{@const g = item.goal}
+				{@const lifecycle = item.lifecycle}
 				{@const liveCurrent =
 					g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
 						? g.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
@@ -202,8 +293,10 @@
 				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 				{@const linked = g.linkedWalletsBreakdown ?? []}
 				{@const remainingToTarget = Math.max(0, g.targetAmount - liveCurrent)}
-				{@const isTargetReached = liveCurrent >= g.targetAmount}
-				<div class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]">
+				{@const isTargetReached = liveCurrent >= g.targetAmount || lifecycle.isCompleted}
+				<div
+					class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]"
+				>
 					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div>
 							<div class="flex items-center gap-2">
@@ -221,11 +314,30 @@
 										Derived ({linked.length} dompet)
 									</span>
 								{/if}
+								{#if lifecycle.status === 'overdue'}
+									<span
+										class="rounded bg-[#FDEBEC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#9F2F2D] uppercase"
+									>
+										⚠️ Lewat Tenggat
+									</span>
+								{:else if lifecycle.status === 'completed'}
+									<span
+										class="rounded bg-[#EDF3EC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#346538] uppercase"
+									>
+										✓ Tercapai
+									</span>
+								{/if}
 							</div>
 							<p class="mt-0.5 text-xs text-[#787774]">
-								{g.daysRemaining !== null
-									? `${g.daysRemaining} hari tersisa ke tenggat`
-									: 'Target jangka panjang'}
+								{#if lifecycle.status === 'overdue'}
+									<span class="font-semibold text-[#9F2F2D]"
+										>Terlewat {lifecycle.overdueDays} hari yang lalu</span
+									>
+								{:else if g.targetDate}
+									{lifecycle.daysRemaining} hari tersisa ke tenggat ({dFmt(g.targetDate)})
+								{:else}
+									Target jangka panjang
+								{/if}
 							</p>
 						</div>
 
@@ -239,9 +351,12 @@
 									{#if isTargetReached}
 										<span class="text-[#346538]">✓ {t('planning.goals.targetReached')}</span>
 									{:else}
-										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'Kurang' : 'Short'}</span>
+										<span class="text-[#787774]"
+											>{i18nStore.locale === 'id' ? 'Kurang' : 'Short'}</span
+										>
 										<span class="text-[#111111]">{fmtIDR(remainingToTarget)}</span>
-										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'lagi' : 'left'}</span>
+										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'lagi' : 'left'}</span
+										>
 									{/if}
 								</div>
 							</div>
@@ -250,7 +365,7 @@
 							<button
 								type="button"
 								onclick={() => openGoalDrawer(g)}
-								class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+								class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
 								title="Rincian & edit target"
 								aria-label="Rincian & edit target {g.goalName}"
 							>
@@ -262,7 +377,11 @@
 					<!-- Progress Track -->
 					<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
 						<div
-							class="h-full {p >= 100 ? 'bg-[#346538]' : 'bg-[#111111]'} transition-all"
+							class="h-full {lifecycle.status === 'completed'
+								? 'bg-[#346538]'
+								: lifecycle.status === 'overdue'
+									? 'bg-[#9F2F2D]'
+									: 'bg-[#111111]'} transition-all"
 							style="width: {Math.min(100, p)}%"
 						></div>
 					</div>
@@ -270,20 +389,25 @@
 					<!-- Goal Headroom & Pacing Metrics -->
 					<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
 						<div class="space-y-0.5">
-							<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+							<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 								{t('planning.goals.remainingHeadroom')}
 							</div>
-							<div class="font-mono text-xs font-bold tabular-nums {isTargetReached ? 'text-[#346538]' : 'text-[#111111]'}">
+							<div
+								class="font-mono text-xs font-bold tabular-nums {isTargetReached
+									? 'text-[#346538]'
+									: 'text-[#111111]'}"
+							>
 								{#if isTargetReached}
 									<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
 								{:else}
-									{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })} <span class="font-normal text-[#787774]">({100 - p}%)</span>
+									{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })}
+									<span class="font-normal text-[#787774]">({100 - p}%)</span>
 								{/if}
 							</div>
 						</div>
 
 						<div class="space-y-0.5 text-right font-mono tabular-nums">
-							<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+							<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 								{t('planning.goals.target')}
 							</div>
 							<div class="text-xs font-semibold text-[#111111]">
@@ -341,9 +465,34 @@
 	<!-- SUB-WORKSPACE 2: BUDGETS -->
 	{#if activeSubTab === 'budgets'}
 		<div class="space-y-4">
+			<!-- Budgets Period Segmented Tabs -->
+			<div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#EAEAEA] pb-3">
+				<div class="flex flex-wrap items-center gap-1.5">
+					{#each [{ id: 'active', label: 'Periode Berjalan (Bulan Ini)', count: budgetCounts.active }, { id: 'past', label: 'Riwayat Lampau', count: budgetCounts.past }, { id: 'all', label: 'Semua Anggaran', count: budgetCounts.all }] as tab (tab.id)}
+						<button
+							type="button"
+							onclick={() => (budgetFilter = tab.id as typeof budgetFilter)}
+							class="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-medium transition-all {budgetFilter ===
+							tab.id
+								? 'bg-[#111111] text-white'
+								: 'bg-[#F0EFEC] text-[#787774] hover:bg-[#EAEAEA] hover:text-[#111111]'}"
+						>
+							<span>{tab.label}</span>
+							<span
+								class="py-0.2 rounded-full px-1.5 text-[10px] {budgetFilter === tab.id
+									? 'bg-white/20 text-white'
+									: 'bg-black/5 text-[#787774]'}"
+							>
+								{tab.count}
+							</span>
+						</button>
+					{/each}
+				</div>
+			</div>
+
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-				{#each budgets as b (b.budgetId)}
-					<BudgetCard budget={b} />
+				{#each filteredBudgets as item (item.budget.budgetId)}
+					<BudgetCard budget={item.budget} />
 				{:else}
 					<div class="col-span-2 py-12 text-center font-mono text-xs text-[#787774]">
 						{t('common.empty')}
@@ -486,7 +635,7 @@
 														e.stopPropagation();
 														openRecurringDetail(r);
 													}}
-													class="flex size-6 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100 group-hover:opacity-100"
+													class="flex size-6 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
 													title="Rincian & ubah tagihan"
 													aria-label="Rincian tagihan {r.templateName}"
 												>

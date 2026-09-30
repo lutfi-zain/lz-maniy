@@ -40,7 +40,8 @@
 			{fmtIDR(totalExpenseIDR)}
 		</span>
 		<span class="mt-1 block text-[11px] text-[#787774]">
-			{expenseCount} {i18nStore.locale === 'id' ? 'kategori pengeluaran aktif' : 'active expense categories'}
+			{expenseCount}
+			{i18nStore.locale === 'id' ? 'kategori pengeluaran aktif' : 'active expense categories'}
 		</span>
 	</div>
 
@@ -56,7 +57,8 @@
 			+{fmtIDR(totalIncomeIDR)}
 		</span>
 		<span class="mt-1 block text-[11px] text-[#787774]">
-			{incomeCount} {i18nStore.locale === 'id' ? 'kategori pemasukan aktif' : 'active income categories'}
+			{incomeCount}
+			{i18nStore.locale === 'id' ? 'kategori pemasukan aktif' : 'active income categories'}
 		</span>
 	</div>
 
@@ -70,21 +72,25 @@
 				<span
 					class="rounded bg-[#FDEBEC] px-1.5 py-0.5 font-mono text-[9px] font-semibold text-[#9F2F2D]"
 				>
-					{dominantExpenseCategory.percentageOfTotal.toFixed(1)}% {t('planning.categories.shareOfPeriod')}
+					{dominantExpenseCategory.percentageOfTotal.toFixed(1)}% {t(
+						'planning.categories.shareOfPeriod'
+					)}
 				</span>
 			{/if}
 		</div>
 		{#if dominantExpenseCategory}
-			<span class="mt-0.5 block truncate font-mono text-xl font-semibold text-[#111111] tabular-nums" title={dominantExpenseCategory.category.categoryName}>
+			<span
+				class="mt-0.5 block truncate font-mono text-xl font-semibold text-[#111111] tabular-nums"
+				title={dominantExpenseCategory.category.categoryName}
+			>
 				{dominantExpenseCategory.category.categoryName}
 			</span>
 			<span class="mt-1 block font-mono text-[11px] text-[#787774] tabular-nums">
-				{fmtIDR(dominantExpenseCategory.totalAmountIDR)} · {dominantExpenseCategory.transactionCount} {i18nStore.locale === 'id' ? 'mutasi' : 'txns'}
+				{fmtIDR(dominantExpenseCategory.totalAmountIDR)} · {dominantExpenseCategory.transactionCount}
+				{i18nStore.locale === 'id' ? 'mutasi' : 'txns'}
 			</span>
 		{:else}
-			<span class="mt-0.5 block font-mono text-xl font-semibold text-[#787774]">
-				-
-			</span>
+			<span class="mt-0.5 block font-mono text-xl font-semibold text-[#787774]"> - </span>
 			<span class="mt-1 block text-[11px] text-[#787774]">
 				{t('ledger.noTransactions')}
 			</span>

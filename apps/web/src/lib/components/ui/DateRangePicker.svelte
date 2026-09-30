@@ -271,7 +271,7 @@
 		bind:this={triggerBtn}
 		type="button"
 		onclick={toggleOpen}
-		class="flex w-full shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-2 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF] sm:min-w-[280px] sm:w-auto sm:py-1.5"
+		class="flex w-full shrink-0 cursor-pointer items-center justify-between gap-2 rounded border border-[#EAEAEA] bg-white px-3 py-2 font-medium text-[#111111] shadow-2xs transition-colors hover:border-[#C8C6BF] sm:w-auto sm:min-w-[280px] sm:py-1.5"
 		aria-haspopup="dialog"
 		aria-expanded={isOpen}
 	>
@@ -290,7 +290,7 @@
 		<div class="fixed inset-0 z-30" onclick={() => (isOpen = false)}></div>
 
 		<div
-			class="absolute top-full z-40 mt-1.5 w-[590px] max-w-[95vw] rounded-lg border border-[#EAEAEA] bg-white p-3.5 shadow-xl transition-all"
+			class="shadow-minimal absolute top-full z-40 mt-1.5 w-[590px] max-w-[95vw] rounded-lg border border-[#EAEAEA] bg-white p-3.5 transition-all"
 			style={popoverStyle}
 		>
 			<!-- Presets Bar at Top -->

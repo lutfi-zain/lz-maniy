@@ -20,7 +20,8 @@
 				<ChartBar class="size-4 text-[#111111]" weight="bold" />
 				<h3 class="text-xs font-semibold text-[#111111]">{t('cockpit.topExpenses')}</h3>
 			</div>
-			<span class="font-mono text-[10px] text-[#787774]">{t('cockpit.topCount', { count: 6 })}</span>
+			<span class="font-mono text-[10px] text-[#787774]">{t('cockpit.topCount', { count: 6 })}</span
+			>
 		</div>
 
 		{#if reedrichStore.isLoading}

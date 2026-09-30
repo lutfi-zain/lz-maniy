@@ -11,13 +11,27 @@
 
 	let { wallet }: { wallet: WalletItem } = $props();
 
+	let fetchedWallet = $state<WalletItem | null>(null);
+
+	$effect(() => {
+		fetchedWallet = null;
+		reedrichStore
+			.fetchWalletById(wallet.walletId)
+			.then((fresh) => {
+				fetchedWallet = fresh;
+			})
+			.catch(() => {});
+	});
+
+	const currentWallet = $derived(fetchedWallet ?? wallet);
+
 	let showDeleteConfirm = $state(false);
 	let isDeleting = $state(false);
 	let deleteError = $state<string | null>(null);
 
-	const isLocked = $derived(wallet.isLocked === 1);
-	const lt = $derived(wallet.lastTransaction);
-	const canDelete = $derived(wallet.balance === 0);
+	const isLocked = $derived(currentWallet.isLocked === 1);
+	const lt = $derived(currentWallet.lastTransaction);
+	const canDelete = $derived(currentWallet.balance === 0);
 
 	function handleEdit() {
 		walletFormStore.openEdit(wallet);
@@ -35,7 +49,6 @@
 			isDeleting = false;
 		}
 	}
-
 </script>
 
 <div class="space-y-4">
@@ -46,7 +59,7 @@
 				>Saldo Saat Ini</span
 			>
 			<span class="font-mono text-base font-semibold text-[#111111]">
-				{fmtCurrency(wallet.balance, wallet.currency)}
+				{fmtCurrency(currentWallet.balance, currentWallet.currency)}
 			</span>
 		</div>
 		<div class="rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
@@ -80,6 +93,28 @@
 			</div>
 		</div>
 	{/if}
+
+	<!-- Account Classification Card -->
+	<div class="space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-xs">
+		<div class="flex items-center justify-between">
+			<span class="text-[#787774]">Institusi / Penyedia</span>
+			<span class="font-semibold text-[#111111]">{currentWallet.institution || 'General'}</span>
+		</div>
+		<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2.5">
+			<span class="text-[#787774]">Klasifikasi Akun</span>
+			<span
+				class="rounded-full bg-[#EFEFED] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-[#111111] uppercase"
+			>
+				{currentWallet.type}
+			</span>
+		</div>
+		<div class="flex items-center justify-between border-t border-[#EAEAEA] pt-2.5">
+			<span class="text-[#787774]">Mata Uang Basis</span>
+			<span class="font-mono text-xs font-medium text-[#111111]">
+				{currentWallet.currency}
+			</span>
+		</div>
+	</div>
 
 	<!-- Transactions List Table -->
 	<div>
@@ -121,7 +156,10 @@
 			<div class="rounded-lg border border-[#FDEBEC] bg-[#FDF2F2] p-3">
 				{#if !canDelete}
 					<p class="text-xs font-medium text-[#9F2F2D]">
-						{t('accounts.deleteZeroBalanceWarning')} ({fmtCurrency(wallet.balance, wallet.currency)})
+						{t('accounts.deleteZeroBalanceWarning')} ({fmtCurrency(
+							wallet.balance,
+							wallet.currency
+						)})
 					</p>
 					<p class="mt-0.5 text-[11px] text-[#787774]">
 						Pindahkan atau sesuaikan saldo menjadi 0 terlebih dahulu sebelum menghapus dompet ini.
@@ -137,10 +175,14 @@
 					</div>
 				{:else}
 					<p class="text-xs font-medium text-[#9F2F2D]">
-						{i18nStore.locale === 'id' ? `Yakin ingin menghapus dompet "${wallet.walletName}"?` : `Are you sure you want to delete "${wallet.walletName}"?`}
+						{i18nStore.locale === 'id'
+							? `Yakin ingin menghapus dompet "${wallet.walletName}"?`
+							: `Are you sure you want to delete "${wallet.walletName}"?`}
 					</p>
 					<p class="mt-0.5 text-[11px] text-[#787774]">
-						{i18nStore.locale === 'id' ? 'Tindakan ini permanen.' : 'This action is permanent and cannot be undone.'}
+						{i18nStore.locale === 'id'
+							? 'Tindakan ini permanen.'
+							: 'This action is permanent and cannot be undone.'}
 					</p>
 					<div class="mt-2.5 flex items-center justify-end gap-2">
 						<button

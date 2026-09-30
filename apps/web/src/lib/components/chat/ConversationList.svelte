@@ -29,9 +29,9 @@
 	}
 </script>
 
-<div class="flex flex-col flex-1 overflow-hidden bg-[#f7f6f3]">
-	<div class="flex items-center justify-between px-3 py-2 border-b border-[#eaeaea]">
-		<span class="text-[11px] text-[#787774] uppercase tracking-wide">Riwayat</span>
+<div class="flex flex-1 flex-col overflow-hidden bg-[#f7f6f3]">
+	<div class="flex items-center justify-between border-b border-[#eaeaea] px-3 py-2">
+		<span class="text-[11px] tracking-wide text-[#787774] uppercase">Riwayat</span>
 		<div class="flex gap-1">
 			<ChatExportImport />
 			<button
@@ -39,7 +39,7 @@
 					chatStore.newConversation();
 					chatStore.showConversationList = false;
 				}}
-				class="p-1 rounded hover:bg-[#eaeaea] text-[#787774] transition-colors"
+				class="rounded p-1 text-[#787774] transition-colors hover:bg-[#eaeaea]"
 				aria-label="Percakapan baru"
 			>
 				<Plus size={14} weight="bold" />
@@ -50,7 +50,7 @@
 	<div class="flex-1 overflow-y-auto">
 		{#each chatStore.conversations as conv (conv.id)}
 			<div
-				class="w-full text-left px-3 py-2.5 border-b border-[#eaeaea] hover:bg-white transition-colors group flex items-center justify-between gap-2 cursor-pointer
+				class="group flex w-full cursor-pointer items-center justify-between gap-2 border-b border-[#eaeaea] px-3 py-2.5 text-left transition-colors hover:bg-white
 					{chatStore.activeConversationId === conv.id ? 'bg-white' : ''}"
 				onclick={() => selectConversation(conv.id)}
 				role="button"
@@ -58,11 +58,11 @@
 				onkeypress={(e) => e.key === 'Enter' && selectConversation(conv.id)}
 			>
 				<div class="min-w-0 flex-1">
-					<p class="text-[12px] text-[#111111] truncate">{conv.title}</p>
-					<p class="text-[11px] font-mono text-[#787774]">{formatRelative(conv.updatedAt)}</p>
+					<p class="truncate text-[12px] text-[#111111]">{conv.title}</p>
+					<p class="font-mono text-[11px] text-[#787774]">{formatRelative(conv.updatedAt)}</p>
 				</div>
 				<button
-					class="p-1 rounded hover:bg-[#fdebec] text-[#787774] hover:text-[#9f2f2d] opacity-0 group-hover:opacity-100 transition-all shrink-0"
+					class="shrink-0 rounded p-1 text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:bg-[#fdebec] hover:text-[#9f2f2d]"
 					onclick={(e) => deleteConv(conv.id, e)}
 					aria-label="Hapus percakapan"
 				>

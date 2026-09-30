@@ -71,7 +71,9 @@ export class RecurringFormStore {
 		this.type = template.templateType;
 		this.frequency = template.templateFrequency;
 		this.interval = template.templateInterval || 1;
-		this.startDate = template.templateStartDate ? template.templateStartDate.slice(0, 10) : getTodayString();
+		this.startDate = template.templateStartDate
+			? template.templateStartDate.slice(0, 10)
+			: getTodayString();
 		this.endDate = template.templateEndDate ? template.templateEndDate.slice(0, 10) : '';
 		this.notes = template.templateNotes || '';
 		this.isActive = template.templateIsActive === 1 || template.templateIsActive === true;

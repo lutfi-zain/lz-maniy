@@ -21,14 +21,17 @@
 				<span>{t('planning.obligations.title')}</span>
 			</h2>
 			<div class="mt-0.5 text-xs text-[#787774]">
-				{i18nStore.locale === 'id' ? 'Utang yang wajib dilunasi dan piutang (talangan) yang diharapkan kembali.' : 'Active liabilities, debts to settle, and receivables.'}
+				{i18nStore.locale === 'id'
+					? 'Utang yang wajib dilunasi dan piutang (talangan) yang diharapkan kembali.'
+					: 'Active liabilities, debts to settle, and receivables.'}
 			</div>
 		</div>
 
 		<span
 			class="rounded-full border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-0.5 font-mono text-[11px] text-[#787774] uppercase"
 		>
-			{totalCount} {i18nStore.locale === 'id' ? 'catatan' : 'records'}
+			{totalCount}
+			{i18nStore.locale === 'id' ? 'catatan' : 'records'}
 		</span>
 	</div>
 

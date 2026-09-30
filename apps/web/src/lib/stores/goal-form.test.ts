@@ -73,4 +73,11 @@ describe('GoalFormStore', () => {
 		store.targetAmount = 50000000;
 		expect(store.isValid).toBe(true);
 	});
+
+	it('openEditWithHydration() sets isHydrating and populates data', async () => {
+		await store.openEditWithHydration(sampleGoal.goalId, sampleGoal);
+		expect(store.isHydrating).toBe(false);
+		expect(store.name).toBe('Laptop Baru');
+		expect(store.notes).toBe('MacBook Pro M-series');
+	});
 });

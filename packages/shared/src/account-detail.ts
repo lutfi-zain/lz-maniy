@@ -81,6 +81,7 @@ export interface BudgetSnapshot {
 	amount: number;
 	periodStart?: string;
 	periodEnd?: string;
+	notes?: string | null;
 	spent: number;
 	remaining: number;
 	percentUsed: number;
@@ -96,6 +97,15 @@ export interface LinkedWalletBreakdown {
 	usedPeg: boolean;
 }
 
+export interface GoalPacingDTO {
+	progressPercentage?: number;
+	remainingAmount?: number;
+	isCompleted?: boolean;
+	daysRemaining?: number | null;
+	requiredDailySavings?: number | null;
+	requiredMonthlySavings?: number | null;
+}
+
 export interface GoalSnapshot {
 	goalId: string;
 	goalName: string;
@@ -109,6 +119,7 @@ export interface GoalSnapshot {
 	progressPercentage: number;
 	isDerived: boolean;
 	daysRemaining: number | null;
+	pacing?: GoalPacingDTO;
 	linkedWalletsBreakdown?: LinkedWalletBreakdown[];
 }
 
@@ -156,6 +167,10 @@ export interface TransactionRecord {
 	transactionType: TransactionType;
 	transactionDescription?: string | null;
 	transactionIsPlanned: 0 | 1;
+	transactionOccurrenceDate?: string | null;
+	transactionRealizedAt?: string | null;
+	transactionPlannedAmount?: number | null;
+	transactionTemplateId?: string | null;
 	transactionDate: string;
 	transactionCreatedAt?: string;
 }

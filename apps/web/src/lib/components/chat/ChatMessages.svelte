@@ -39,7 +39,7 @@
 
 <div
 	bind:this={scrollEl}
-	class="flex-1 overflow-y-auto overscroll-contain px-3 py-4 flex flex-col gap-3"
+	class="flex flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 py-4"
 	onscroll={onScroll}
 	role="log"
 	aria-label="Percakapan"
@@ -60,7 +60,7 @@
 {#if userScrolledUp && chatStore.hasMessages}
 	<div class="flex justify-center pb-1">
 		<button
-			class="text-[11px] text-[#787774] px-3 py-1 rounded-full border border-[#eaeaea] bg-white hover:bg-[#f7f6f3] transition-colors"
+			class="rounded-full border border-[#eaeaea] bg-white px-3 py-1 text-[11px] text-[#787774] transition-colors hover:bg-[#f7f6f3]"
 			onclick={() => {
 				userScrolledUp = false;
 				if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;

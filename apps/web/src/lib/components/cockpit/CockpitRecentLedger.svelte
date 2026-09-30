@@ -62,7 +62,7 @@
 	}
 </script>
 
-<div class="rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs overflow-hidden max-w-full">
+<div class="max-w-full overflow-hidden rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
 	<!-- Card Header with Date Range Filter -->
 	<div
 		class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EAEAEA] pb-2.5"

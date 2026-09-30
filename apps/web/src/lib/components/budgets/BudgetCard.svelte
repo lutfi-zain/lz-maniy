@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { resolveBudgetPeriod } from '$lib/utils/lifecycle';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import type { BudgetSnapshot } from '$lib/types/account-detail';
 
 	let { budget }: { budget: BudgetSnapshot } = $props();
 
+	const periodInfo = $derived(resolveBudgetPeriod(budget));
 	const percent = $derived(budget.percentUsed || 0);
 	const rawRemaining = $derived(budget.amount - budget.spent);
 	const isOver = $derived(rawRemaining < 0 || percent >= 100);
@@ -56,7 +58,9 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="group relative flex cursor-pointer flex-col justify-between rounded-lg border border-[#EAEAEA] bg-white p-4 transition-all duration-150 hover:border-[#C8C6BF] hover:shadow-xs"
+	class="group relative flex cursor-pointer flex-col justify-between rounded-lg border border-[#EAEAEA] p-4 transition-all duration-150 hover:border-[#C8C6BF] hover:shadow-xs {periodInfo.isPast
+		? 'bg-[#FAFAFA] opacity-85'
+		: 'bg-white'}"
 	onclick={handleClick}
 >
 	<div>
@@ -66,13 +70,23 @@
 					<ChartPieSlice class="size-4 shrink-0 text-[#787774]" weight="bold" />
 					<span class="truncate">{budget.budgetName}</span>
 				</div>
-				<div class="mt-1 truncate text-xs text-[#787774]">
-					{i18nStore.locale === 'id' ? 'Kategori' : 'Category'}: {budget.categoryName || 'General'}
+				<div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#787774]">
+					<span class="truncate"
+						>{i18nStore.locale === 'id' ? 'Kategori' : 'Category'}: {budget.categoryName ||
+							'General'}</span
+					>
+					{#if periodInfo.isPast}
+						<span
+							class="py-0.2 rounded bg-[#EFEFED] px-1.5 font-mono text-[9px] font-medium tracking-wider text-[#787774] uppercase"
+						>
+							Lampau
+						</span>
+					{/if}
 				</div>
 			</div>
 
-			<div class="flex items-center gap-1.5 shrink-0">
-				<span class="font-mono text-xs font-semibold tabular-nums text-[#111111]">
+			<div class="flex shrink-0 items-center gap-1.5">
+				<span class="font-mono text-xs font-semibold text-[#111111] tabular-nums">
 					{Math.round(percent)}%
 				</span>
 				<span
@@ -95,7 +109,7 @@
 		<div class="flex flex-wrap items-baseline justify-between gap-y-2 text-xs">
 			<!-- Primary Headroom / Overrun Metric -->
 			<div class="space-y-0.5">
-				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+				<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 					{isOver ? t('planning.budgets.overrunLabel') : t('planning.budgets.headroomLabel')}
 				</div>
 				<div class="font-mono text-xs font-bold tabular-nums {headroomColorClass}">
@@ -105,11 +119,13 @@
 
 			<!-- Secondary Spent vs Allowance Ratio -->
 			<div class="space-y-0.5 text-right">
-				<div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">
+				<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 					{t('planning.budgets.utilizationRatio')}
 				</div>
-				<div class="font-mono text-[11px] tabular-nums text-[#787774]">
-					<span class="font-medium text-[#111111]">{fmtIDR(budget.spent)}</span> / {fmtIDR(budget.amount)}
+				<div class="font-mono text-[11px] text-[#787774] tabular-nums">
+					<span class="font-medium text-[#111111]">{fmtIDR(budget.spent)}</span> / {fmtIDR(
+						budget.amount
+					)}
 				</div>
 			</div>
 		</div>

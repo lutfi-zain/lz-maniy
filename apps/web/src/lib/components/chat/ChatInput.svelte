@@ -41,7 +41,9 @@
 	async function send() {
 		if (chatStore.isStreaming || (!inputText.trim() && !stagedImage)) return;
 		const text = inputText;
-		const img = stagedImage ? { data: stagedImage.data, mimeType: stagedImage.mimeType } : undefined;
+		const img = stagedImage
+			? { data: stagedImage.data, mimeType: stagedImage.mimeType }
+			: undefined;
 		inputText = '';
 		stagedImage = null;
 		if (textareaEl) textareaEl.style.height = 'auto';
@@ -56,9 +58,12 @@
 	}
 </script>
 
-<div class="border-t border-[#eaeaea] bg-white px-3 py-2 shrink-0">
+<div class="shrink-0 border-t border-[#eaeaea] bg-white px-3 py-2">
 	{#if stagedImage}
-		<ImageAttachmentPreview previewUrl={stagedImage.previewUrl} onremove={() => (stagedImage = null)} />
+		<ImageAttachmentPreview
+			previewUrl={stagedImage.previewUrl}
+			onremove={() => (stagedImage = null)}
+		/>
 	{/if}
 	<div class="flex items-end gap-2">
 		<textarea
@@ -70,13 +75,13 @@
 			disabled={chatStore.isStreaming}
 			rows={1}
 			data-chat-input
-			class="flex-1 resize-none bg-transparent text-[13px] font-sans text-[#111111] placeholder-[#787774] outline-none py-1 max-h-36 overflow-y-auto disabled:opacity-50"
+			class="max-h-36 flex-1 resize-none overflow-y-auto bg-transparent py-1 font-sans text-[13px] text-[#111111] placeholder-[#787774] outline-none disabled:opacity-50"
 		></textarea>
 
 		<button
 			onclick={() => fileInputEl?.click()}
 			disabled={chatStore.isStreaming}
-			class="p-1 text-[#787774] hover:text-[#111111] transition-colors disabled:opacity-30"
+			class="p-1 text-[#787774] transition-colors hover:text-[#111111] disabled:opacity-30"
 			aria-label="Lampirkan gambar"
 		>
 			<PaperclipHorizontal size={16} weight="bold" />
@@ -85,7 +90,7 @@
 		{#if chatStore.isStreaming}
 			<button
 				onclick={() => chatStore.abortStream()}
-				class="p-1.5 rounded bg-[#111111] text-white hover:bg-[#333] transition-colors"
+				class="rounded bg-[#111111] p-1.5 text-white transition-colors hover:bg-[#333]"
 				aria-label="Hentikan"
 			>
 				<Stop size={14} weight="fill" />
@@ -94,7 +99,7 @@
 			<button
 				onclick={send}
 				disabled={!inputText.trim() && !stagedImage}
-				class="p-1.5 rounded bg-[#111111] text-white hover:bg-[#333] transition-colors disabled:opacity-30"
+				class="rounded bg-[#111111] p-1.5 text-white transition-colors hover:bg-[#333] disabled:opacity-30"
 				aria-label="Kirim pesan"
 			>
 				<ArrowUp size={14} weight="bold" />

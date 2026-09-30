@@ -22,8 +22,12 @@
 			title: item.personName,
 			subtitle: `${i18nStore.locale === 'id' ? 'Jatuh tempo' : 'Due'}: ${dFmt(item.dueDate)} · Status: ${item.status}`,
 			badge: isDebt
-				? (i18nStore.locale === 'id' ? 'KEWAJIBAN UTANG' : 'DEBT / PAYABLE')
-				: (i18nStore.locale === 'id' ? 'PIUTANG / TALANGAN' : 'LOAN / RECEIVABLE'),
+				? i18nStore.locale === 'id'
+					? 'KEWAJIBAN UTANG'
+					: 'DEBT / PAYABLE'
+				: i18nStore.locale === 'id'
+					? 'PIUTANG / TALANGAN'
+					: 'LOAN / RECEIVABLE',
 			data: { item, type }
 		});
 	}
@@ -40,7 +44,8 @@
 			{item.personName}
 		</div>
 		<div class="mt-0.5 text-xs text-[#787774]">
-			{i18nStore.locale === 'id' ? 'Jatuh tempo' : 'Due'}: {dFmt(item.dueDate)} · <span class="capitalize">{item.status}</span>
+			{i18nStore.locale === 'id' ? 'Jatuh tempo' : 'Due'}: {dFmt(item.dueDate)} ·
+			<span class="capitalize">{item.status}</span>
 		</div>
 	</div>
 

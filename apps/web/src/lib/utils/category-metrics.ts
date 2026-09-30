@@ -94,13 +94,10 @@ export function calculateCategoryMetrics(options: {
 		const transactionCount = catCountMap.get(cat.categoryId) || 0;
 
 		const totalBaseline = cat.categoryType === 'expense' ? totalExpenseIDR : totalIncomeIDR;
-		const percentageOfTotal =
-			totalBaseline > 0 ? (totalAmountIDR / totalBaseline) * 100 : 0;
+		const percentageOfTotal = totalBaseline > 0 ? (totalAmountIDR / totalBaseline) * 100 : 0;
 
 		const linkedBudget =
-			budgetMap.get(cat.categoryId) ||
-			budgetMap.get(cat.categoryName.toLowerCase()) ||
-			null;
+			budgetMap.get(cat.categoryId) || budgetMap.get(cat.categoryName.toLowerCase()) || null;
 
 		return {
 			category: cat,
@@ -150,9 +147,7 @@ export function sortCategoryMetrics(
 		case 'count_desc':
 			return list.sort((a, b) => b.transactionCount - a.transactionCount);
 		case 'name_asc':
-			return list.sort((a, b) =>
-				a.category.categoryName.localeCompare(b.category.categoryName)
-			);
+			return list.sort((a, b) => a.category.categoryName.localeCompare(b.category.categoryName));
 		default:
 			return list;
 	}
