@@ -57,15 +57,19 @@ describe('TransactionFormStore', () => {
 		expect(store.adminFee).toBe(2500);
 		expect(store.description).toBe('Lunch at Cafe');
 		expect(store.date).toBe('2026-09-25');
+		expect(store.time).toBe('12:00');
 		expect(store.isPlanned).toBe(false);
 	});
 
-	it('openEdit() populates fields and enters edit mode', () => {
-		store.openEdit(sampleTxn);
+	it('openCreate() pre-fills time with current local HH:mm', () => {
+		store.openCreate();
+		expect(store.time).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
+	});
 
-		expect(store.isOpen).toBe(true);
-		expect(store.mode).toBe('edit');
-		expect(store.amount).toBe(150000);
+	it('populate defaults time to 00:00 for date-only values', () => {
+		store.openEdit({ ...sampleTxn, transactionDate: '2026-09-25' });
+		expect(store.date).toBe('2026-09-25');
+		expect(store.time).toBe('00:00');
 	});
 
 	it('close() sets isOpen to false and resets transient messages', () => {
@@ -159,6 +163,23 @@ describe('TransactionFormStore', () => {
 
 			// Distinct wallet -> valid
 			store.targetWalletId = 'wallet-2';
+			expect(store.isValid).toBe(true);
+		});
+
+		it('rejects empty or malformed time', () => {
+			store.openCreate('expense');
+			store.walletId = 'wallet-1';
+			store.categoryId = 'cat-1';
+			store.amount = 10000;
+			expect(store.isValid).toBe(true);
+
+			store.time = '';
+			expect(store.isValid).toBe(false);
+
+			store.time = '25:99';
+			expect(store.isValid).toBe(false);
+
+			store.time = '09:05';
 			expect(store.isValid).toBe(true);
 		});
 	});

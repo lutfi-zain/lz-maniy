@@ -2,7 +2,7 @@
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
-	import { dFmt, dFmtTime } from '$lib/utils/dates';
+	import { dFmt, dFmtTime, hasNonMidnightTime, extractTimeHHmm } from '$lib/utils/dates';
 	import { t } from '$lib/i18n/index.svelte';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import Trash from 'phosphor-svelte/lib/Trash';
@@ -118,11 +118,11 @@
 		<div class="flex items-center justify-between gap-4 p-3.5">
 			<span class="text-[#787774]">Tanggal</span>
 			<span class="font-mono text-[#111111]">
-				{dFmt(transaction.transactionDate)}
+				{dFmt(transaction.transactionDate)}{#if hasNonMidnightTime(transaction.transactionDate)}
+					<span class="text-[11px] text-[#787774]"> · {extractTimeHHmm(transaction.transactionDate)}</span
+					>{/if}
 			</span>
 		</div>
-
-		<!-- Kategori -->
 		{#if !isTransfer}
 			<div class="flex items-center justify-between gap-4 p-3.5">
 				<span class="text-[#787774]">Kategori</span>

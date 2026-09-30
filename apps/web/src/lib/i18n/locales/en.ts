@@ -226,6 +226,7 @@ export const en = {
 			categoryLabel: 'Category',
 			budgetLabel: 'Budget (Optional)',
 			dateLabel: 'Transaction Date',
+			timeLabel: 'Time',
 			descriptionLabel: 'Description',
 			plannedLabel: 'Planned / Forecasted Transaction',
 			plannedDescription: 'Will not affect liquid balances until marked realized',

@@ -9,6 +9,15 @@ function getTodayString(): string {
 	return `${y}-${m}-${d}`;
 }
 
+export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function getCurrentTimeString(): string {
+	const now = new Date();
+	const h = String(now.getHours()).padStart(2, '0');
+	const m = String(now.getMinutes()).padStart(2, '0');
+	return `${h}:${m}`;
+}
+
 export class TransactionFormStore {
 	isOpen = $state<boolean>(false);
 	mode = $state<'create' | 'edit' | 'view'>('create');
@@ -28,15 +37,17 @@ export class TransactionFormStore {
 	adminFee = $state<number>(0);
 	description = $state<string>('');
 	date = $state<string>(getTodayString());
+	time = $state<string>(getCurrentTimeString());
 	isPlanned = $state<boolean>(false);
 
 	// Validation derived state
 	isValid = $derived.by(() => {
 		const hasValidAmount = this.amount !== null && this.amount > 0 && !isNaN(this.amount);
 		const hasValidDate = this.date.trim().length > 0;
+		const hasValidTime = TIME_PATTERN.test(this.time.trim());
 		const hasSourceWallet = this.walletId.trim().length > 0;
 
-		if (!hasValidAmount || !hasValidDate || !hasSourceWallet) {
+		if (!hasValidAmount || !hasValidDate || !hasValidTime || !hasSourceWallet) {
 			return false;
 		}
 
@@ -142,6 +153,7 @@ export class TransactionFormStore {
 		this.adminFee = 0;
 		this.description = '';
 		this.date = getTodayString();
+		this.time = getCurrentTimeString();
 		this.isPlanned = false;
 	}
 
@@ -154,6 +166,9 @@ export class TransactionFormStore {
 		this.adminFee = t.transactionAdminFee ?? 0;
 		this.description = t.transactionDescription ?? '';
 		this.date = t.transactionDate ? t.transactionDate.slice(0, 10) : getTodayString();
+		// String surgery (no Date parsing): keeps stored wall-clock digits verbatim across zones.
+		const hm = t.transactionDate && t.transactionDate.length > 10 ? t.transactionDate.slice(11, 16) : '';
+		this.time = TIME_PATTERN.test(hm) ? hm : '00:00';
 		this.isPlanned = t.transactionIsPlanned === 1;
 	}
 }
