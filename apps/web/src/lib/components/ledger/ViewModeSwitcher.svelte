@@ -19,11 +19,11 @@
 		'single'
 			? 'bg-white text-[#111111] shadow-2xs'
 			: 'text-[#787774] hover:text-[#111111]'}"
-		title="Tampilan Tabel Standar"
+		title="Tampilan List / Tabel"
 		aria-pressed={currentMode === 'single'}
 	>
 		<Table class="size-3.5" weight={currentMode === 'single' ? 'bold' : 'regular'} />
-		<span>Daftar</span>
+		<span>List</span>
 	</button>
 
 	<button

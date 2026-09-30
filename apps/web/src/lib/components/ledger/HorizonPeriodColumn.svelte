@@ -2,10 +2,12 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte.js';
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import { fmtIDR, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt, mLabel } from '$lib/utils/dates';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Plus from 'phosphor-svelte/lib/Plus';
+	import CornersOut from 'phosphor-svelte/lib/CornersOut';
 	import Trash from 'phosphor-svelte/lib/Trash';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import PeriodSummaryCard, { type PeriodSummary } from './PeriodSummaryCard.svelte';
@@ -42,7 +44,6 @@
 		return mLabel(periodKey, i18nStore.locale);
 	});
 
-	const allTxs = $derived(reedrichStore.allTransactions);
 	const allWallets = $derived(reedrichStore.allWallets);
 	const categories = $derived(reedrichStore.categories);
 
@@ -64,57 +65,79 @@
 		return c?.categoryName ?? '—';
 	}
 
-	// Filtered transactions for this specific period column
-	const periodTransactions = $derived.by(() => {
-		const q = globalFilters.searchKeyword.trim().toLowerCase();
+	// Card-Level Localized Query State (Reedrich v1.13.0)
+	let isColumnLoading = $state<boolean>(true);
+	let columnError = $state<string | null>(null);
+	let periodTransactions = $state<TransactionRecord[]>([]);
 
-		return allTxs.filter((t) => {
-			// Date filter for this column
-			const txDate = t.transactionDate.slice(0, 10);
-			if (txDate < startDate || txDate > endDate) return false;
+	$effect(() => {
+		const start = startDate;
+		const end = endDate;
+		const wIds = globalFilters.walletIds;
+		const cIds = globalFilters.categoryIds;
+		const bIds = globalFilters.budgetIds;
+		const fType = globalFilters.type;
+		const fStatus = globalFilters.status;
+		const kw = globalFilters.searchKeyword.trim();
 
-			// Type filter
-			if (globalFilters.type !== 'all' && t.transactionType !== globalFilters.type) return false;
+		const controller = new AbortController();
+		isColumnLoading = true;
+		columnError = null;
 
-			// Status filter
-			if (globalFilters.status === 'realized' && t.transactionIsPlanned !== 0) return false;
-			if (globalFilters.status === 'planned' && t.transactionIsPlanned !== 1) return false;
-
-			// Wallet filter
-			if (globalFilters.walletIds.length > 0) {
-				const isSource = globalFilters.walletIds.includes(t.transactionWalletId);
-				const isTarget = t.transactionTargetWalletId
-					? globalFilters.walletIds.includes(t.transactionTargetWalletId)
-					: false;
-				if (!isSource && !isTarget) return false;
-			}
-
-			// Category filter
-			if (globalFilters.categoryIds.length > 0) {
-				if (
-					!t.transactionCategoryId ||
-					!globalFilters.categoryIds.includes(t.transactionCategoryId)
-				) {
-					return false;
+		reedrichStore
+			.fetchTransactions(
+				{
+					startDate: start,
+					endDate: end,
+					walletId: wIds.length > 0 ? wIds : undefined,
+					categoryId: cIds.length > 0 ? cIds : undefined,
+					budgetId: bIds.length > 0 ? bIds : undefined,
+					type: fType,
+					status: fStatus,
+					q: kw || undefined,
+					envelope: true,
+					limit: 50
+				},
+				controller.signal
+			)
+			.then((envelope) => {
+				if (controller.signal.aborted) return;
+				periodTransactions = envelope.items;
+			})
+			.catch((err) => {
+				if (controller.signal.aborted) return;
+				console.warn('Period column fetch error:', err);
+				columnError = err instanceof Error ? err.message : String(err);
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					isColumnLoading = false;
 				}
-			}
+			});
 
-			// Budget filter
-			if (globalFilters.budgetIds.length > 0) {
-				if (!t.transactionBudgetId || !globalFilters.budgetIds.includes(t.transactionBudgetId)) {
-					return false;
-				}
-			}
+		return () => {
+			controller.abort();
+		};
+	});
 
-			// Search keyword
-			if (q) {
-				const desc = (t.transactionDescription || '').toLowerCase();
-				const id = (t.transactionId || '').toLowerCase();
-				if (!desc.includes(q) && !id.includes(q)) return false;
+	// Local cashflow calculation from card's own data
+	const localCashflow = $derived.by(() => {
+		let inSum = 0;
+		let outSum = 0;
+		for (const t of periodTransactions) {
+			const curr = getWalletCurrency(t.transactionWalletId);
+			const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr);
+			if (t.transactionType === 'income') {
+				inSum += amtIDR;
+			} else if (t.transactionType === 'expense') {
+				outSum += amtIDR;
 			}
-
-			return true;
-		});
+		}
+		return {
+			income: inSum,
+			expense: outSum,
+			net: inSum - outSum
+		};
 	});
 
 	function handleQuickAdd() {
@@ -123,6 +146,10 @@
 		const initialDate = todayIso >= startDate && todayIso <= endDate ? todayIso : startDate;
 		transactionFormStore.openCreate();
 		transactionFormStore.date = initialDate;
+	}
+	function handleMaximize() {
+		dateFilterStore.setFilter('custom', startDate, endDate);
+		settingsStore.setViewMode('single');
 	}
 
 	function handleRowClick(t: TransactionRecord) {
@@ -144,6 +171,20 @@
 		</div>
 
 		<div class="flex items-center gap-1">
+			<button
+				type="button"
+				onclick={handleMaximize}
+				class="flex size-6 cursor-pointer items-center justify-center rounded text-[#787774] transition-colors hover:bg-[#F0EFEC] hover:text-[#111111] active:scale-95"
+				title={i18nStore.locale === 'id'
+					? 'Maksimalkan periode ke tampilan List'
+					: 'Maximize period to List view'}
+				aria-label={i18nStore.locale === 'id'
+					? 'Maksimalkan periode ke tampilan List'
+					: 'Maximize period to List view'}
+			>
+				<CornersOut class="size-3.5" weight="bold" />
+			</button>
+
 			<button
 				type="button"
 				onclick={handleQuickAdd}
@@ -174,7 +215,7 @@
 
 	<!-- Dense Ledger Table -->
 	<div class="h-[320px] divide-y divide-[#EAEAEA] overflow-y-auto text-xs">
-		{#if reedrichStore.isLedgerLoading && periodTransactions.length === 0}
+		{#if isColumnLoading && periodTransactions.length === 0}
 			<div class="space-y-3 p-3.5">
 				{#each [0, 1, 2, 3, 4] as i (i)}
 					<div class="space-y-1.5 py-1">
@@ -189,6 +230,10 @@
 						</div>
 					</div>
 				{/each}
+			</div>
+		{:else if columnError}
+			<div class="flex h-full flex-col items-center justify-center p-4 text-center">
+				<p class="text-[11px] text-[#9F2F2D]">{columnError}</p>
 			</div>
 		{:else if periodTransactions.length === 0}
 			<div class="flex h-full flex-col items-center justify-center p-4 text-center">
@@ -263,5 +308,12 @@
 	</div>
 
 	<!-- Period Summary Card -->
-	<PeriodSummaryCard summary={periodSummary} />
+	<PeriodSummaryCard
+		summary={{
+			...periodSummary,
+			income: localCashflow.income,
+			expense: localCashflow.expense,
+			net: localCashflow.net
+		}}
+	/>
 </div>

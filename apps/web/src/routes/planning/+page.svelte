@@ -18,15 +18,46 @@
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import PencilSimple from 'phosphor-svelte/lib/PencilSimple';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
+	import Table from 'phosphor-svelte/lib/Table';
+	import CalendarBlank from 'phosphor-svelte/lib/CalendarBlank';
+	import { planningFilterStore } from '$lib/stores/planning-filter.svelte';
+	import GoalsHorizonBoard from '$lib/components/goals/GoalsHorizonBoard.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import BudgetCard from '$lib/components/budgets/BudgetCard.svelte';
 	import type { RecurringTemplate, GoalSnapshot } from '$lib/types/account-detail';
 	import { resolveGoalLifecycle, resolveBudgetPeriod } from '$lib/utils/lifecycle';
 
-	let activeSubTab = $state<'budgets' | 'goals' | 'obligations' | 'categories'>('goals');
-	let goalFilter = $state<'all' | 'in_progress' | 'overdue' | 'completed'>('all');
-	let budgetFilter = $state<'active' | 'past' | 'all'>('active');
+	let activeSubTab = $state<'budgets' | 'goals' | 'obligations' | 'categories'>(
+		planningFilterStore.activeSubTab
+	);
+	let goalFilter = $state<'all' | 'in_progress' | 'overdue' | 'completed'>(
+		planningFilterStore.goalFilter
+	);
+	let budgetFilter = $state<'active' | 'past' | 'all'>(planningFilterStore.budgetFilter);
+	const goalsViewMode = $derived(planningFilterStore.goalsViewMode);
+	// Mobile (<1024px) always renders List view; Horizon Board is desktop-only
+	let isMobile = $state(
+		typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false
+	);
+
+	$effect(() => {
+		const mq = window.matchMedia('(max-width: 1023px)');
+		isMobile = mq.matches;
+		const handler = (e: MediaQueryListEvent) => (isMobile = e.matches);
+		mq.addEventListener('change', handler);
+		return () => mq.removeEventListener('change', handler);
+	});
+
+	$effect(() => {
+		planningFilterStore.activeSubTab = activeSubTab;
+	});
+	$effect(() => {
+		planningFilterStore.goalFilter = goalFilter;
+	});
+	$effect(() => {
+		planningFilterStore.budgetFilter = budgetFilter;
+	});
 
 	const budgets = $derived(reedrichStore.activeBudgets);
 	const goals = $derived(reedrichStore.activeGoals);
@@ -130,7 +161,6 @@
 			console.warn('Gagal memuat detail target:', err);
 		}
 	}
-
 </script>
 
 <div class="space-y-4">
@@ -280,186 +310,227 @@
 					</button>
 				{/each}
 			</div>
+
+			<!-- View Mode Switcher: List vs Horizon Board -->
+			<div
+				class="hidden items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 lg:inline-flex"
+			>
+				<button
+					type="button"
+					onclick={() => (planningFilterStore.goalsViewMode = 'list')}
+					class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
+					'list'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774] hover:text-[#111111]'}"
+					title="Tampilan List / Kartu"
+					aria-pressed={goalsViewMode === 'list'}
+				>
+					<Table class="size-3.5" weight={goalsViewMode === 'list' ? 'bold' : 'regular'} />
+					<span>List</span>
+				</button>
+
+				<button
+					type="button"
+					onclick={() => (planningFilterStore.goalsViewMode = 'horizon')}
+					class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
+					'horizon'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774] hover:text-[#111111]'}"
+					title="Tampilan Kalendar Multi-Periode"
+					aria-pressed={goalsViewMode === 'horizon'}
+				>
+					<CalendarBlank
+						class="size-3.5"
+						weight={goalsViewMode === 'horizon' ? 'bold' : 'regular'}
+					/>
+					<span>Horizon Board</span>
+				</button>
+			</div>
 		</div>
 
-		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-			{#each filteredGoals as item (item.goal.goalId)}
-				{@const g = item.goal}
-				{@const lifecycle = item.lifecycle}
-				{@const liveCurrent =
-					g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
-						? g.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
-						: g.currentAmount}
-				{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
-				{@const linked = g.linkedWalletsBreakdown ?? []}
-				{@const remainingToTarget = Math.max(0, g.targetAmount - liveCurrent)}
-				{@const isTargetReached = liveCurrent >= g.targetAmount || lifecycle.isCompleted}
-				<div
-					class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]"
-				>
-					<div class="flex flex-wrap items-start justify-between gap-3">
-						<div>
-							<div class="flex items-center gap-2">
-								<a
-									href="/ledger?search={encodeURIComponent(g.goalName)}"
-									class="text-base font-semibold text-[#111111] no-underline hover:underline"
-									title="Buka mutasi {g.goalName} di Ledger"
-								>
-									{g.goalName}
-								</a>
-								{#if g.isDerived}
-									<span
-										class="rounded bg-[#F0EFEC] px-2 py-0.5 font-mono text-[10px] text-[#787774] uppercase"
+		{#if !isMobile && goalsViewMode === 'horizon'}
+			<GoalsHorizonBoard />
+		{:else}
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				{#each filteredGoals as item (item.goal.goalId)}
+					{@const g = item.goal}
+					{@const lifecycle = item.lifecycle}
+					{@const liveCurrent =
+						g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
+							? g.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
+							: g.currentAmount}
+					{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
+					{@const linked = g.linkedWalletsBreakdown ?? []}
+					{@const remainingToTarget = Math.max(0, g.targetAmount - liveCurrent)}
+					{@const isTargetReached = liveCurrent >= g.targetAmount || lifecycle.isCompleted}
+					<div
+						class="group relative space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-5 shadow-2xs transition-all hover:border-[#111111]"
+					>
+						<div class="flex flex-wrap items-start justify-between gap-3">
+							<div>
+								<div class="flex items-center gap-2">
+									<a
+										href="/ledger?search={encodeURIComponent(g.goalName)}"
+										class="text-base font-semibold text-[#111111] no-underline hover:underline"
+										title="Buka mutasi {g.goalName} di Ledger"
 									>
-										Derived ({linked.length} dompet)
-									</span>
-								{/if}
-								{#if lifecycle.status === 'overdue'}
-									<span
-										class="rounded bg-[#FDEBEC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#9F2F2D] uppercase"
-									>
-										⚠️ Lewat Tenggat
-									</span>
-								{:else if lifecycle.status === 'completed'}
-									<span
-										class="rounded bg-[#EDF3EC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#346538] uppercase"
-									>
-										✓ Tercapai
-									</span>
-								{/if}
+										{g.goalName}
+									</a>
+									{#if g.isDerived}
+										<span
+											class="rounded bg-[#F0EFEC] px-2 py-0.5 font-mono text-[10px] text-[#787774] uppercase"
+										>
+											Derived ({linked.length} dompet)
+										</span>
+									{/if}
+									{#if lifecycle.status === 'overdue'}
+										<span
+											class="rounded bg-[#FDEBEC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#9F2F2D] uppercase"
+										>
+											⚠️ Lewat Tenggat
+										</span>
+									{:else if lifecycle.status === 'completed'}
+										<span
+											class="rounded bg-[#EDF3EC] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#346538] uppercase"
+										>
+											✓ Tercapai
+										</span>
+									{/if}
+								</div>
+								<p class="mt-0.5 text-xs text-[#787774]">
+									{#if lifecycle.status === 'overdue'}
+										<span class="font-semibold text-[#9F2F2D]"
+											>Terlewat {lifecycle.overdueDays} hari yang lalu</span
+										>
+									{:else if g.targetDate}
+										{lifecycle.daysRemaining} hari tersisa ke tenggat ({dFmt(g.targetDate)})
+									{:else}
+										Target jangka panjang
+									{/if}
+								</p>
 							</div>
-							<p class="mt-0.5 text-xs text-[#787774]">
-								{#if lifecycle.status === 'overdue'}
-									<span class="font-semibold text-[#9F2F2D]"
-										>Terlewat {lifecycle.overdueDays} hari yang lalu</span
-									>
-								{:else if g.targetDate}
-									{lifecycle.daysRemaining} hari tersisa ke tenggat ({dFmt(g.targetDate)})
-								{:else}
-									Target jangka panjang
-								{/if}
-							</p>
+
+							<div class="flex items-center gap-3">
+								<div class="text-right font-mono tabular-nums">
+									<div class="flex items-baseline justify-end gap-1.5">
+										<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
+										<span class="text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+									</div>
+									<div class="mt-0.5 text-xs font-semibold">
+										{#if isTargetReached}
+											<span class="text-[#346538]">✓ {t('planning.goals.targetReached')}</span>
+										{:else}
+											<span class="text-[#787774]"
+												>{i18nStore.locale === 'id' ? 'Kurang' : 'Short'}</span
+											>
+											<span class="text-[#111111]">{fmtIDR(remainingToTarget)}</span>
+											<span class="text-[#787774]"
+												>{i18nStore.locale === 'id' ? 'lagi' : 'left'}</span
+											>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Pencil button on card hover only -->
+								<button
+									type="button"
+									onclick={() => openGoalDrawer(g)}
+									class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
+									title="Rincian & edit target"
+									aria-label="Rincian & edit target {g.goalName}"
+								>
+									<PencilSimple class="size-3.5" weight="bold" />
+								</button>
+							</div>
 						</div>
 
-						<div class="flex items-center gap-3">
-							<div class="text-right font-mono tabular-nums">
-								<div class="flex items-baseline justify-end gap-1.5">
-									<span class="text-lg font-semibold text-[#346538]">{fmtIDR(liveCurrent)}</span>
-									<span class="text-xs text-[#787774]">/ {fmtIDR(g.targetAmount)} ({p}%)</span>
+						<!-- Progress Track -->
+						<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
+							<div
+								class="h-full {lifecycle.status === 'completed'
+									? 'bg-[#346538]'
+									: lifecycle.status === 'overdue'
+										? 'bg-[#9F2F2D]'
+										: 'bg-[#111111]'} transition-all"
+								style="width: {Math.min(100, p)}%"
+							></div>
+						</div>
+
+						<!-- Goal Headroom & Pacing Metrics -->
+						<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
+							<div class="space-y-0.5">
+								<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
+									{t('planning.goals.remainingHeadroom')}
 								</div>
-								<div class="mt-0.5 text-xs font-semibold">
+								<div
+									class="font-mono text-xs font-bold tabular-nums {isTargetReached
+										? 'text-[#346538]'
+										: 'text-[#111111]'}"
+								>
 									{#if isTargetReached}
-										<span class="text-[#346538]">✓ {t('planning.goals.targetReached')}</span>
+										<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
 									{:else}
-										<span class="text-[#787774]"
-											>{i18nStore.locale === 'id' ? 'Kurang' : 'Short'}</span
-										>
-										<span class="text-[#111111]">{fmtIDR(remainingToTarget)}</span>
-										<span class="text-[#787774]">{i18nStore.locale === 'id' ? 'lagi' : 'left'}</span
-										>
+										{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })}
+										<span class="font-normal text-[#787774]">({100 - p}%)</span>
 									{/if}
 								</div>
 							</div>
 
-							<!-- Pencil button on card hover only -->
-							<button
-								type="button"
-								onclick={() => openGoalDrawer(g)}
-								class="flex size-7 cursor-pointer items-center justify-center rounded border border-[#EAEAEA] bg-white text-[#787774] opacity-0 transition-all group-hover:opacity-100 hover:border-[#111111] hover:text-[#111111] hover:shadow-2xs focus-visible:opacity-100"
-								title="Rincian & edit target"
-								aria-label="Rincian & edit target {g.goalName}"
-							>
-								<PencilSimple class="size-3.5" weight="bold" />
-							</button>
-						</div>
-					</div>
-
-					<!-- Progress Track -->
-					<div class="h-2 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-						<div
-							class="h-full {lifecycle.status === 'completed'
-								? 'bg-[#346538]'
-								: lifecycle.status === 'overdue'
-									? 'bg-[#9F2F2D]'
-									: 'bg-[#111111]'} transition-all"
-							style="width: {Math.min(100, p)}%"
-						></div>
-					</div>
-
-					<!-- Goal Headroom & Pacing Metrics -->
-					<div class="flex flex-wrap items-baseline justify-between gap-y-1.5 text-xs">
-						<div class="space-y-0.5">
-							<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-								{t('planning.goals.remainingHeadroom')}
-							</div>
-							<div
-								class="font-mono text-xs font-bold tabular-nums {isTargetReached
-									? 'text-[#346538]'
-									: 'text-[#111111]'}"
-							>
-								{#if isTargetReached}
-									<span class="text-[#346538]">{t('planning.goals.targetReached')} ✓</span>
-								{:else}
-									{t('planning.goals.remainingToTarget', { amount: fmtIDR(remainingToTarget) })}
-									<span class="font-normal text-[#787774]">({100 - p}%)</span>
-								{/if}
+							<div class="space-y-0.5 text-right font-mono tabular-nums">
+								<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
+									{t('planning.goals.target')}
+								</div>
+								<div class="text-xs font-semibold text-[#111111]">
+									{fmtIDR(g.targetAmount)}
+								</div>
 							</div>
 						</div>
-
-						<div class="space-y-0.5 text-right font-mono tabular-nums">
-							<div class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-								{t('planning.goals.target')}
-							</div>
-							<div class="text-xs font-semibold text-[#111111]">
-								{fmtIDR(g.targetAmount)}
-							</div>
-						</div>
-					</div>
-					<!-- Derived Linked Wallets Matrix -->
-					{#if linked.length > 0}
-						<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs">
-							<div class="mb-2 flex items-center justify-between font-medium text-[#111111]">
-								<span>Rincian Dompet Penyusun Target:</span>
-								<span class="font-mono text-[11px] text-[#787774]"
-									>Total Live: {fmtIDR(liveCurrent)}</span
-								>
-							</div>
-
-							<div class="divide-y divide-[#EAEAEA]">
-								{#each linked as lw (lw.walletId)}
-									<a
-										href="/ledger?walletId={lw.walletId}"
-										class="flex items-center justify-between rounded px-2 py-1.5 text-[11px] no-underline transition-colors hover:bg-white hover:shadow-2xs"
-										title="Buka mutasi {lw.walletName} di Ledger"
+						<!-- Derived Linked Wallets Matrix -->
+						{#if linked.length > 0}
+							<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-3 text-xs">
+								<div class="mb-2 flex items-center justify-between font-medium text-[#111111]">
+									<span>Rincian Dompet Penyusun Target:</span>
+									<span class="font-mono text-[11px] text-[#787774]"
+										>Total Live: {fmtIDR(liveCurrent)}</span
 									>
-										<div class="flex items-center gap-2">
-											<LockKey class="size-3 text-[#956400]" weight="bold" />
-											<span class="font-medium text-[#111111]">{lw.walletName}</span>
-											<span class="text-[#787774]">
-												({lw.currency}
-												{lw.usedPeg ? '· Kurs Live' : '· Nilai Pasti'})
-											</span>
-										</div>
-										<div class="text-right font-mono text-[#111111] tabular-nums">
-											{#if lw.currency !== 'IDR'}
-												<span class="text-[#787774]"
-													>{fmtCurrency(lw.balance, lw.currency)} ≈
+								</div>
+
+								<div class="divide-y divide-[#EAEAEA]">
+									{#each linked as lw (lw.walletId)}
+										<a
+											href="/ledger?walletId={lw.walletId}"
+											class="flex items-center justify-between rounded px-2 py-1.5 text-[11px] no-underline transition-colors hover:bg-white hover:shadow-2xs"
+											title="Buka mutasi {lw.walletName} di Ledger"
+										>
+											<div class="flex items-center gap-2">
+												<LockKey class="size-3 text-[#956400]" weight="bold" />
+												<span class="font-medium text-[#111111]">{lw.walletName}</span>
+												<span class="text-[#787774]">
+													({lw.currency}
+													{lw.usedPeg ? '· Kurs Live' : '· Nilai Pasti'})
 												</span>
-											{/if}
-											<strong class="font-semibold">{fmtIDR(lw.convertedAmount)}</strong>
-										</div>
-									</a>
-								{/each}
+											</div>
+											<div class="text-right font-mono text-[#111111] tabular-nums">
+												{#if lw.currency !== 'IDR'}
+													<span class="text-[#787774]"
+														>{fmtCurrency(lw.balance, lw.currency)} ≈
+													</span>
+												{/if}
+												<strong class="font-semibold">{fmtIDR(lw.convertedAmount)}</strong>
+											</div>
+										</a>
+									{/each}
+								</div>
 							</div>
-						</div>
-					{/if}
-				</div>
-			{:else}
-				<div class="col-span-1 py-12 text-center font-mono text-xs text-[#787774] md:col-span-2">
-					{t('common.empty')}
-				</div>
-			{/each}
-		</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="col-span-1 py-12 text-center font-mono text-xs text-[#787774] md:col-span-2">
+						{t('common.empty')}
+					</div>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 
 	<!-- SUB-WORKSPACE 2: BUDGETS -->

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fmtIDR } from '$lib/utils/currency';
-	import Target from 'phosphor-svelte/lib/Target';
-	import { t, i18nStore } from '$lib/i18n/index.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 
@@ -62,10 +61,6 @@
 				<Skeleton class="h-2.5 w-20" />
 			</div>
 		</div>
-		<div class="space-y-2">
-			<Skeleton class="h-2.5 w-20" />
-			<Skeleton class="h-10 w-full rounded" />
-		</div>
 	{:else}
 		<!-- Layer 1: Cashflow Metrics -->
 		<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
@@ -93,7 +88,7 @@
 		</div>
 
 		<!-- Layer 2: Point-in-Time Net Worth -->
-		<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
+		<div class="space-y-1">
 			<div class="flex items-center justify-between">
 				<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
 					{summary.label || 'PROYEKSI NET WORTH'}
@@ -117,59 +112,6 @@
 				</span>
 				<span class="font-medium text-[#956400] tabular-nums">{fmtIDR(summary.locked)}</span>
 			</div>
-		</div>
-
-		<!-- Layer 3: Snapshot Goals -->
-		<div class="space-y-2">
-			<div
-				class="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-[#787774] uppercase"
-			>
-				<Target class="size-3 text-[#787774]" weight="bold" />
-				<span>{t('ledger.summary.goalsProgress')}</span>
-			</div>
-
-			{#if summary.goalSnapshots.length === 0}
-				<div class="py-1 text-[11px] text-[#787774]">
-					{t('ledger.summary.noGoals')}
-				</div>
-			{:else}
-				<div class="space-y-1.5">
-					{#each summary.goalSnapshots as goal (goal.goalId)}
-						{@const pct = Math.min(100, Math.round(goal.progressPercentage))}
-						<div class="flex flex-col gap-1 rounded border border-[#EAEAEA] bg-white p-2">
-							<div class="flex items-center justify-between gap-1 text-[11px]">
-								<span class="truncate font-medium text-[#111111]">{goal.goalName}</span>
-								{#if goal.isMilestone}
-									<span
-										class="py-0.2 shrink-0 rounded bg-[#EDF3EC] px-1 font-mono text-[9px] font-bold text-[#346538]"
-									>
-										{i18nStore.locale === 'id' ? 'Tercapai!' : 'Reached!'}
-									</span>
-								{:else}
-									<span class="shrink-0 font-mono text-[10px] font-semibold text-[#787774]">
-										{pct}%
-									</span>
-								{/if}
-							</div>
-
-							<!-- Progress track -->
-							<div class="h-1.5 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-								<div
-									class="h-full rounded-full transition-all duration-300 {goal.isMilestone
-										? 'bg-[#346538]'
-										: 'bg-[#956400]'}"
-									style="width: {pct}%"
-								></div>
-							</div>
-
-							<div class="flex items-center justify-between font-mono text-[9px] text-[#787774]">
-								<span>{fmtIDR(goal.currentAmount)}</span>
-								<span>{fmtIDR(goal.targetAmount)}</span>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
 		</div>
 	{/if}
 </div>
