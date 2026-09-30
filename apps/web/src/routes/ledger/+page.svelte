@@ -6,7 +6,6 @@
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import { t } from '$lib/i18n/index.svelte';
-	import Table from 'phosphor-svelte/lib/Table';
 	import MagnifyingGlass from 'phosphor-svelte/lib/MagnifyingGlass';
 	import ArrowLeft from 'phosphor-svelte/lib/ArrowLeft';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
@@ -19,20 +18,55 @@
 	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
 	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
-	import { matchesBudgetFilter } from '$lib/utils/budget-filter';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
 	import ViewModeSwitcher from '$lib/components/ledger/ViewModeSwitcher.svelte';
 	import HorizonBoard from '$lib/components/ledger/HorizonBoard.svelte';
 	import type { GlobalFilters } from '$lib/components/ledger/HorizonPeriodColumn.svelte';
-	// Filters
-	let selectedWalletIds = $state<string[]>([]);
-	let selectedCategoryIds = $state<string[]>([]);
-	let selectedBudgetIds = $state<string[]>([]);
-	let budgetFilterName = $state<string>('');
-	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>('all');
-	let selectedStatus = $state<'all' | 'realized' | 'planned'>('all');
-	let searchKeyword = $state<string>('');
+	import type { TransactionRecord } from '$lib/types/account-detail';
+	import { ledgerFilterStore } from '$lib/stores/ledger-filter.svelte.js';
+	// Mobile (<1024px) always renders List view; Horizon Board is desktop-only
+	let isMobile = $state(
+		typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false
+	);
+
+	$effect(() => {
+		const mq = window.matchMedia('(max-width: 1023px)');
+		isMobile = mq.matches;
+		const handler = (e: MediaQueryListEvent) => (isMobile = e.matches);
+		mq.addEventListener('change', handler);
+		return () => mq.removeEventListener('change', handler);
+	});
+
+	let selectedWalletIds = $state<string[]>(ledgerFilterStore.walletIds);
+	let selectedCategoryIds = $state<string[]>(ledgerFilterStore.categoryIds);
+	let selectedBudgetIds = $state<string[]>(ledgerFilterStore.budgetIds);
+	let budgetFilterName = $state<string>(ledgerFilterStore.budgetFilterName);
+	let selectedType = $state<'all' | 'expense' | 'income' | 'transfer'>(ledgerFilterStore.type);
+	let selectedStatus = $state<'all' | 'realized' | 'planned'>(ledgerFilterStore.status);
+	let searchKeyword = $state<string>(ledgerFilterStore.searchKeyword);
+
+	$effect(() => {
+		ledgerFilterStore.walletIds = selectedWalletIds;
+	});
+	$effect(() => {
+		ledgerFilterStore.categoryIds = selectedCategoryIds;
+	});
+	$effect(() => {
+		ledgerFilterStore.budgetIds = selectedBudgetIds;
+	});
+	$effect(() => {
+		ledgerFilterStore.budgetFilterName = budgetFilterName;
+	});
+	$effect(() => {
+		ledgerFilterStore.type = selectedType;
+	});
+	$effect(() => {
+		ledgerFilterStore.status = selectedStatus;
+	});
+	$effect(() => {
+		ledgerFilterStore.searchKeyword = searchKeyword;
+	});
 
 	const globalFilters = $derived<GlobalFilters>({
 		walletIds: selectedWalletIds,
@@ -44,9 +78,23 @@
 	});
 
 	// Pagination
-	let currentPage = $state<number>(1);
-	let pageSize = $state<number>(50);
+	let currentPage = $state<number>(ledgerFilterStore.currentPage);
+	let pageSize = $state<number>(ledgerFilterStore.pageSize);
 
+	$effect(() => {
+		ledgerFilterStore.currentPage = currentPage;
+	});
+	$effect(() => {
+		ledgerFilterStore.pageSize = pageSize;
+	});
+
+	// Server-Driven Query State (v1.13.0)
+	let isQueryLoading = $state<boolean>(true);
+	let queryError = $state<string | null>(null);
+	let serverTransactions = $state<TransactionRecord[]>([]);
+	let serverTotalCount = $state<number>(0);
+	let serverTotalPages = $state<number>(1);
+	let serverHasNext = $state<boolean>(false);
 	onMount(() => {
 		// Read initial query params
 		const qWallet = page.url.searchParams.get('walletId');
@@ -68,8 +116,8 @@
 		if (qType && ['expense', 'income', 'transfer'].includes(qType)) {
 			selectedType = qType as typeof selectedType;
 		}
-		// Ensure all transactions and categories are loaded
-		reedrichStore.fetchAllTransactions().then(() => {
+		// Ensure snapshot (categories and wallets) is loaded
+		reedrichStore.fetchSnapshot().then(() => {
 			if (qCat) {
 				const found = reedrichStore.categories.find(
 					(c) => c.categoryName.toLowerCase() === qCat.toLowerCase()
@@ -139,55 +187,64 @@
 		return b?.budgetName ?? null;
 	}
 
-	// Filtered transactions
-	const filteredTransactions = $derived.by(() => {
-		const q = searchKeyword.trim().toLowerCase();
+	// Server-Driven Query Effect with AbortController
+	$effect(() => {
+		const wallets = selectedWalletIds;
+		const cats = selectedCategoryIds;
+		const budgets = selectedBudgetIds;
+		const tType = selectedType;
+		const sStatus = selectedStatus;
+		const keyword = searchKeyword;
 		const start = dateFilterStore.startDate;
 		const end = dateFilterStore.endDate;
+		const pageNum = currentPage;
+		const limitNum = pageSize;
 
-		return allTxs.filter((t) => {
-			// Type filter
-			if (selectedType !== 'all' && t.transactionType !== selectedType) return false;
+		const controller = new AbortController();
+		isQueryLoading = true;
+		queryError = null;
 
-			// Status filter
-			if (selectedStatus === 'realized' && t.transactionIsPlanned !== 0) return false;
-			if (selectedStatus === 'planned' && t.transactionIsPlanned !== 1) return false;
-
-			// Wallet filter (multi-selection)
-			if (selectedWalletIds.length > 0) {
-				const isSource = selectedWalletIds.includes(t.transactionWalletId);
-				const isTarget = t.transactionTargetWalletId
-					? selectedWalletIds.includes(t.transactionTargetWalletId)
-					: false;
-				if (!isSource && !isTarget) return false;
-			}
-
-			// Category filter (matched by categoryId)
-			if (selectedCategoryIds.length > 0) {
-				if (!t.transactionCategoryId || !selectedCategoryIds.includes(t.transactionCategoryId)) {
-					return false;
+		reedrichStore
+			.fetchTransactions(
+				{
+					walletId: wallets.length > 0 ? wallets : undefined,
+					categoryId: cats.length > 0 ? cats : undefined,
+					budgetId: budgets.length > 0 ? budgets : undefined,
+					type: tType,
+					status: sStatus,
+					q: keyword.trim() || undefined,
+					startDate: start || undefined,
+					endDate: end || undefined,
+					limit: limitNum,
+					offset: (pageNum - 1) * limitNum,
+					envelope: true
+				},
+				controller.signal
+			)
+			.then((envelope) => {
+				if (controller.signal.aborted) return;
+				serverTransactions = envelope.items;
+				serverTotalCount = envelope.pagination.total;
+				serverTotalPages = envelope.pagination.totalPages;
+				serverHasNext = envelope.pagination.hasNext;
+			})
+			.catch((err) => {
+				if (controller.signal.aborted) return;
+				console.warn('Ledger query error:', err);
+				queryError = err instanceof Error ? err.message : String(err);
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					isQueryLoading = false;
 				}
-			}
+			});
 
-			// Date range filter
-			if (start && t.transactionDate.slice(0, 10) < start) return false;
-			if (end && t.transactionDate.slice(0, 10) > end) return false;
-
-			// Budget filter
-			if (!matchesBudgetFilter(t, selectedBudgetIds, budgetMap, getCategoryName)) {
-				return false;
-			}
-
-			// Search keyword filter
-			if (q) {
-				const desc = (t.transactionDescription || '').toLowerCase();
-				const id = (t.transactionId || '').toLowerCase();
-				if (!desc.includes(q) && !id.includes(q)) return false;
-			}
-
-			return true;
-		});
+		return () => {
+			controller.abort();
+		};
 	});
+
+	const filteredTransactions = $derived(serverTransactions);
 
 	// Aggregates computed from filtered transactions
 	// Helper to resolve currency of any wallet
@@ -244,10 +301,8 @@
 	);
 
 	// Pagination slice
-	const totalPages = $derived(Math.max(1, Math.ceil(filteredTransactions.length / pageSize)));
-	const pagedTransactions = $derived(
-		filteredTransactions.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-	);
+	const totalPages = $derived(serverTotalPages);
+	const pagedTransactions = $derived(serverTransactions);
 
 	function resetFilters() {
 		dateFilterStore.reset();
@@ -255,9 +310,11 @@
 		selectedCategoryIds = [];
 		selectedBudgetIds = [];
 		budgetFilterName = '';
+		selectedType = 'all';
 		selectedStatus = 'all';
 		searchKeyword = '';
 		currentPage = 1;
+		ledgerFilterStore.resetFilters();
 	}
 
 	function getWalletName(id?: string | null): string {
@@ -530,7 +587,7 @@
 		{/if}
 	</div>
 
-	{#if settingsStore.settings.ledgerViewMode === 'calendar_board'}
+	{#if !isMobile && settingsStore.settings.ledgerViewMode === 'calendar_board'}
 		<HorizonBoard {globalFilters} />
 	{:else}
 		<!-- Dual-Layer Live Summary Strip -->
@@ -616,7 +673,11 @@
 
 		<!-- Full-Width Tabular Transaction Grid -->
 		<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">
-			{#if reedrichStore.isLedgerLoading}
+			{#if queryError}
+				<div class="p-6 text-center text-xs text-[#9F2F2D]">
+					<p>{queryError}</p>
+				</div>
+			{:else if isQueryLoading && serverTransactions.length === 0}
 				<div class="divide-y divide-[#EAEAEA] p-4">
 					{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
 						<div class="flex items-center justify-between gap-4 py-2.5">
@@ -806,7 +867,7 @@
 				>
 					<div>
 						Halaman <strong class="font-mono text-[#111111]">{currentPage}</strong> dari
-						<span class="font-mono">{totalPages}</span> ({filteredTransactions.length} total baris)
+						<span class="font-mono">{totalPages}</span> ({serverTotalCount} total baris)
 					</div>
 
 					<div class="flex items-center gap-1.5">
@@ -821,7 +882,7 @@
 						</button>
 						<button
 							type="button"
-							disabled={currentPage >= totalPages}
+							disabled={!serverHasNext || currentPage >= totalPages}
 							onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))}
 							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-white px-2 py-1 text-xs text-[#111111] hover:bg-[#F9F9F8] disabled:cursor-not-allowed disabled:opacity-40"
 						>

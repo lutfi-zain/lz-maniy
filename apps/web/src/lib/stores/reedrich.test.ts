@@ -291,4 +291,84 @@ describe('ReedrichStore', () => {
 			).rejects.toThrow('Amount must be positive');
 		});
 	});
+
+	describe('Server-Driven Queries & v1.13.0 API', () => {
+		it('fetchTransactions sends structured query params and handles envelope', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/transactions?');
+				expect(url).toContain('envelope=true');
+				expect(url).toContain('walletId=w1%2Cw2');
+				expect(url).toContain('categoryId=c1');
+				expect(url).toContain('type=expense');
+				expect(url).toContain('status=planned');
+				expect(url).toContain('q=kopi');
+				expect(url).toContain('limit=25');
+				expect(url).toContain('offset=50');
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						items: [{ transactionId: 't-1', transactionAmount: 50000 }],
+						pagination: { total: 100, limit: 25, offset: 50, hasNext: true, totalPages: 4 }
+					})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const res = await store.fetchTransactions({
+				walletId: ['w1', 'w2'],
+				categoryId: 'c1',
+				type: 'expense',
+				status: 'planned',
+				q: 'kopi',
+				limit: 25,
+				offset: 50
+			});
+
+			expect(res.items.length).toBe(1);
+			expect(res.pagination.total).toBe(100);
+			expect(res.pagination.hasNext).toBe(true);
+		});
+
+		it('fetchHorizonProjections constructs correct analytics URL', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/analytics/horizon?');
+				expect(url).toContain('periods=2026-09%2C2026-10');
+				expect(url).toContain('months=3');
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						baseCurrency: 'IDR',
+						generatedAt: new Date().toISOString(),
+						startingNetWorth: { total: 100000, spendable: 50000, locked: 50000 },
+						periods: []
+					})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const res = await store.fetchHorizonProjections(['2026-09', '2026-10'], 3);
+			expect(res.baseCurrency).toBe('IDR');
+		});
+
+		it('fetchSnapshot passes startDate and endDate query params when provided', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				if (url.includes('/api/v1/account-detail')) {
+					expect(url).toContain('startDate=2026-09-01');
+					expect(url).toContain('endDate=2026-09-30');
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							netWorth: { consolidated: { total: 100 } },
+							wallets: { spendable: { total: 50, items: [] }, locked: { total: 50, items: [] } }
+						})
+					});
+				}
+				return Promise.resolve({ ok: true, json: async () => [] });
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			await store.fetchSnapshot({ startDate: '2026-09-01', endDate: '2026-09-30' });
+			expect(store.isLive).toBe(true);
+		});
+	});
 });

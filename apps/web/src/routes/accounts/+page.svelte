@@ -18,6 +18,10 @@
 	import StatusBadge from '$lib/components/ui/StatusBadge.svelte';
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { walletFormStore } from '$lib/stores/wallet-form.svelte';
+	import { accountsFilterStore } from '$lib/stores/accounts-filter.svelte';
+	import AccountsHorizonBoard from '$lib/components/accounts/AccountsHorizonBoard.svelte';
+	import Table from 'phosphor-svelte/lib/Table';
+	import CalendarBlank from 'phosphor-svelte/lib/CalendarBlank';
 	import {
 		calculatePointInTimeNetWorth,
 		calculatePointInTimeWalletBalances
@@ -26,10 +30,38 @@
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	// Filters & Sorting state
-	let searchQuery = $state('');
-	let statusFilter = $state<'all' | 'spendable' | 'locked'>('all');
-	let sortBy = $state<'balance_desc' | 'balance_asc' | 'name' | 'last_tx'>('balance_desc');
-	let viewMode = $state<'grouped' | 'flat'>('grouped');
+	let searchQuery = $state(accountsFilterStore.searchQuery);
+	let statusFilter = $state<'all' | 'spendable' | 'locked'>(accountsFilterStore.statusFilter);
+	let sortBy = $state<'balance_desc' | 'balance_asc' | 'name' | 'last_tx'>(
+		accountsFilterStore.sortBy
+	);
+	const viewMode = $derived(accountsFilterStore.viewMode);
+	let listViewStyle = $state<'grouped' | 'flat'>(accountsFilterStore.listViewStyle);
+	// Mobile (<1024px) always renders List view; Horizon Board is desktop-only
+	let isMobile = $state(
+		typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false
+	);
+
+	$effect(() => {
+		const mq = window.matchMedia('(max-width: 1023px)');
+		isMobile = mq.matches;
+		const handler = (e: MediaQueryListEvent) => (isMobile = e.matches);
+		mq.addEventListener('change', handler);
+		return () => mq.removeEventListener('change', handler);
+	});
+
+	$effect(() => {
+		accountsFilterStore.searchQuery = searchQuery;
+	});
+	$effect(() => {
+		accountsFilterStore.statusFilter = statusFilter;
+	});
+	$effect(() => {
+		accountsFilterStore.sortBy = sortBy;
+	});
+	$effect(() => {
+		accountsFilterStore.listViewStyle = listViewStyle;
+	});
 
 	onMount(() => {
 		const qPreset = page.url.searchParams.get('datePreset');
@@ -270,6 +302,39 @@
 			</div>
 
 			<div class="flex items-center gap-1.5">
+				<!-- View mode switcher: List vs Horizon Board -->
+				<div
+					class="hidden items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 lg:inline-flex"
+				>
+					<button
+						type="button"
+						onclick={() => (accountsFilterStore.viewMode = 'list')}
+						class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {viewMode ===
+						'list'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774] hover:text-[#111111]'}"
+						title="Tampilan List / Kartu"
+						aria-pressed={viewMode === 'list'}
+					>
+						<Table class="size-3.5" weight={viewMode === 'list' ? 'bold' : 'regular'} />
+						<span>List</span>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => (accountsFilterStore.viewMode = 'horizon')}
+						class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {viewMode ===
+						'horizon'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774] hover:text-[#111111]'}"
+						title="Tampilan Kalendar Multi-Periode"
+						aria-pressed={viewMode === 'horizon'}
+					>
+						<CalendarBlank class="size-3.5" weight={viewMode === 'horizon' ? 'bold' : 'regular'} />
+						<span>Horizon Board</span>
+					</button>
+				</div>
+
 				<DateRangePicker
 					bind:start={dateFilterStore.startDate}
 					bind:end={dateFilterStore.endDate}
@@ -353,35 +418,39 @@
 					</select>
 				</div>
 
-				<!-- View mode toggle -->
-				<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
-					<button
-						type="button"
-						onclick={() => (viewMode = 'grouped')}
-						class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-						'grouped'
-							? 'bg-white text-[#111111] shadow-2xs'
-							: 'text-[#787774]'}"
-					>
-						{t('planning.categories.viewGrouped')}
-					</button>
-					<button
-						type="button"
-						onclick={() => (viewMode = 'flat')}
-						class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {viewMode ===
-						'flat'
-							? 'bg-white text-[#111111] shadow-2xs'
-							: 'text-[#787774]'}"
-					>
-						{t('planning.categories.viewFlat')}
-					</button>
-				</div>
+				<!-- View style toggle for list mode -->
+				{#if viewMode === 'list'}
+					<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5">
+						<button
+							type="button"
+							onclick={() => (listViewStyle = 'grouped')}
+							class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {listViewStyle ===
+							'grouped'
+								? 'bg-white text-[#111111] shadow-2xs'
+								: 'text-[#787774]'}"
+						>
+							{t('planning.categories.viewGrouped')}
+						</button>
+						<button
+							type="button"
+							onclick={() => (listViewStyle = 'flat')}
+							class="cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors {listViewStyle ===
+							'flat'
+								? 'bg-white text-[#111111] shadow-2xs'
+								: 'text-[#787774]'}"
+						>
+							{t('planning.categories.viewFlat')}
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
 
-	<!-- Accounts List / Tree -->
-	{#if reedrichStore.isLoading && allWallets.length === 0}
+	<!-- Accounts Content: Horizon Board vs List Views -->
+	{#if !isMobile && viewMode === 'horizon'}
+		<AccountsHorizonBoard />
+	{:else if reedrichStore.isLoading && allWallets.length === 0}
 		<div class="space-y-4">
 			{#each [0, 1, 2] as i (i)}
 				<div class="space-y-3 overflow-hidden rounded-lg border border-[#EAEAEA] bg-white p-4">
@@ -396,7 +465,7 @@
 				</div>
 			{/each}
 		</div>
-	{:else if viewMode === 'grouped'}
+	{:else if listViewStyle === 'grouped'}
 		<div class="space-y-4">
 			{#each groupedInstitutions as group (group.institution)}
 				<div class="overflow-hidden rounded-lg border border-[#EAEAEA] bg-white shadow-2xs">

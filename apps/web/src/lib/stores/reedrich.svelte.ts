@@ -31,8 +31,12 @@ import type {
 	UpdateTransactionPayload,
 	UpdateWalletPayload,
 	UserProfileDTO,
-	WalletItem
+	WalletItem,
+	TransactionEnvelope,
+	TransactionQueryParams,
+	HorizonBoardDTO
 } from '$lib/types/account-detail';
+import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
 
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
@@ -133,15 +137,19 @@ export class ReedrichStore {
 		this.drawerTransactions = [];
 	}
 
-	async fetchSnapshot(customToken?: string) {
+	async fetchSnapshot(dates?: { startDate?: string; endDate?: string }, customToken?: string) {
 		const token = (customToken ?? this.apiToken).trim();
 		if (token) this.apiToken = token;
 
 		this.isLoading = true;
 		this.statusMessage = 'Menghubungi API Reedrich account-detail...';
 		try {
+			const dateQuery =
+				dates?.startDate && dates?.endDate
+					? `?startDate=${encodeURIComponent(dates.startDate)}&endDate=${encodeURIComponent(dates.endDate)}`
+					: '';
 			const [accRes, catRes] = await Promise.all([
-				this.request(`${DEFAULT_API_URL}/api/v1/account-detail`),
+				this.request(`${DEFAULT_API_URL}/api/v1/account-detail${dateQuery}`),
 				this.request(`${DEFAULT_API_URL}/api/v1/categories`).catch(() => null),
 				this.fetchUserProfile().catch(() => null)
 			]);
@@ -211,6 +219,120 @@ export class ReedrichStore {
 		} finally {
 			this.isLedgerLoading = false;
 		}
+	}
+
+	/**
+	 * Parameterized server-driven transaction query engine (Reedrich v1.13.0).
+	 * Queries /api/v1/transactions with ?envelope=true and structured filters.
+	 */
+	async fetchTransactions(
+		params: TransactionQueryParams = {},
+		signal?: AbortSignal
+	): Promise<TransactionEnvelope> {
+		return globalConcurrencyPool.run(async (taskSignal) => {
+			const queryParts: string[] = ['envelope=true'];
+
+			if (params.walletId) {
+				const val = Array.isArray(params.walletId)
+					? params.walletId.filter(Boolean).join(',')
+					: params.walletId;
+				if (val) queryParts.push(`walletId=${encodeURIComponent(val)}`);
+			}
+			if (params.targetWalletId) {
+				const val = Array.isArray(params.targetWalletId)
+					? params.targetWalletId.filter(Boolean).join(',')
+					: params.targetWalletId;
+				if (val) queryParts.push(`targetWalletId=${encodeURIComponent(val)}`);
+			}
+			if (params.categoryId) {
+				const val = Array.isArray(params.categoryId)
+					? params.categoryId.filter(Boolean).join(',')
+					: params.categoryId;
+				if (val) queryParts.push(`categoryId=${encodeURIComponent(val)}`);
+			}
+			if (params.budgetId) {
+				const val = Array.isArray(params.budgetId)
+					? params.budgetId.filter(Boolean).join(',')
+					: params.budgetId;
+				if (val) queryParts.push(`budgetId=${encodeURIComponent(val)}`);
+			}
+			if (params.type && params.type !== 'all') {
+				queryParts.push(`type=${encodeURIComponent(params.type)}`);
+			}
+			if (params.status && params.status !== 'all') {
+				queryParts.push(`status=${encodeURIComponent(params.status)}`);
+			} else if (params.isPlanned !== undefined) {
+				queryParts.push(`isPlanned=${params.isPlanned}`);
+			}
+			if (params.q || params.search) {
+				const qVal = (params.q || params.search || '').trim();
+				if (qVal) queryParts.push(`q=${encodeURIComponent(qVal)}`);
+			}
+			if (params.startDate) {
+				queryParts.push(`startDate=${encodeURIComponent(params.startDate)}`);
+			}
+			if (params.endDate) {
+				queryParts.push(`endDate=${encodeURIComponent(params.endDate)}`);
+			}
+			if (params.limit !== undefined) {
+				queryParts.push(`limit=${params.limit}`);
+			}
+			if (params.offset !== undefined) {
+				queryParts.push(`offset=${params.offset}`);
+			}
+
+			const url = `${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`;
+			const res = await this.request(url, { signal: taskSignal || signal });
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`);
+			}
+
+			const data = await res.json();
+			if (data && 'items' in data && 'pagination' in data) {
+				return data as TransactionEnvelope;
+			}
+			const items: TransactionRecord[] = Array.isArray(data) ? data : [];
+			const totalHeader = res.headers?.get('x-total-count');
+			const total = totalHeader ? parseInt(totalHeader, 10) : items.length;
+			const limit = params.limit ?? 50;
+			const offset = params.offset ?? 0;
+			return {
+				items,
+				pagination: {
+					total,
+					limit,
+					offset,
+					hasNext: offset + items.length < total,
+					totalPages: Math.max(1, Math.ceil(total / limit))
+				}
+			};
+		}, signal);
+	}
+
+	/**
+	 * Multi-Period Horizon Projections Engine (Reedrich v1.13.0).
+	 * Queries /api/v1/analytics/horizon with single-pass roll-forward calculations.
+	 */
+	async fetchHorizonProjections(
+		periods?: string[],
+		months?: number,
+		signal?: AbortSignal
+	): Promise<HorizonBoardDTO> {
+		return globalConcurrencyPool.run(async (taskSignal) => {
+			const queryParts: string[] = ['baseCurrency=IDR'];
+			if (periods && periods.length > 0) {
+				queryParts.push(`periods=${encodeURIComponent(periods.join(','))}`);
+			}
+			if (months !== undefined) {
+				queryParts.push(`months=${months}`);
+			}
+			const url = `${DEFAULT_API_URL}/api/v1/analytics/horizon?${queryParts.join('&')}`;
+			const res = await this.request(url, { signal: taskSignal || signal });
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`);
+			}
+			return (await res.json()) as HorizonBoardDTO;
+		}, signal);
 	}
 	async fetchTransactionsForDrawer(param: {
 		walletId?: string;

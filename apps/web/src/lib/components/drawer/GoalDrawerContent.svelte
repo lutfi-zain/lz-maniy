@@ -41,9 +41,7 @@
 	const linked = $derived(currentGoal.linkedWalletsBreakdown ?? []);
 	const lifecycle = $derived(resolveGoalLifecycle(currentGoal));
 	const availableWalletsToLink = $derived(
-		reedrichStore.allWallets.filter(
-			(w) => !linked.some((lw) => lw.walletId === w.walletId)
-		)
+		reedrichStore.allWallets.filter((w) => !linked.some((lw) => lw.walletId === w.walletId))
 	);
 
 	function openWallet(walletId: string) {
@@ -240,7 +238,9 @@
 
 		{#if showLinkWallet}
 			<div class="mb-3 space-y-2 rounded-lg border border-[#EAEAEA] bg-[#F9F9F8] p-3">
-				<span class="block text-[11px] font-medium text-[#111111]">Pilih Rekening untuk Dihubungkan</span>
+				<span class="block text-[11px] font-medium text-[#111111]"
+					>Pilih Rekening untuk Dihubungkan</span
+				>
 				<div class="flex items-center gap-2">
 					<select
 						bind:value={linkWalletId}
@@ -312,7 +312,9 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="rounded-lg border border-dashed border-[#EAEAEA] p-4 text-center text-xs text-[#787774]">
+			<div
+				class="rounded-lg border border-dashed border-[#EAEAEA] p-4 text-center text-xs text-[#787774]"
+			>
 				Belum ada dompet yang terhubung ke target ini.
 			</div>
 		{/if}

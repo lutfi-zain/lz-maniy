@@ -384,3 +384,75 @@ export interface UpdateProfilePayload {
 	lastName?: string;
 	whatsappNumber?: string;
 }
+
+export interface PaginationMetadata {
+	total: number;
+	limit: number;
+	offset: number;
+	hasNext: boolean;
+	totalPages: number;
+}
+
+export interface TransactionEnvelope {
+	items: TransactionRecord[];
+	pagination: PaginationMetadata;
+}
+
+export interface TransactionQueryParams {
+	walletId?: string | string[];
+	targetWalletId?: string | string[];
+	categoryId?: string | string[];
+	budgetId?: string | string[];
+	type?: 'expense' | 'income' | 'transfer' | 'all';
+	status?: 'realized' | 'planned' | 'all';
+	isPlanned?: boolean;
+	q?: string;
+	search?: string;
+	startDate?: string;
+	endDate?: string;
+	envelope?: boolean;
+	limit?: number;
+	offset?: number;
+}
+
+export interface HorizonPeriodSummary {
+	periodKey: string;
+	startDate: string;
+	endDate: string;
+	cashflow: {
+		income: number;
+		expense: number;
+		net: number;
+	};
+	netWorth: {
+		total: number;
+		spendable: number;
+		locked: number;
+	};
+	walletBalances: Array<{
+		walletId: string;
+		walletName: string;
+		balance: number;
+		currency: string;
+		isLocked: number;
+	}>;
+	goals: Array<{
+		goalId: string;
+		name: string;
+		currentAmount: number;
+		targetAmount: number;
+		progressPercentage: number;
+		isReached: boolean;
+	}>;
+}
+
+export interface HorizonBoardDTO {
+	baseCurrency: string;
+	generatedAt: string;
+	startingNetWorth: {
+		total: number;
+		spendable: number;
+		locked: number;
+	};
+	periods: HorizonPeriodSummary[];
+}

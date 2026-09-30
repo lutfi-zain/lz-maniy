@@ -191,7 +191,7 @@
 							<Skeleton class="h-2.5 w-24" />
 						</div>
 					</div>
-					<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
+					<div class="space-y-1">
 						<div class="flex justify-between">
 							<Skeleton class="h-2.5 w-28" />
 							<Skeleton class="h-3 w-24" />
@@ -204,10 +204,6 @@
 							<Skeleton class="h-2.5 w-24" />
 							<Skeleton class="h-2.5 w-20" />
 						</div>
-					</div>
-					<div class="space-y-2">
-						<Skeleton class="h-2.5 w-20" />
-						<Skeleton class="h-10 w-full rounded" />
 					</div>
 				</div>
 			</div>
