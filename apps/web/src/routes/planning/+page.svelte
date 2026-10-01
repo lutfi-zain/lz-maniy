@@ -113,12 +113,27 @@
 	});
 
 	onMount(() => {
+		reedrichStore.fetchGoals();
+		reedrichStore.fetchBudgets();
+		reedrichStore.fetchDebtsLoans();
 		reedrichStore.fetchRecurringTemplates();
 	});
 
+	$effect(() => {
+		const tab = activeSubTab;
+		if (tab === 'budgets') {
+			reedrichStore.fetchBudgets();
+		} else if (tab === 'goals') {
+			reedrichStore.fetchGoals();
+		} else if (tab === 'obligations') {
+			reedrichStore.fetchDebtsLoans();
+			reedrichStore.fetchRecurringTemplates();
+		}
+	});
+
 	const ob = $derived(reedrichStore.snapshot?.obligations);
-	const debts = $derived(ob?.activeDebts ?? []);
-	const loans = $derived(ob?.activeLoans ?? []);
+	const debts = $derived(reedrichStore.activeDebts);
+	const loans = $derived(reedrichStore.activeLoans);
 	const recurringTemplates = $derived(reedrichStore.recurringTemplates);
 	const isRecurringLoading = $derived(reedrichStore.isRecurringLoading);
 	const categories = $derived(reedrichStore.categories);
@@ -216,7 +231,7 @@
 		</div>
 
 		<!-- Right: Date Filter & Action Button -->
-		{#if activeSubTab !== 'categories'}
+		{#if activeSubTab !== 'categories' && !(activeSubTab === 'goals' && goalsViewMode === 'horizon')}
 			<div class="flex items-center gap-2">
 				<DateRangePicker
 					bind:start={dateFilterStore.startDate}

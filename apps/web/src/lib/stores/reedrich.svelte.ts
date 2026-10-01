@@ -32,6 +32,8 @@ import type {
 	UpdateWalletPayload,
 	UserProfileDTO,
 	WalletItem,
+	ActiveDebt,
+	ActiveLoan,
 	TransactionEnvelope,
 	TransactionQueryParams,
 	HorizonBoardDTO
@@ -63,11 +65,31 @@ export class ReedrichStore {
 	// Cache to avoid refetching identical entity queries
 	private transactionCache = new SvelteMap<string, TransactionRecord[]>();
 
-	// Derived values
-	spendableWallets = $derived(this.snapshot?.wallets.spendable.items ?? []);
-	lockedWallets = $derived(this.snapshot?.wallets.locked.items ?? []);
-	allWallets = $derived([...this.spendableWallets, ...this.lockedWallets]);
+	// Dedicated standalone entity state
+	activeWallets = $state<WalletItem[]>([]);
+	isWalletsLoading = $state<boolean>(false);
+	rawDebts = $state<ActiveDebt[] | null>(null);
+	rawLoans = $state<ActiveLoan[] | null>(null);
+	isDebtsLoansLoading = $state<boolean>(false);
 
+	// Derived values
+	spendableWallets = $derived.by(() => {
+		if (this.activeWallets.length > 0) {
+			return this.activeWallets.filter((w) => w.isLocked === 0);
+		}
+		return this.snapshot?.wallets.spendable.items ?? [];
+	});
+	lockedWallets = $derived.by(() => {
+		if (this.activeWallets.length > 0) {
+			return this.activeWallets.filter((w) => w.isLocked === 1);
+		}
+		return this.snapshot?.wallets.locked.items ?? [];
+	});
+	allWallets = $derived(
+		this.activeWallets.length > 0
+			? this.activeWallets
+			: [...this.spendableWallets, ...this.lockedWallets]
+	);
 	filteredWallets = $derived.by(() => {
 		let list =
 			this.activeTab === 'spendable'
@@ -95,8 +117,8 @@ export class ReedrichStore {
 
 	activeBudgets = $derived(this.snapshot?.budgets ?? []);
 	activeGoals = $derived(this.snapshot?.goals ?? []);
-	activeDebts = $derived(this.snapshot?.obligations?.activeDebts ?? []);
-	activeLoans = $derived(this.snapshot?.obligations?.activeLoans ?? []);
+	activeDebts = $derived(this.rawDebts ?? this.snapshot?.obligations?.activeDebts ?? []);
+	activeLoans = $derived(this.rawLoans ?? this.snapshot?.obligations?.activeLoans ?? []);
 
 	constructor(autoInit = false) {
 		if (autoInit) {
@@ -577,6 +599,114 @@ export class ReedrichStore {
 	}
 
 	/**
+	 * Standalone fetch of user wallets via GET /api/v1/wallets (includes real lastTransaction).
+	 */
+	async fetchWallets(signal?: AbortSignal): Promise<WalletItem[]> {
+		return globalConcurrencyPool.run(async (taskSignal) => {
+			this.isWalletsLoading = true;
+			try {
+				const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets`, {
+					signal: taskSignal || signal
+				});
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const json: unknown = await res.json();
+				const itemsRaw = Array.isArray(json) ? json : [];
+				interface RawWalletEntry {
+					walletId: string;
+					walletName: string;
+					walletInstitution?: string;
+					institution?: string;
+					walletType?: WalletItem['type'];
+					type?: WalletItem['type'];
+					walletBalance?: number;
+					balance?: number;
+					walletCurrency?: string;
+					currency?: string;
+					walletIsLocked?: 0 | 1;
+					isLocked?: 0 | 1;
+					lastTransaction?: WalletItem['lastTransaction'];
+				}
+				const items: WalletItem[] = (itemsRaw as RawWalletEntry[]).map((w) => ({
+					walletId: w.walletId,
+					walletName: w.walletName,
+					institution: w.walletInstitution ?? w.institution ?? 'General',
+					type: w.walletType ?? w.type ?? 'bank',
+					balance: w.walletBalance ?? w.balance ?? 0,
+					currency: w.walletCurrency ?? w.currency ?? 'IDR',
+					isLocked: (w.walletIsLocked ?? w.isLocked ?? 0) as 0 | 1,
+					lastTransaction: w.lastTransaction ?? null
+				}));
+				this.activeWallets = items;
+				return items;
+			} catch (err) {
+				console.warn('Gagal memuat daftar dompet dari /api/v1/wallets:', err);
+				return this.allWallets;
+			} finally {
+				this.isWalletsLoading = false;
+			}
+		}, signal);
+	}
+
+	/**
+	 * Standalone fetch of debts and loans via GET /api/v1/debts-loans.
+	 */
+	async fetchDebtsLoans(
+		signal?: AbortSignal
+	): Promise<{ activeDebts: ActiveDebt[]; activeLoans: ActiveLoan[] }> {
+		return globalConcurrencyPool.run(async (taskSignal) => {
+			this.isDebtsLoansLoading = true;
+			try {
+				const res = await this.request(`${DEFAULT_API_URL}/api/v1/debts-loans`, {
+					signal: taskSignal || signal
+				});
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const json: unknown = await res.json();
+				const itemsRaw = Array.isArray(json) ? json : [];
+				interface RawDebtLoanEntry {
+					debtLoanId: string;
+					debtLoanPersonName?: string;
+					personName?: string;
+					debtLoanRemainingAmount?: number;
+					remainingAmount?: number;
+					debtLoanAmount?: number;
+					debtLoanDueDate?: string | null;
+					dueDate?: string | null;
+					debtLoanStatus?: 'unpaid' | 'partially_paid' | 'paid';
+					status?: 'unpaid' | 'partially_paid' | 'paid';
+					debtLoanType?: 'debt' | 'loan';
+					type?: 'debt' | 'loan';
+				}
+				const debts: ActiveDebt[] = [];
+				const loans: ActiveLoan[] = [];
+				for (const item of itemsRaw as RawDebtLoanEntry[]) {
+					const mapped = {
+						debtLoanId: item.debtLoanId,
+						personName: item.debtLoanPersonName ?? item.personName ?? 'Kewajiban',
+						remainingAmount:
+							item.debtLoanRemainingAmount ?? item.remainingAmount ?? item.debtLoanAmount ?? 0,
+						dueDate: item.debtLoanDueDate ?? item.dueDate ?? null,
+						status: (item.debtLoanStatus ?? item.status ?? 'unpaid') as
+							'unpaid' | 'partially_paid' | 'paid'
+					};
+					if ((item.debtLoanType ?? item.type) === 'debt') {
+						debts.push(mapped);
+					} else {
+						loans.push(mapped);
+					}
+				}
+				this.rawDebts = debts;
+				this.rawLoans = loans;
+				return { activeDebts: debts, activeLoans: loans };
+			} catch (err) {
+				console.warn('Gagal memuat kewajiban dari /api/v1/debts-loans:', err);
+				return { activeDebts: this.activeDebts, activeLoans: this.activeLoans };
+			} finally {
+				this.isDebtsLoansLoading = false;
+			}
+		}, signal);
+	}
+
+	/**
 	 * Standalone fetch of single wallet by ID.
 	 */
 	async fetchWalletById(walletId: string): Promise<WalletItem> {
@@ -636,7 +766,7 @@ export class ReedrichStore {
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
 		this.allTransactions = [];
-		await Promise.all([this.fetchSnapshot(), this.fetchRecurringTemplates()]);
+		await Promise.all([this.fetchSnapshot(), this.fetchWallets(), this.fetchRecurringTemplates()]);
 	}
 
 	/**

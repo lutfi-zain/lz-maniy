@@ -96,10 +96,9 @@
 			}
 
 			// Portfolio point-in-time aggregates
-			const netWorth = srvPeriod?.netWorth.total ?? currentNetWorth;
-			const spendable = srvPeriod?.netWorth.spendable ?? currentSpendable;
-			const locked = srvPeriod?.netWorth.locked ?? currentLocked;
-
+			let netWorth = srvPeriod?.netWorth.total ?? currentNetWorth;
+			let spendable = srvPeriod?.netWorth.spendable ?? currentSpendable;
+			let locked = srvPeriod?.netWorth.locked ?? currentLocked;
 			// Filter and sort wallets based on accountsFilterStore
 			const q = accountsFilterStore.searchQuery.trim().toLowerCase();
 			let filtered = allWallets.filter((w) => {
@@ -130,6 +129,24 @@
 				if (accountsFilterStore.sortBy === 'name') return a.walletName.localeCompare(b.walletName);
 				return 0;
 			});
+
+			// Recalculate column subtotals if filtered
+			if (accountsFilterStore.hasActiveFilters) {
+				let fSpendable = 0;
+				let fLocked = 0;
+				for (const w of filtered) {
+					const rawB = balances.get(w.walletId) ?? w.balance;
+					const bIDR = getConvertedBalanceInIDR(rawB, w.currency);
+					if (w.isLocked) {
+						fLocked += bIDR;
+					} else {
+						fSpendable += bIDR;
+					}
+				}
+				spendable = fSpendable;
+				locked = fLocked;
+				netWorth = fSpendable + fLocked;
+			}
 
 			return {
 				periodKey,
