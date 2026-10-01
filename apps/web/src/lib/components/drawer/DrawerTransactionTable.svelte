@@ -8,8 +8,24 @@
 
 	const txs = $derived(reedrichStore.filteredDrawerTransactions);
 	const isLoading = $derived(reedrichStore.isDrawerLoading);
-</script>
+	const pagination = $derived(reedrichStore.drawerPagination);
 
+	const currentPage = $derived(
+		pagination.limit > 0 ? Math.floor(pagination.offset / pagination.limit) + 1 : 1
+	);
+	const totalPages = $derived(pagination.totalPages || 1);
+
+	function goToPage(page: number) {
+		if (!reedrichStore.drawerCurrentParams) return;
+		const limit = pagination.limit || 50;
+		const offset = (page - 1) * limit;
+		reedrichStore.fetchTransactionsForDrawer({
+			...reedrichStore.drawerCurrentParams,
+			limit,
+			offset
+		});
+	}
+</script>
 <div class="mt-4">
 	<div class="mb-3 flex items-center gap-2">
 		<div class="relative flex-1">
@@ -109,5 +125,32 @@
 				</tbody>
 			</table>
 		</div>
+
+		<!-- Pagination Controls -->
+		{#if totalPages > 1}
+			<div class="mt-3 flex items-center justify-between border-t border-[#EAEAEA] pt-2 text-xs">
+				<span class="font-mono text-[11px] text-[#787774]">
+					Halaman {currentPage} dari {totalPages} ({pagination.total} transaksi)
+				</span>
+				<div class="flex items-center gap-1.5">
+					<button
+						type="button"
+						disabled={currentPage <= 1 || isLoading}
+						onclick={() => goToPage(currentPage - 1)}
+						class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111] hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						Sebelumnya
+					</button>
+					<button
+						type="button"
+						disabled={currentPage >= totalPages || isLoading}
+						onclick={() => goToPage(currentPage + 1)}
+						class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2.5 py-1 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111] hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						Selanjutnya
+					</button>
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>

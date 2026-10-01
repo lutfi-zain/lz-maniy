@@ -413,6 +413,8 @@ export interface TransactionQueryParams {
 	envelope?: boolean;
 	limit?: number;
 	offset?: number;
+	orderBy?: 'date' | 'amount' | 'createdAt' | 'description';
+	direction?: 'asc' | 'desc';
 }
 
 export interface HorizonPeriodSummary {

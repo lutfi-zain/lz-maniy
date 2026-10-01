@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
@@ -24,6 +25,9 @@
 				{
 					startDate: dateFilterStore.startDate || undefined,
 					endDate: dateFilterStore.endDate || undefined,
+					status: 'realized',
+					orderBy: 'date',
+					direction: 'desc',
 					limit: 30,
 					envelope: true
 				},
@@ -147,7 +151,11 @@
 							{@const isPlan = tx.transactionIsPlanned === 1}
 							{@const curr = getWalletCurrency(tx.transactionWalletId)}
 							{@const amtIDR = getConvertedBalanceInIDR(tx.transactionAmount, curr)}
-							<tr class="transition-colors hover:bg-[#F9F9F8]">
+							<tr
+								class="cursor-pointer transition-colors hover:bg-[#F9F9F8]"
+								onclick={() => transactionFormStore.openView(tx)}
+								title="Klik untuk melihat/mengedit transaksi"
+							>
 								<td class="py-2 font-mono text-[11px] whitespace-nowrap text-[#787774]">
 									{dFmt(tx.transactionDate)}
 								</td>
@@ -192,7 +200,18 @@
 					{@const isPlan = tx.transactionIsPlanned === 1}
 					{@const curr = getWalletCurrency(tx.transactionWalletId)}
 					{@const amtIDR = getConvertedBalanceInIDR(tx.transactionAmount, curr)}
-					<div class="py-2.5 transition-colors hover:bg-[#FBFBFA]">
+					<div
+						role="button"
+						tabindex="0"
+						class="cursor-pointer py-2.5 transition-colors hover:bg-[#FBFBFA]"
+						onclick={() => transactionFormStore.openView(tx)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								transactionFormStore.openView(tx);
+							}
+						}}
+					>
 						<div class="flex items-start justify-between gap-2">
 							<div
 								class="line-clamp-1 text-xs font-medium text-[#111111]"

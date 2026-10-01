@@ -321,8 +321,12 @@ describe('ReedrichStore', () => {
 				status: 'planned',
 				q: 'kopi',
 				limit: 25,
-				offset: 50
+				offset: 50,
+				orderBy: 'date',
+				direction: 'desc'
 			});
+			expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('orderBy=date'), expect.anything());
+			expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('direction=desc'), expect.anything());
 
 			expect(res.items.length).toBe(1);
 			expect(res.pagination.total).toBe(100);
@@ -428,6 +432,41 @@ describe('ReedrichStore', () => {
 			expect(wallets[0].lastTransaction?.description).toBe('Dividen');
 			expect(store.allWallets.length).toBe(1);
 			expect(store.allWallets[0].walletId).toBe('w-custom-1');
+		});
+
+		it('fetchWallets correctly appends point-in-time snapshot parameters', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/wallets?');
+				expect(url).toContain('startDate=2026-08-01');
+				expect(url).toContain('endDate=2026-08-31');
+				expect(url).toContain('filter=realized');
+				expect(url).toContain('isLocked=false');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							walletId: 'w-custom-pit',
+							walletName: 'BCA August',
+							walletInstitution: 'BCA',
+							walletType: 'bank',
+							walletBalance: 8000000,
+							walletCurrency: 'IDR',
+							walletIsLocked: 0
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const wallets = await store.fetchWallets({
+				startDate: '2026-08-01',
+				endDate: '2026-08-31',
+				filter: 'realized',
+				isLocked: false
+			});
+			expect(wallets.length).toBe(1);
+			expect(wallets[0].balance).toBe(8000000);
+			expect(wallets[0].walletName).toBe('BCA August');
 		});
 
 		it('fetchDebtsLoans queries /api/v1/debts-loans and categorizes debts and loans', async () => {

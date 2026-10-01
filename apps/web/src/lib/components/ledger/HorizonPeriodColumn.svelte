@@ -67,9 +67,11 @@
 
 	// Card-Level Localized Query State (Reedrich v1.13.0)
 	let isColumnLoading = $state<boolean>(true);
+	let isLoadingMore = $state<boolean>(false);
 	let columnError = $state<string | null>(null);
 	let periodTransactions = $state<TransactionRecord[]>([]);
-
+	let hasNext = $state<boolean>(false);
+	let totalCount = $state<number>(0);
 	$effect(() => {
 		const start = startDate;
 		const end = endDate;
@@ -103,6 +105,8 @@
 			.then((envelope) => {
 				if (controller.signal.aborted) return;
 				periodTransactions = envelope.items;
+				hasNext = envelope.pagination?.hasNext ?? false;
+				totalCount = envelope.pagination?.total ?? envelope.items.length;
 			})
 			.catch((err) => {
 				if (controller.signal.aborted) return;
@@ -119,6 +123,33 @@
 			controller.abort();
 		};
 	});
+
+	async function loadMore() {
+		if (isLoadingMore || !hasNext) return;
+		isLoadingMore = true;
+		try {
+			const envelope = await reedrichStore.fetchTransactions({
+				startDate,
+				endDate,
+				walletId: globalFilters.walletIds.length > 0 ? globalFilters.walletIds : undefined,
+				categoryId: globalFilters.categoryIds.length > 0 ? globalFilters.categoryIds : undefined,
+				budgetId: globalFilters.budgetIds.length > 0 ? globalFilters.budgetIds : undefined,
+				type: globalFilters.type,
+				status: globalFilters.status,
+				q: globalFilters.searchKeyword.trim() || undefined,
+				envelope: true,
+				limit: 50,
+				offset: periodTransactions.length
+			});
+			periodTransactions = [...periodTransactions, ...envelope.items];
+			hasNext = envelope.pagination?.hasNext ?? false;
+			totalCount = envelope.pagination?.total ?? periodTransactions.length;
+		} catch (err) {
+			console.warn('Gagal memuat transaksi berikutnya:', err);
+		} finally {
+			isLoadingMore = false;
+		}
+	}
 
 	// Local cashflow calculation from card's own data
 	const localCashflow = $derived.by(() => {
@@ -304,6 +335,19 @@
 					</div>
 				</button>
 			{/each}
+
+			{#if hasNext}
+				<div class="p-2 text-center">
+					<button
+						type="button"
+						disabled={isLoadingMore}
+						onclick={loadMore}
+						class="w-full cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 font-mono text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111] hover:bg-white disabled:opacity-50"
+					>
+						{isLoadingMore ? 'Memuat...' : `Muat Lebih Banyak (${periodTransactions.length} dari ${totalCount})`}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	</div>
 
