@@ -28,7 +28,6 @@
 		if (authStore.isAuthenticated) {
 			reedrichStore.fetchSnapshot();
 			reedrichStore.fetchUserProfile();
-			reedrichStore.fetchAllTransactions();
 			if (authStore.accessToken) {
 				settingsStore.load(PUBLIC_AGENT_URL, authStore.accessToken);
 			}

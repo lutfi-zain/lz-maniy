@@ -71,7 +71,6 @@
 		if (qPreset && qStart && qEnd) {
 			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
 		}
-		reedrichStore.fetchAllTransactions();
 	});
 
 	const nw = $derived(reedrichStore.snapshot?.netWorth);

@@ -114,7 +114,6 @@
 
 	onMount(() => {
 		reedrichStore.fetchRecurringTemplates();
-		reedrichStore.fetchAllTransactions();
 	});
 
 	const ob = $derived(reedrichStore.snapshot?.obligations);

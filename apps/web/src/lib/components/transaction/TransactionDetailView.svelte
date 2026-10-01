@@ -119,7 +119,8 @@
 			<span class="text-[#787774]">Tanggal</span>
 			<span class="font-mono text-[#111111]">
 				{dFmt(transaction.transactionDate)}{#if hasNonMidnightTime(transaction.transactionDate)}
-					<span class="text-[11px] text-[#787774]"> · {extractTimeHHmm(transaction.transactionDate)}</span
+					<span class="text-[11px] text-[#787774]">
+						· {extractTimeHHmm(transaction.transactionDate)}</span
 					>{/if}
 			</span>
 		</div>

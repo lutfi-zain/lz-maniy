@@ -370,5 +370,29 @@ describe('ReedrichStore', () => {
 			await store.fetchSnapshot({ startDate: '2026-09-01', endDate: '2026-09-30' });
 			expect(store.isLive).toBe(true);
 		});
+
+		it('fetchTransactionsForDrawer requests envelope and populates drawerTransactions', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/transactions?');
+				expect(url).toContain('envelope=true');
+				expect(url).toContain('walletId=w-test');
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						items: [{ transactionId: 't-drawer-1', transactionAmount: 75000 }],
+						pagination: { total: 1, limit: 50, offset: 0, hasNext: false, totalPages: 1 }
+					})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			await store.fetchTransactionsForDrawer({ walletId: 'w-test', limit: 50 });
+			expect(store.drawerTransactions.length).toBe(1);
+			expect(store.drawerTransactions[0].transactionId).toBe('t-drawer-1');
+
+			// Second call uses cache and does not re-fetch
+			await store.fetchTransactionsForDrawer({ walletId: 'w-test', limit: 50 });
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+		});
 	});
 });
