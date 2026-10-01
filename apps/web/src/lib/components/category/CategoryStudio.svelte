@@ -3,6 +3,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
+	import type { TransactionRecord } from '$lib/types/account-detail';
 	import {
 		calculateCategoryMetrics,
 		sortCategoryMetrics,
@@ -25,12 +26,43 @@
 	let viewMode = $state<'grouped' | 'flat'>('grouped');
 	let onlyActive = $state(false);
 
-	onMount(() => {
-		reedrichStore.fetchAllTransactions();
+	let categoryTransactions = $state<TransactionRecord[]>([]);
+	let isQueryLoading = $state(false);
+
+	$effect(() => {
+		const start = dateFilterStore.startDate;
+		const end = dateFilterStore.endDate;
+		const controller = new AbortController();
+		isQueryLoading = true;
+
+		reedrichStore
+			.fetchTransactions(
+				{
+					startDate: start || undefined,
+					endDate: end || undefined,
+					limit: 200,
+					envelope: true
+				},
+				controller.signal
+			)
+			.then((env) => {
+				if (controller.signal.aborted) return;
+				categoryTransactions = env.items;
+			})
+			.catch((err) => {
+				if (controller.signal.aborted) return;
+				console.warn('CategoryStudio transactions query error:', err);
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					isQueryLoading = false;
+				}
+			});
+
+		return () => controller.abort();
 	});
 
 	const allWallets = $derived(reedrichStore.allWallets);
-	const allTransactions = $derived(reedrichStore.allTransactions);
 	const categories = $derived(reedrichStore.categories);
 	const activeBudgets = $derived(reedrichStore.activeBudgets);
 
@@ -47,7 +79,7 @@
 	const stats = $derived.by(() => {
 		return calculateCategoryMetrics({
 			categories,
-			transactions: allTransactions,
+			transactions: categoryTransactions,
 			budgets: activeBudgets,
 			walletCurrencyMap,
 			startDate: dateFilterStore.startDate,

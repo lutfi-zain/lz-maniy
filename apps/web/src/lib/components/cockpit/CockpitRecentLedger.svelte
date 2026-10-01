@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
-	import { authStore } from '$lib/stores/auth.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
-	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import { t } from '$lib/i18n/index.svelte';
@@ -13,43 +11,48 @@
 	import type { TransactionRecord } from '$lib/types/account-detail';
 	let recentTransactions = $state<TransactionRecord[]>([]);
 	let isLoading = $state(false);
+	let activeController: AbortController | null = null;
+
+	async function loadRecent() {
+		activeController?.abort();
+		const controller = new AbortController();
+		activeController = controller;
+		isLoading = true;
+
+		try {
+			const envelope = await reedrichStore.fetchTransactions(
+				{
+					startDate: dateFilterStore.startDate || undefined,
+					endDate: dateFilterStore.endDate || undefined,
+					limit: 30,
+					envelope: true
+				},
+				controller.signal
+			);
+			if (controller.signal.aborted) return;
+			recentTransactions = envelope.items;
+		} catch (e: unknown) {
+			if (controller.signal.aborted) return;
+			console.warn('Gagal memuat feed mutasi terkini:', e);
+		} finally {
+			if (!controller.signal.aborted) {
+				isLoading = false;
+			}
+		}
+	}
+
 	// Reactive synchronization with dateFilterStore
 	$effect(() => {
-		// Track reactive dependencies
 		const _s = dateFilterStore.startDate;
 		const _e = dateFilterStore.endDate;
 		const _p = dateFilterStore.preset;
 		if (_p || _s || _e) {
 			loadRecent();
 		}
+		return () => {
+			activeController?.abort();
+		};
 	});
-
-	async function loadRecent() {
-		isLoading = true;
-		const queryParts = ['limit=30'];
-		if (dateFilterStore.startDate) queryParts.push(`startDate=${dateFilterStore.startDate}`);
-		if (dateFilterStore.endDate) queryParts.push(`endDate=${dateFilterStore.endDate}`);
-
-		try {
-			const token = (authStore.accessToken || reedrichStore.apiToken).trim();
-			const headers: Record<string, string> = {};
-			if (token) {
-				headers['X-API-Key'] = token;
-				headers['Authorization'] = 'Bearer ' + token;
-			}
-			const res = await fetch(`${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`, {
-				headers
-			});
-			if (res.ok) {
-				const data = await res.json();
-				recentTransactions = Array.isArray(data) ? data : (data.items ?? []);
-			}
-		} catch (e) {
-			console.warn('Gagal memuat feed mutasi terkini:', e);
-		} finally {
-			isLoading = false;
-		}
-	}
 
 	function getWalletName(walletId: string): string {
 		const w = reedrichStore.allWallets.find((x) => x.walletId === walletId);
@@ -80,7 +83,6 @@
 					bind:preset={dateFilterStore.preset}
 					onchange={({ preset, start, end }) => {
 						dateFilterStore.setFilter(preset as DatePreset, start, end);
-						loadRecent();
 					}}
 				/>
 				{#if dateFilterStore.preset !== 'this_month'}
@@ -88,7 +90,6 @@
 						type="button"
 						onclick={() => {
 							dateFilterStore.reset();
-							loadRecent();
 						}}
 						class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
 						title="Reset ke Bulan Ini"

@@ -167,7 +167,8 @@ export class TransactionFormStore {
 		this.description = t.transactionDescription ?? '';
 		this.date = t.transactionDate ? t.transactionDate.slice(0, 10) : getTodayString();
 		// String surgery (no Date parsing): keeps stored wall-clock digits verbatim across zones.
-		const hm = t.transactionDate && t.transactionDate.length > 10 ? t.transactionDate.slice(11, 16) : '';
+		const hm =
+			t.transactionDate && t.transactionDate.length > 10 ? t.transactionDate.slice(11, 16) : '';
 		this.time = TIME_PATTERN.test(hm) ? hm : '00:00';
 		this.isPlanned = t.transactionIsPlanned === 1;
 	}

@@ -194,33 +194,6 @@ export class ReedrichStore {
 		}
 	}
 
-	async fetchAllTransactions() {
-		if (this.allTransactions.length > 0) return;
-		this.isLedgerLoading = true;
-		try {
-			let offset = 0;
-			const accumulated: TransactionRecord[] = [];
-			while (true) {
-				const res = await this.request(
-					`${DEFAULT_API_URL}/api/v1/transactions?limit=200&offset=${offset}`
-				);
-				if (!res.ok) break;
-				const data = await res.json();
-				const items: TransactionRecord[] = Array.isArray(data) ? data : (data.items ?? []);
-				accumulated.push(...items);
-				if (items.length < 200) break;
-				offset += 200;
-			}
-			if (accumulated.length > 0) {
-				this.allTransactions = accumulated;
-			}
-		} catch (e) {
-			console.warn('Gagal memuat seluruh transaksi:', e);
-		} finally {
-			this.isLedgerLoading = false;
-		}
-	}
-
 	/**
 	 * Parameterized server-driven transaction query engine (Reedrich v1.13.0).
 	 * Queries /api/v1/transactions with ?envelope=true and structured filters.
@@ -345,41 +318,15 @@ export class ReedrichStore {
 		this.isDrawerLoading = true;
 		const limit = param.limit ?? 50;
 
-		// If allTransactions is already loaded in memory, filter instantly!
-		if (this.allTransactions.length > 0) {
-			const matches = this.allTransactions.filter((t) => {
-				if (
-					param.walletId &&
-					t.transactionWalletId !== param.walletId &&
-					t.transactionTargetWalletId !== param.walletId
-				) {
-					return false;
-				}
-				if (param.categoryId && t.transactionCategoryId !== param.categoryId) {
-					return false;
-				}
-				if (param.budgetId && t.transactionBudgetId !== param.budgetId) {
-					return false;
-				}
-				const d = (t.transactionDate || '').slice(0, 10);
-				if (param.startDate && d < param.startDate) return false;
-				if (param.endDate && d > param.endDate) return false;
-				return true;
-			});
-			this.drawerTransactions = matches.slice(0, limit);
-			this.isDrawerLoading = false;
-			return;
-		}
+		const cacheKey = [
+			param.walletId || '',
+			param.categoryId || '',
+			param.budgetId || '',
+			param.startDate || '',
+			param.endDate || '',
+			limit
+		].join(':');
 
-		const queryParts: string[] = [`limit=${limit}`];
-
-		if (param.walletId) queryParts.push(`walletId=${encodeURIComponent(param.walletId)}`);
-		if (param.categoryId) queryParts.push(`categoryId=${encodeURIComponent(param.categoryId)}`);
-		if (param.budgetId) queryParts.push(`budgetId=${encodeURIComponent(param.budgetId)}`);
-		if (param.startDate) queryParts.push(`startDate=${encodeURIComponent(param.startDate)}`);
-		if (param.endDate) queryParts.push(`endDate=${encodeURIComponent(param.endDate)}`);
-
-		const cacheKey = queryParts.join('&');
 		if (this.transactionCache.has(cacheKey)) {
 			this.drawerTransactions = this.transactionCache.get(cacheKey)!;
 			this.isDrawerLoading = false;
@@ -387,17 +334,18 @@ export class ReedrichStore {
 		}
 
 		try {
-			const url = `${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`;
-			const res = await this.request(url);
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const envelope = await this.fetchTransactions({
+				walletId: param.walletId,
+				categoryId: param.categoryId,
+				budgetId: param.budgetId,
+				startDate: param.startDate,
+				endDate: param.endDate,
+				limit,
+				envelope: true
+			});
 
-			const json = await res.json();
-			const items: TransactionRecord[] = Array.isArray(json)
-				? json
-				: (json.items ?? json.data ?? []);
-
-			this.transactionCache.set(cacheKey, items);
-			this.drawerTransactions = items;
+			this.transactionCache.set(cacheKey, envelope.items);
+			this.drawerTransactions = envelope.items;
 		} catch (err) {
 			console.warn('Gagal memuat transaksi untuk drawer:', err);
 			this.drawerTransactions = [];
@@ -688,11 +636,7 @@ export class ReedrichStore {
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
 		this.allTransactions = [];
-		await Promise.all([
-			this.fetchSnapshot(),
-			this.fetchAllTransactions(),
-			this.fetchRecurringTemplates()
-		]);
+		await Promise.all([this.fetchSnapshot(), this.fetchRecurringTemplates()]);
 	}
 
 	/**

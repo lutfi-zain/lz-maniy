@@ -3,9 +3,7 @@ import { buildLocalISO, hasNonMidnightTime, extractTimeHHmm } from './dates';
 
 describe('buildLocalISO', () => {
 	it('assembles date + time with seconds :00 and a zone offset', () => {
-		expect(buildLocalISO('2026-09-30', '14:30')).toMatch(
-			/^2026-09-30T14:30:00[+-]\d{2}:\d{2}$/
-		);
+		expect(buildLocalISO('2026-09-30', '14:30')).toMatch(/^2026-09-30T14:30:00[+-]\d{2}:\d{2}$/);
 	});
 
 	it('zero-pads single-digit hours and minutes', () => {
