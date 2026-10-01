@@ -12,25 +12,8 @@
 	import type { TransactionRecord } from '$lib/types/account-detail';
 	let recentTransactions = $state<TransactionRecord[]>([]);
 	let isLoading = $state(false);
-	let applyingTxId = $state<string | null>(null);
 	let activeController: AbortController | null = null;
 
-	async function applyTransaction(tx: TransactionRecord) {
-		if (!tx.transactionTemplateId) return;
-		applyingTxId = tx.transactionId;
-		try {
-			await reedrichStore.applyRecurringTemplate(tx.transactionTemplateId, {
-				transactionId: tx.transactionId,
-				executionDate: tx.transactionDate,
-				actualAmount: tx.transactionAmount
-			});
-			await loadRecent();
-		} catch (err) {
-			console.warn('Gagal menerapkan transaksi terencana:', err);
-		} finally {
-			applyingTxId = null;
-		}
-	}
 	async function loadRecent() {
 		activeController?.abort();
 		const controller = new AbortController();
@@ -42,7 +25,7 @@
 				{
 					startDate: dateFilterStore.startDate || undefined,
 					endDate: dateFilterStore.endDate || undefined,
-					status: 'all',
+					status: 'realized',
 					orderBy: 'date',
 					direction: 'desc',
 					limit: 30,
@@ -184,24 +167,9 @@
 										{tx.transactionDescription || '(tanpa deskripsi)'}
 									</div>
 									{#if isPlan}
-										<div class="mt-0.5 flex items-center gap-1.5">
-											<span class="inline-block font-mono text-[9px] font-semibold text-[#956400] uppercase">
-												Planned
-											</span>
-											{#if tx.transactionTemplateId}
-												<button
-													type="button"
-													onclick={(e) => {
-														e.stopPropagation();
-														applyTransaction(tx);
-													}}
-													disabled={applyingTxId === tx.transactionId}
-													class="rounded border border-[#346538] bg-[#EDF3EC] px-1.5 py-0.5 text-[9px] font-medium text-[#346538] transition-colors hover:bg-[#346538] hover:text-white disabled:opacity-50"
-												>
-													{applyingTxId === tx.transactionId ? 'Menerapkan...' : 'Terapkan'}
-												</button>
-											{/if}
-										</div>
+										<span class="inline-block font-mono text-[9px] text-[#956400] uppercase">
+											Planned
+										</span>
 									{/if}
 								</td>
 								<td class="max-w-[110px] truncate py-2 text-[11px] text-[#787774]">
@@ -271,24 +239,9 @@
 								<span class="truncate">{getWalletName(tx.transactionWalletId)}</span>
 							</div>
 							{#if isPlan}
-								<div class="flex items-center gap-1.5">
-									<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
-										Planned
-									</span>
-									{#if tx.transactionTemplateId}
-										<button
-											type="button"
-											onclick={(e) => {
-												e.stopPropagation();
-												applyTransaction(tx);
-											}}
-											disabled={applyingTxId === tx.transactionId}
-											class="rounded border border-[#346538] bg-[#EDF3EC] px-1.5 py-0.5 text-[9px] font-medium text-[#346538] transition-colors hover:bg-[#346538] hover:text-white disabled:opacity-50"
-										>
-											{applyingTxId === tx.transactionId ? 'Menerapkan...' : 'Terapkan'}
-										</button>
-									{/if}
-								</div>
+								<span class="font-mono text-[9px] font-semibold text-[#956400] uppercase">
+									Planned
+								</span>
 							{/if}
 						</div>
 					</div>

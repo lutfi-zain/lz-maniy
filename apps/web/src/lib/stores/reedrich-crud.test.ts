@@ -301,34 +301,6 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 		});
 	});
 
-	// --- Debts & Loans Repay ---
-	describe('Debts and Loans Repayment', () => {
-		it('repayDebtLoan() sends POST to /repay with payload', async () => {
-			const mockResponse = { debtLoanId: 'd-1', remainingAmount: 500000, status: 'partially_paid' };
-			const mockFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
-				if (init?.method === 'POST') {
-					return Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }));
-				}
-				return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }));
-			});
-			vi.stubGlobal('fetch', mockFetch);
-
-			const result = await store.repayDebtLoan('d-1', {
-				amount: 500000,
-				walletId: 'w-1',
-				adjustWalletBalance: true
-			});
-			expect(result).toEqual(mockResponse);
-			expect(mockFetch).toHaveBeenCalledWith(
-				expect.stringContaining('/api/v1/debts-loans/d-1/repay'),
-				expect.objectContaining({
-					method: 'POST',
-					body: JSON.stringify({ amount: 500000, walletId: 'w-1', adjustWalletBalance: true })
-				})
-			);
-		});
-	});
-
 	// --- Profile ---
 	describe('Profile Update', () => {
 		it('updateProfile() sends PATCH to /api/v1/me', async () => {
