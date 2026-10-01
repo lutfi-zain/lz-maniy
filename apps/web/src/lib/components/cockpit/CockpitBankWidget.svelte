@@ -32,6 +32,17 @@
 		}
 		return Array.from(map.entries());
 	});
+
+	function handleWalletClick(w: (typeof allWallets)[0]) {
+		reedrichStore.openDrawer({
+			type: 'wallet',
+			title: w.walletName,
+			subtitle: `${w.institution} · Tipe: ${w.type} · Mata Uang: ${w.currency}`,
+			badge: w.isLocked === 1 ? 'DOMPET TERKUNCI' : 'DOMPET SPENDABLE',
+			data: { wallet: w }
+		});
+		reedrichStore.fetchTransactionsForDrawer({ walletId: w.walletId, limit: 50 });
+	}
 </script>
 
 <!-- Desktop: Detailed Institution & Sub-Wallets Sidebar (>= md) -->
@@ -80,11 +91,12 @@
 					<!-- Sub-wallets -->
 					<div class="space-y-1 border-l border-[#EAEAEA] pl-2">
 						{#each data.items as w (w.walletId)}
-							<a
-								href="/ledger?walletId={encodeURIComponent(w.walletId)}"
-								class="group flex items-center justify-between py-0.5 text-[11px] text-[#787774] no-underline transition-colors hover:text-[#111111]"
+							<button
+								type="button"
+								onclick={() => handleWalletClick(w)}
+								class="group flex w-full cursor-pointer items-center justify-between py-0.5 text-[11px] text-[#787774] transition-colors hover:text-[#111111]"
 							>
-								<span class="flex max-w-[130px] items-center gap-1 truncate">
+								<span class="flex max-w-[130px] items-center gap-1 truncate text-left">
 									{#if w.isLocked === 1}
 										<LockKey class="size-2.5 shrink-0 text-[#956400]" weight="bold" />
 									{/if}
@@ -93,7 +105,7 @@
 								<span class="font-mono text-[#111111] tabular-nums group-hover:underline">
 									{fmtCurrency(w.balance, w.currency)}
 								</span>
-							</a>
+							</button>
 						{/each}
 					</div>
 				</div>

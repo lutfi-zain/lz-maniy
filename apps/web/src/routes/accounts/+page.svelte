@@ -22,10 +22,6 @@
 	import AccountsHorizonBoard from '$lib/components/accounts/AccountsHorizonBoard.svelte';
 	import Table from 'phosphor-svelte/lib/Table';
 	import CalendarBlank from 'phosphor-svelte/lib/CalendarBlank';
-	import {
-		calculatePointInTimeNetWorth,
-		calculatePointInTimeWalletBalances
-	} from '$lib/utils/networth-timeline';
 	import type { WalletItem } from '$lib/types/account-detail';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
@@ -63,6 +59,8 @@
 		accountsFilterStore.listViewStyle = listViewStyle;
 	});
 
+	let activeController: AbortController | null = null;
+
 	onMount(() => {
 		const qPreset = page.url.searchParams.get('datePreset');
 		const qStart = page.url.searchParams.get('startDate');
@@ -71,7 +69,29 @@
 		if (qPreset && qStart && qEnd) {
 			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
 		}
-		reedrichStore.fetchWallets();
+	});
+
+	// Server-driven point-in-time synchronization with dateFilterStore
+	$effect(() => {
+		const start = dateFilterStore.startDate;
+		const end = dateFilterStore.endDate;
+		const preset = dateFilterStore.preset;
+
+		activeController?.abort();
+		const controller = new AbortController();
+		activeController = controller;
+
+		reedrichStore.fetchWallets(
+			{
+				startDate: start || undefined,
+				endDate: end || undefined
+			},
+			controller.signal
+		);
+
+		return () => {
+			controller.abort();
+		};
 	});
 
 	const nw = $derived(reedrichStore.snapshot?.netWorth);
@@ -88,34 +108,32 @@
 		return map;
 	});
 
-	// Dynamic point-in-time balances for every wallet at horizon T_akhir
-	const pointInTimeBalances = $derived(
-		calculatePointInTimeWalletBalances({
-			wallets: allWallets,
-			allTransactions: allTxs,
-			endDate: dateFilterStore.endDate
-		})
-	);
-
 	function getWalletBalance(w: WalletItem): number {
-		return pointInTimeBalances.get(w.walletId) ?? w.balance;
+		return w.balance;
 	}
 
-	// Point-in-time portfolio summary tiles
-	const currentNetWorth = $derived(nw?.consolidated.total ?? 0);
-	const currentSpendable = $derived(wl?.spendable.total);
-	const currentLocked = $derived(wl?.locked.total);
-	const timelineNetWorth = $derived(
-		calculatePointInTimeNetWorth({
-			currentNetWorth,
-			allTransactions: allTxs,
-			endDate: dateFilterStore.endDate,
-			wallets: allWallets,
-			walletCurrencyMap,
-			currentSpendable,
-			currentLocked
-		})
-	);
+	// Point-in-time portfolio summary tiles derived directly from server-filtered wallets
+	const timelineNetWorth = $derived.by(() => {
+		let total = 0;
+		let spendable = 0;
+		let locked = 0;
+		for (const w of allWallets) {
+			const convertedIDR = getConvertedBalanceInIDR(w.balance, w.currency || 'IDR');
+			total += convertedIDR;
+			if (w.isLocked === 1) {
+				locked += convertedIDR;
+			} else {
+				spendable += convertedIDR;
+			}
+		}
+		const isFiltered = dateFilterStore.preset !== 'this_month' && dateFilterStore.preset !== 'all';
+		return {
+			label: isFiltered ? 'NET WORTH PENUTUPAN' : 'NET WORTH SAAT INI',
+			amount: total,
+			spendableAmount: spendable,
+			lockedAmount: locked
+		};
+	});
 	// Filtered wallets
 	const filteredWallets = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();

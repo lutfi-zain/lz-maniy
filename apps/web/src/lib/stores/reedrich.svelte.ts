@@ -55,7 +55,26 @@ export class ReedrichStore {
 	drawerTransactions = $state<TransactionRecord[]>([]);
 	isDrawerLoading = $state<boolean>(false);
 	drawerSearch = $state<string>('');
-
+	drawerPagination = $state<{
+		total: number;
+		limit: number;
+		offset: number;
+		hasNext: boolean;
+		totalPages: number;
+	}>({
+		total: 0,
+		limit: 50,
+		offset: 0,
+		hasNext: false,
+		totalPages: 1
+	});
+	drawerCurrentParams = $state<{
+		walletId?: string;
+		categoryId?: string;
+		budgetId?: string;
+		startDate?: string;
+		endDate?: string;
+	} | null>(null);
 	// Recurring templates dataset
 	recurringTemplates = $state<RecurringTemplate[]>([]);
 	isRecurringLoading = $state<boolean>(false);
@@ -275,6 +294,12 @@ export class ReedrichStore {
 			if (params.offset !== undefined) {
 				queryParts.push(`offset=${params.offset}`);
 			}
+			if (params.orderBy) {
+				queryParts.push(`orderBy=${encodeURIComponent(params.orderBy)}`);
+			}
+			if (params.direction) {
+				queryParts.push(`direction=${encodeURIComponent(params.direction)}`);
+			}
 
 			const url = `${DEFAULT_API_URL}/api/v1/transactions?${queryParts.join('&')}`;
 			const res = await this.request(url, { signal: taskSignal || signal });
@@ -336,9 +361,18 @@ export class ReedrichStore {
 		startDate?: string;
 		endDate?: string;
 		limit?: number;
+		offset?: number;
 	}) {
 		this.isDrawerLoading = true;
 		const limit = param.limit ?? 50;
+		const offset = param.offset ?? 0;
+		this.drawerCurrentParams = {
+			walletId: param.walletId,
+			categoryId: param.categoryId,
+			budgetId: param.budgetId,
+			startDate: param.startDate,
+			endDate: param.endDate
+		};
 
 		const cacheKey = [
 			param.walletId || '',
@@ -346,7 +380,8 @@ export class ReedrichStore {
 			param.budgetId || '',
 			param.startDate || '',
 			param.endDate || '',
-			limit
+			limit,
+			offset
 		].join(':');
 
 		if (this.transactionCache.has(cacheKey)) {
@@ -363,14 +398,17 @@ export class ReedrichStore {
 				startDate: param.startDate,
 				endDate: param.endDate,
 				limit,
+				offset,
 				envelope: true
 			});
 
 			this.transactionCache.set(cacheKey, envelope.items);
 			this.drawerTransactions = envelope.items;
+			this.drawerPagination = envelope.pagination;
 		} catch (err) {
 			console.warn('Gagal memuat transaksi untuk drawer:', err);
 			this.drawerTransactions = [];
+			this.drawerPagination = { total: 0, limit, offset: 0, hasNext: false, totalPages: 1 };
 		} finally {
 			this.isDrawerLoading = false;
 		}
@@ -599,16 +637,37 @@ export class ReedrichStore {
 	}
 
 	/**
-	 * Standalone fetch of user wallets via GET /api/v1/wallets (includes real lastTransaction).
+	 * Standalone fetch of user wallets via GET /api/v1/wallets with point-in-time snapshot parameters.
 	 */
-	async fetchWallets(signal?: AbortSignal): Promise<WalletItem[]> {
+	async fetchWallets(
+		params?: {
+			startDate?: string;
+			endDate?: string;
+			filter?: 'realized' | 'planned' | 'all';
+			isLocked?: boolean;
+		},
+		signal?: AbortSignal
+	): Promise<WalletItem[]> {
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			this.isWalletsLoading = true;
 			try {
-				const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets`, {
+				const queryParts: string[] = [];
+				if (params?.startDate) {
+					queryParts.push(`startDate=${encodeURIComponent(params.startDate)}`);
+				}
+				if (params?.endDate) {
+					queryParts.push(`endDate=${encodeURIComponent(params.endDate)}`);
+				}
+				if (params?.filter && params.filter !== 'all') {
+					queryParts.push(`filter=${encodeURIComponent(params.filter)}`);
+				}
+				if (params?.isLocked !== undefined) {
+					queryParts.push(`isLocked=${params.isLocked}`);
+				}
+				const qs = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+				const res = await this.request(`${DEFAULT_API_URL}/api/v1/wallets${qs}`, {
 					signal: taskSignal || signal
 				});
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				const json: unknown = await res.json();
 				const itemsRaw = Array.isArray(json) ? json : [];
 				interface RawWalletEntry {
