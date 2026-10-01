@@ -1,4 +1,4 @@
-import type { AccountDetail, CategoryRecord } from '$lib/types/account-detail';
+import type { AccountDetail, CategoryRecord, FinancialSummary } from '$lib/types/account-detail';
 
 import { PUBLIC_API_URL, PUBLIC_API_TOKEN } from '$env/static/public';
 
@@ -462,3 +462,117 @@ export const MOCK_CATEGORIES: CategoryRecord[] = [
 	{ categoryId: 'cat_5', categoryName: 'Cicilan Motor', categoryType: 'expense' },
 	{ categoryId: 'cat_6', categoryName: 'Gaji & Pendapatan', categoryType: 'income' }
 ];
+
+export const MOCK_SUMMARY: FinancialSummary = {
+	netWorthByCurrency: { IDR: 15271190.85, USDT: 115.61 },
+	netWorthByInstitution: {
+		OCBC: 959368,
+		BCA: 8975931.69,
+		'Bank Jago': 4872868.16,
+		GoPay: 10023,
+		Bitget: 115.61,
+		General: 453000
+	},
+	consolidatedNetWorth: {
+		baseCurrency: 'IDR',
+		estimatedTotal: 17333190.67,
+		isEstimated: true,
+		exchangeRatesSource: 'live'
+	},
+	spendableCash: {
+		byCurrency: { IDR: 1102293.15 },
+		estimatedTotal: 1102293.15,
+		currency: 'IDR'
+	},
+	lockedCash: {
+		byCurrency: { IDR: 14168897.7, USDT: 115.61 },
+		estimatedTotal: 16230897.52,
+		currency: 'IDR'
+	},
+	safeToSpend: 4500000,
+	dailySafeToSpend: 375000,
+	safeToSpendDetails: {
+		remainingDays: 12,
+		plannedExpensesDeducted: 1500000,
+		recurringExpensesDeducted: 2000000,
+		activeDebtDeducted: 2000000,
+		isDeficit: false
+	},
+	totalIncome: 20475000,
+	totalExpense: 11703300,
+	totalAdminFees: 0,
+	netSavings: 8771700,
+	totalDebt: 6645000,
+	totalReceivable: 302808,
+	categoryBreakdown: {
+		'House Maintenance': 80000,
+		'Makan & Minum': 63500,
+		'Taktis / Operasional': 20000
+	},
+	cashflowProjections: {
+		lookaheadDays: 30,
+		startDate: '2026-10-01',
+		endDate: '2026-10-31',
+		projectedIncome: 20475000,
+		projectedExpense: 11703300,
+		projectedAdminFees: 0,
+		projectedNetChange: 8771700,
+		events: [
+			{
+				templateId: '53cde47e-85db-436f-9be5-db9885fa26e8',
+				templateName: 'Gaji Siloam Bulanan',
+				date: '2026-10-05',
+				amount: 20475000,
+				adminFee: 0,
+				type: 'income',
+				walletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+				targetWalletId: null,
+				categoryId: '78ddcb45-2535-4965-b5da-2a1f7e688962'
+			},
+			{
+				templateId: '0b6ee465-9a73-4e36-a5b7-65709fe41d19',
+				templateName: 'Tagihan Listrik PLN',
+				date: '2026-10-05',
+				amount: 1004000,
+				adminFee: 0,
+				type: 'expense',
+				walletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+				targetWalletId: null,
+				categoryId: '2701f41a-e2c1-453a-a35a-81f13dd057b8'
+			},
+			{
+				templateId: '62bafd3e-1753-401c-9a1d-a8c7ed6b7b30',
+				templateName: 'Tagihan BPJS Kesehatan',
+				date: '2026-10-05',
+				amount: 452500,
+				adminFee: 0,
+				type: 'expense',
+				walletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+				targetWalletId: null,
+				categoryId: '2701f41a-e2c1-453a-a35a-81f13dd057b8'
+			},
+			{
+				templateId: '6ec486d6-992e-41f9-a8da-2ea8bc0c8489',
+				templateName: 'Tagihan Internet Indihome',
+				date: '2026-10-05',
+				amount: 336000,
+				adminFee: 0,
+				type: 'expense',
+				walletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+				targetWalletId: null,
+				categoryId: '2701f41a-e2c1-453a-a35a-81f13dd057b8'
+			},
+			{
+				templateId: '01ee42d6-1c73-42bb-843d-98b9d5743d8d',
+				templateName: 'Cicilan Motor Nmax',
+				date: '2026-10-05',
+				amount: 1300000,
+				adminFee: 0,
+				type: 'expense',
+				walletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+				targetWalletId: null,
+				categoryId: '28c757f5-b381-42dd-9e94-e1573292a165'
+			}
+		]
+	}
+};

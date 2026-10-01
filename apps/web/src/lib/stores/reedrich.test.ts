@@ -504,5 +504,39 @@ describe('ReedrichStore', () => {
 			expect(store.activeDebts.length).toBe(1);
 			expect(store.activeLoans.length).toBe(1);
 		});
+
+		it('populates summary from mock data initially and supports fetchSummary', async () => {
+			expect(store.summary).not.toBeNull();
+			expect(store.summary?.safeToSpend).toBe(4500000);
+			expect(store.summary?.safeToSpendDetails.isDeficit).toBe(false);
+
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				if (url.includes('/api/v1/summary')) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: async () => ({
+							...store.summary,
+							safeToSpend: -1000000,
+							safeToSpendDetails: {
+								remainingDays: 10,
+								plannedExpensesDeducted: 5000000,
+								recurringExpensesDeducted: 1000000,
+								activeDebtDeducted: 500000,
+								isDeficit: true
+							}
+						})
+					});
+				}
+				return Promise.resolve({ ok: false, status: 404 });
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const summary = await store.fetchSummary();
+			expect(summary).not.toBeNull();
+			expect(summary?.safeToSpend).toBe(-1000000);
+			expect(summary?.safeToSpendDetails.isDeficit).toBe(true);
+			expect(store.summary?.safeToSpendDetails.isDeficit).toBe(true);
+		});
 	});
 });

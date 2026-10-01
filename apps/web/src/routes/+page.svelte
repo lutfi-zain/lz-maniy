@@ -4,6 +4,7 @@
 	import CockpitBankWidget from '$lib/components/cockpit/CockpitBankWidget.svelte';
 	import CockpitRecentLedger from '$lib/components/cockpit/CockpitRecentLedger.svelte';
 	import CockpitAllocationWidget from '$lib/components/cockpit/CockpitAllocationWidget.svelte';
+	import CockpitCashflowTimeline from '$lib/components/cockpit/CockpitCashflowTimeline.svelte';
 </script>
 
 <div class="max-w-full space-y-4 overflow-hidden">
@@ -27,9 +28,10 @@
 			<CockpitRecentLedger />
 		</div>
 
-		<!-- Right: Monthly Expense Breakdown & Active Budgets -->
-		<div class="min-w-0 lg:col-span-2 xl:col-span-1">
+		<!-- Right: Monthly Expense Breakdown & 30-Day Cashflow Timeline -->
+		<div class="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
 			<CockpitAllocationWidget />
+			<CockpitCashflowTimeline />
 		</div>
 	</div>
 </div>
