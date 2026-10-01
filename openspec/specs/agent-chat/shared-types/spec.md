@@ -86,6 +86,11 @@ The shared types package SHALL define configurations and capability flags for AI
 #### Scenario: Agent Settings Structure
 - **WHEN** consumer imports `AgentSettings` from `@maniyy/shared`
 - **THEN** the interface defines `defaultProvider: 'gemini' | 'groq'`, `defaultModel: string`, and optional `systemPromptOverride?: string`
+
+#### Scenario: OpenCode Model Definitions
+- **WHEN** consumer imports `AVAILABLE_MODELS` from `@maniyy/shared`
+- **THEN** non-functional upstream OpenCode models (`muse-spark-1.3-contributor-free`, `deepseek-v4-flash-free`) are omitted from active model choices
+- **THEN** active entries prioritize verified Google Gemini and Groq models
 ### Requirement: Re-Export of Core Domain Types
 The shared types package SHALL re-export all core Reedrich financial entity and DTO types.
 

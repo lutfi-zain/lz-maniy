@@ -7,7 +7,7 @@ import { EVAL_DATASET } from './dataset.js';
 
 const REEDRICH_URL = 'https://reedrich-mcp.lutfidmz.workers.dev';
 const REEDRICH_TOKEN = 'fp_live_be1431dce4ec5d97dfcedef125984f6e';
-const GEMINI_KEY = 'AQ.Ab8RN6IFl5OrBB_Skw_Z6J9FobRy-2EVmWoQdjSvF3cBYhu0Vg';
+const GEMINI_KEY = 'AQ.Ab8RN6IdIhUs6lMi_QQ9HyNjc8-esITMmdlSHH66n-of-HWj_w';
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 const financialTools = createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN);

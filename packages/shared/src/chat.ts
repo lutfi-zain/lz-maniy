@@ -77,20 +77,6 @@ export const DEFAULT_MODELS: ModelConfig[] = [
 		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 	},
 	{
-		provider: 'opencode',
-		model: 'muse-spark-1.3-contributor-free',
-		displayName: 'Muse Spark 1.3 Free (OpenCode)',
-		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high', 'xhigh']
-	},
-	{
-		provider: 'opencode',
-		model: 'deepseek-v4-flash-free',
-		displayName: 'DeepSeek V4 Flash Free (OpenCode)',
-		capabilities: { vision: false, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
-	},
-	{
 		provider: 'groq',
 		model: 'openai/gpt-oss-20b',
 		displayName: 'GPT-OSS 20B (Groq Fast)',

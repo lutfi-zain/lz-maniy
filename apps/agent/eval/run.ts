@@ -26,7 +26,7 @@ export async function runEval(providerType: 'gemini' | 'groq', modelName: string
 	console.log(`🚀 EVALUATING AGENT REASONING: ${providerType} (${modelName})`);
 	console.log(`======================================================\n`);
 
-	const geminiKey = 'AQ.Ab8RN6IFl5OrBB_Skw_Z6J9FobRy-2EVmWoQdjSvF3cBYhu0Vg';
+	const geminiKey = 'AQ.Ab8RN6IdIhUs6lMi_QQ9HyNjc8-esITMmdlSHH66n-of-HWj_w';
 	const groqKey = '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';
 
 	const model = providerType === 'gemini'

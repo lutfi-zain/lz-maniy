@@ -70,7 +70,7 @@ describe('OpenCode Adapter', () => {
 		expect(model.provider).toContain('opencode');
 	});
 
-	it('integrates with getModel for opencode provider', () => {
+	it('integrates with getModel for opencode provider with safe fallback', () => {
 		const mockEnv = {
 			DB: {} as unknown as D1Database,
 			CONFIG: {} as unknown as KVNamespace,
@@ -81,15 +81,10 @@ describe('OpenCode Adapter', () => {
 		};
 		const model = getModel(mockEnv, 'opencode', 'muse-spark-1.3-contributor-free');
 		expect(model).toBeDefined();
-		expect(model.modelId).toBe('muse-spark-1.3-contributor-free');
 	});
 
-	it('lists opencode models in AVAILABLE_MODELS with thinking capability', () => {
+	it('removes non-functional opencode models from AVAILABLE_MODELS', () => {
 		const opencodeModels = AVAILABLE_MODELS.filter((m) => m.provider === 'opencode');
-		expect(opencodeModels.length).toBeGreaterThanOrEqual(2);
-		const muse = opencodeModels.find((m) => m.model === 'muse-spark-1.3-contributor-free');
-		expect(muse).toBeDefined();
-		expect(muse?.capabilities.thinking).toBe(true);
-		expect(muse?.thinkingLevels).toContain('high');
+		expect(opencodeModels.length).toBe(0);
 	});
 });

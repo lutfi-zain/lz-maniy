@@ -36,18 +36,22 @@ The agent service SHALL authenticate incoming requests by validating the provide
 The agent service SHALL support model selection between Google Gemini, Groq, and OpenCode providers using system-managed environment API keys or default public tokens.
 
 #### Scenario: Provider and Model Routing
-- **WHEN** client requests a Gemini model (e.g. `gemini-1.5-flash`, `gemini-1.5-pro`) or a Groq model (e.g. `llama-3.3-70b-versatile`)
-- **THEN** the service instantiates the corresponding Vercel AI SDK provider with `GEMINI_API_KEY` or `GROQ_API_KEY` from worker environment bindings
+- **WHEN** client requests a Gemini model (e.g. `gemini-3.1-flash-lite`, `gemini-3.6-flash`) or a Groq model (e.g. `openai/gpt-oss-20b`)
+- **THEN** the service instantiates the corresponding Vercel AI SDK provider with the updated valid `GEMINI_API_KEY` or `GROQ_API_KEY` from worker environment bindings
 - **THEN** requests route to the designated provider without requiring client-supplied API keys
 
 #### Scenario: Public Model Listing
 - **WHEN** an unauthenticated client sends `GET /api/models`
 - **THEN** the server returns HTTP 200 with the list of supported models, their display names, providers, and capabilities (`vision`, `tool_calling`) without requiring an Authorization header
+- **THEN** non-functional OpenCode models are excluded from the active listing
 
 #### Scenario: OpenCode Provider Routing with Public Token
-- **WHEN** client requests an OpenCode model (e.g. `muse-spark-1.3-contributor-free`, `deepseek-v4-flash-free`) with provider `opencode`
-- **THEN** the service instantiates the OpenCode adapter targeting `https://opencode.ai/zen/v1` with `Authorization: Bearer public` (or environment `OPENCODE_API_KEY`)
-- **THEN** the outbound request contains official OpenCode CLI headers (`User-Agent`, `x-opencode-client: cli`, `x-opencode-project: global`, `x-opencode-session`, `x-opencode-request`) preventing `403 FreeTierError`
+- **WHEN** client requests a legacy conversation or payload specifying provider `opencode`
+- **THEN** the service safely falls back to the default Gemini model (`gemini-3.1-flash-lite`) instead of triggering upstream 500 or 403 network crashes
+
+#### Scenario: Gemini High-Demand Error Handling
+- **WHEN** an upstream Gemini request returns HTTP 503 due to temporary high demand spikes (e.g. on `gemini-3.7-flash` or `gemini-3.8-flash`)
+- **THEN** the runner catches the error and surfaces a descriptive stream message recommending fallback to `gemini-3.1-flash-lite` or retry
 ### Requirement: Multi-Step Tool Calling Agent Loop
 The agent service SHALL execute an agent loop with `maxSteps` (up to 10 steps) allowing the model to invoke multiple tools sequentially without premature termination when intermediate text or reasoning is emitted.
 

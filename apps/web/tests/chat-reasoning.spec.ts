@@ -15,11 +15,11 @@ test.describe('Agent Chat Reasoning & UI Enhancements', () => {
 						thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 					},
 					{
-						provider: 'opencode',
-						model: 'muse-spark-1.3-contributor-free',
-						displayName: 'Muse Spark 1.3 Free (OpenCode)',
+						provider: 'gemini',
+						model: 'gemini-3.7-flash',
+						displayName: 'Gemini 3.7 Flash',
 						capabilities: { vision: true, tool_calling: true, thinking: true },
-						thinkingLevels: ['off', 'low', 'medium', 'high', 'xhigh']
+						thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 					},
 					{
 						provider: 'groq',
@@ -65,7 +65,7 @@ test.describe('Agent Chat Reasoning & UI Enhancements', () => {
 		await expect(thinkingBtn).toContainText('high');
 	});
 
-	test('displays OpenCode models in model picker and switches model', async ({ page }) => {
+	test('displays active models in model picker and switches model', async ({ page }) => {
 		await page.goto('/');
 
 		// Open chat panel
@@ -76,19 +76,15 @@ test.describe('Agent Chat Reasoning & UI Enhancements', () => {
 		await expect(modelBtn).toBeVisible();
 		await modelBtn.click();
 
-		// Check OpenCode Zen section header and Muse Spark
-		const opencodeHeader = page.getByText('OpenCode Zen (Public Tier)');
-		await expect(opencodeHeader).toBeVisible();
+		// Check Google Gemini section header and Groq section header
+		const geminiHeader = page.getByText('Google Gemini');
+		await expect(geminiHeader).toBeVisible();
 
-		const museModel = page.getByText('Muse Spark 1.3 Free (OpenCode)');
-		await expect(museModel).toBeVisible();
-		await museModel.click();
+		const groqModel = page.getByText('GPT-OSS 20B (Groq Fast)');
+		await expect(groqModel).toBeVisible();
+		await groqModel.click();
 
-		// Verify model selector button displays Muse Spark
-		await expect(modelBtn).toContainText('Muse Spark 1.3 Free');
-
-		// Since Muse Spark supports thinking, thinking selector remains visible
-		const thinkingBtn = page.getByRole('button', { name: 'Atur Thinking Level' });
-		await expect(thinkingBtn).toBeVisible();
+		// Verify model selector button displays selected model
+		await expect(modelBtn).toContainText('GPT-OSS 20B');
 	});
 });
