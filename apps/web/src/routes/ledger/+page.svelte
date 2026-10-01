@@ -354,31 +354,33 @@
 					<kbd class="absolute top-1/2 right-2 -translate-y-1/2 text-[9px]">/</kbd>
 				</div>
 
-				<!-- Custom 2-Click Date Range Picker with Presets -->
-				<div class="flex items-center gap-1.5">
-					<DateRangePicker
-						bind:start={dateFilterStore.startDate}
-						bind:end={dateFilterStore.endDate}
-						bind:preset={dateFilterStore.preset}
-						onchange={({ preset, start, end }) => {
-							dateFilterStore.setFilter(preset as DatePreset, start, end);
-							currentPage = 1;
-						}}
-					/>
-					{#if dateFilterStore.preset !== 'this_month'}
-						<button
-							type="button"
-							onclick={() => {
-								dateFilterStore.reset();
+				<!-- Custom 2-Click Date Range Picker with Presets (Hidden in Horizon Board mode) -->
+				{#if !(!isMobile && settingsStore.settings.ledgerViewMode === 'calendar_board')}
+					<div class="flex items-center gap-1.5">
+						<DateRangePicker
+							bind:start={dateFilterStore.startDate}
+							bind:end={dateFilterStore.endDate}
+							bind:preset={dateFilterStore.preset}
+							onchange={({ preset, start, end }) => {
+								dateFilterStore.setFilter(preset as DatePreset, start, end);
 								currentPage = 1;
 							}}
-							class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
-							title="Reset ke Bulan Ini"
-						>
-							{t('common.reset')}
-						</button>
-					{/if}
-				</div>
+						/>
+						{#if dateFilterStore.preset !== 'this_month'}
+							<button
+								type="button"
+								onclick={() => {
+									dateFilterStore.reset();
+									currentPage = 1;
+								}}
+								class="flex cursor-pointer items-center gap-1 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1.5 text-[11px] font-medium text-[#787774] transition-colors hover:border-[#111111] hover:text-[#111111]"
+								title="Reset ke Bulan Ini"
+							>
+								{t('common.reset')}
+							</button>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Right Actions: View Mode Switcher + Actions -->

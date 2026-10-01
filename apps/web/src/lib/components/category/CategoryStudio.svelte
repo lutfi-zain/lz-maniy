@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
@@ -145,7 +144,7 @@
 	<CategoryControlsBar bind:searchQuery bind:typeFilter bind:sortBy bind:viewMode bind:onlyActive />
 
 	<!-- Content: Skeleton vs List -->
-	{#if reedrichStore.isLoading && categories.length === 0}
+	{#if (reedrichStore.isLoading || isQueryLoading) && categories.length === 0}
 		<!-- Skeleton Loading State -->
 		<div class="space-y-4">
 			{#each [0, 1] as group (group)}

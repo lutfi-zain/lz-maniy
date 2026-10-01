@@ -184,3 +184,11 @@ Each period column in the multi-period Horizon Board SHALL independently fetch a
 - **WHEN** an individual period column fails to fetch due to a network interruption
 - **THEN** only that specific column renders an error badge with a retry action
 - **AND** all other successfully loaded columns remain fully interactive.
+
+### Requirement: Context-Aware Ledger Horizon Toolbar
+The Ledger studio toolbar SHALL conditionally hide the global `DateRangePicker` when the multi-period Horizon Board view is active.
+
+#### Scenario: Hide Date Range Picker in Horizon Mode
+- **WHEN** user selects `Horizon Board` view mode on `/ledger`
+- **THEN** the top `DateRangePicker` is hidden from the filter toolbar
+- **AND** when user selects `List` view mode, the `DateRangePicker` is restored.

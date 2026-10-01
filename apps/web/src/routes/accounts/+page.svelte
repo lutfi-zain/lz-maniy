@@ -71,6 +71,7 @@
 		if (qPreset && qStart && qEnd) {
 			dateFilterStore.setFilter(qPreset as DatePreset, qStart, qEnd);
 		}
+		reedrichStore.fetchWallets();
 	});
 
 	const nw = $derived(reedrichStore.snapshot?.netWorth);
@@ -334,14 +335,16 @@
 					</button>
 				</div>
 
-				<DateRangePicker
-					bind:start={dateFilterStore.startDate}
-					bind:end={dateFilterStore.endDate}
-					bind:preset={dateFilterStore.preset}
-					onchange={({ preset, start, end }) => {
-						dateFilterStore.setFilter(preset as DatePreset, start, end);
-					}}
-				/>
+				{#if viewMode !== 'horizon'}
+					<DateRangePicker
+						bind:start={dateFilterStore.startDate}
+						bind:end={dateFilterStore.endDate}
+						bind:preset={dateFilterStore.preset}
+						onchange={({ preset, start, end }) => {
+							dateFilterStore.setFilter(preset as DatePreset, start, end);
+						}}
+					/>
+				{/if}
 				<button
 					type="button"
 					onclick={() => walletFormStore.openCreate()}
@@ -350,7 +353,7 @@
 					<Plus class="size-3.5" weight="bold" />
 					<span>{t('accounts.addAccount')}</span>
 				</button>
-				{#if dateFilterStore.preset !== 'this_month'}
+				{#if viewMode !== 'horizon' && dateFilterStore.preset !== 'this_month'}
 					<button
 						type="button"
 						onclick={() => dateFilterStore.reset()}
@@ -449,7 +452,7 @@
 	<!-- Accounts Content: Horizon Board vs List Views -->
 	{#if !isMobile && viewMode === 'horizon'}
 		<AccountsHorizonBoard />
-	{:else if reedrichStore.isLoading && allWallets.length === 0}
+	{:else if (reedrichStore.isWalletsLoading || reedrichStore.isLoading) && allWallets.length === 0}
 		<div class="space-y-4">
 			{#each [0, 1, 2] as i (i)}
 				<div class="space-y-3 overflow-hidden rounded-lg border border-[#EAEAEA] bg-white p-4">

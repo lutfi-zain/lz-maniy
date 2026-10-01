@@ -394,5 +394,76 @@ describe('ReedrichStore', () => {
 			await store.fetchTransactionsForDrawer({ walletId: 'w-test', limit: 50 });
 			expect(fetchMock).toHaveBeenCalledTimes(1);
 		});
+
+		it('fetchWallets queries /api/v1/wallets and updates activeWallets and lastTransaction', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/wallets');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							walletId: 'w-custom-1',
+							walletName: 'BCA Private',
+							walletInstitution: 'BCA',
+							walletType: 'bank',
+							walletBalance: 12500000,
+							walletCurrency: 'IDR',
+							walletIsLocked: 0,
+							lastTransaction: {
+								transactionId: 'tx-1',
+								date: '2026-10-01T00:00:00.000Z',
+								amount: 500000,
+								description: 'Dividen',
+								direction: 'in'
+							}
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const wallets = await store.fetchWallets();
+			expect(wallets.length).toBe(1);
+			expect(wallets[0].walletName).toBe('BCA Private');
+			expect(wallets[0].lastTransaction?.description).toBe('Dividen');
+			expect(store.allWallets.length).toBe(1);
+			expect(store.allWallets[0].walletId).toBe('w-custom-1');
+		});
+
+		it('fetchDebtsLoans queries /api/v1/debts-loans and categorizes debts and loans', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/debts-loans');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							debtLoanId: 'd-1',
+							debtLoanPersonName: 'Bank Mandiri KPR',
+							debtLoanAmount: 250000000,
+							debtLoanRemainingAmount: 200000000,
+							debtLoanType: 'debt',
+							debtLoanStatus: 'partially_paid'
+						},
+						{
+							debtLoanId: 'l-1',
+							debtLoanPersonName: 'Teman Kantor',
+							debtLoanAmount: 5000000,
+							debtLoanRemainingAmount: 5000000,
+							debtLoanType: 'loan',
+							debtLoanStatus: 'unpaid'
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const { activeDebts, activeLoans } = await store.fetchDebtsLoans();
+			expect(activeDebts.length).toBe(1);
+			expect(activeDebts[0].personName).toBe('Bank Mandiri KPR');
+			expect(activeLoans.length).toBe(1);
+			expect(activeLoans[0].personName).toBe('Teman Kantor');
+			expect(store.activeDebts.length).toBe(1);
+			expect(store.activeLoans.length).toBe(1);
+		});
 	});
 });
