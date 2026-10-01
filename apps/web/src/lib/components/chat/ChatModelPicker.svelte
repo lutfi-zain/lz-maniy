@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import { onMount } from 'svelte';
-	import { CaretDown, Check, Sparkle, Lightning, Brain, Globe } from 'phosphor-svelte';
+	import { CaretDown, Check, Sparkle, Lightning, Brain } from 'phosphor-svelte';
 	import type { ThinkingLevel } from '@maniyy/shared';
 
 	let open = $state(false);
@@ -20,9 +20,6 @@
 
 	const geminiModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'gemini'));
 	const groqModels = $derived(chatStore.availableModels.filter((m) => m.provider === 'groq'));
-	const opencodeModels = $derived(
-		chatStore.availableModels.filter((m) => m.provider === 'opencode')
-	);
 
 	const availableThinkingLevels = $derived<ThinkingLevel[]>(
 		chatStore.selectedModel.thinkingLevels ?? ['off', 'low', 'medium', 'high']
@@ -40,8 +37,6 @@
 		>
 			{#if chatStore.selectedModel.provider === 'gemini'}
 				<Sparkle size={12} weight="fill" class="text-[#1F6C9F]" />
-			{:else if chatStore.selectedModel.provider === 'opencode'}
-				<Globe size={12} weight="fill" class="text-[#107C41]" />
 			{:else}
 				<Lightning size={12} weight="fill" class="text-[#956400]" />
 			{/if}
@@ -77,34 +72,6 @@
 							</div>
 							{#if chatStore.selectedModel.model === model.model}
 								<Check size={12} weight="bold" class="text-[#1F6C9F]" />
-							{/if}
-						</button>
-					{/each}
-				{/if}
-
-				<!-- OpenCode Section -->
-				{#if opencodeModels.length > 0}
-					<div class="my-1 border-t border-[#EAEAEA]"></div>
-					<div class="px-2 py-1 text-[10px] font-semibold tracking-wider text-[#107C41] uppercase">
-						OpenCode Zen (Public Tier)
-					</div>
-					{#each opencodeModels as model (model.model)}
-						<button
-							type="button"
-							onclick={() => selectModel(model)}
-							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
-								.selectedModel.model === model.model
-								? 'bg-[#EDF3EC] font-medium text-[#111111]'
-								: 'text-[#111111]'}"
-						>
-							<div class="flex flex-col">
-								<span>{model.displayName}</span>
-								{#if model.capabilities.thinking}
-									<span class="text-[10px] text-[#787774]">Reasoning supported</span>
-								{/if}
-							</div>
-							{#if chatStore.selectedModel.model === model.model}
-								<Check size={12} weight="bold" class="text-[#107C41]" />
 							{/if}
 						</button>
 					{/each}

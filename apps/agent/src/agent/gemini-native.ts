@@ -217,7 +217,19 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 			}
 		});
 
-		let response = await chat.sendMessage({ message: userMessage });
+		let response;
+		try {
+			response = await chat.sendMessage({ message: userMessage });
+		} catch (err: unknown) {
+			const errMsg = (err as Error)?.message || String(err);
+			if (errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE')) {
+				yield `0:${JSON.stringify('⚠️ Model ' + modelName + ' saat ini sedang mengalami lonjakan beban tinggi sementara di Google. Silakan coba sesaat lagi atau gunakan model Gemini 3.1 Flash Lite.')}\n`;
+				yield `e:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}\n`;
+				yield `d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n`;
+				return;
+			}
+			throw err;
+		}
 		let loops = 8;
 		while (loops-- > 0 && response.functionCalls && response.functionCalls.length > 0) {
 			const fCalls = response.functionCalls;
@@ -240,7 +252,19 @@ export function createGeminiRunner(apiKey: string, reedrichUrl: string, token: s
 				});
 			}
 
-			const stream = await chat.sendMessageStream({ message: parts });
+			let stream;
+			try {
+				stream = await chat.sendMessageStream({ message: parts });
+			} catch (err: unknown) {
+				const errMsg = (err as Error)?.message || String(err);
+				if (errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE')) {
+					yield `0:${JSON.stringify('⚠️ Model ' + modelName + ' mengalami lonjakan beban tinggi di Google saat memproses hasil. Silakan ulangi dengan tombol Coba Lagi atau gunakan Gemini 3.1 Flash Lite.')}\n`;
+					yield `e:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0},"isContinued":false}\n`;
+					yield `d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n`;
+					return;
+				}
+				throw err;
+			}
 			let nextFunctionCalls: typeof response.functionCalls | undefined;
 
 			for await (const chunk of stream) {
