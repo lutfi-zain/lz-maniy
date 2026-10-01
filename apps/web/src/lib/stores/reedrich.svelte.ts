@@ -3,7 +3,8 @@ import {
 	DEFAULT_API_URL,
 	DEFAULT_TOKEN,
 	MOCK_CATEGORIES,
-	MOCK_SNAPSHOT
+	MOCK_SNAPSHOT,
+	MOCK_SUMMARY
 } from '$lib/stores/mock-data';
 import { authStore } from '$lib/stores/auth.svelte';
 import type {
@@ -36,12 +37,15 @@ import type {
 	ActiveLoan,
 	TransactionEnvelope,
 	TransactionQueryParams,
-	HorizonBoardDTO
+	HorizonBoardDTO,
+	FinancialSummary,
+	RepayDebtLoanPayload
 } from '$lib/types/account-detail';
 import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
 
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
+	summary = $state<FinancialSummary | null>(null);
 	categories = $state<CategoryRecord[]>([]);
 	apiToken = $state<string>(DEFAULT_TOKEN);
 	isLive = $state<boolean>(false);
@@ -148,6 +152,7 @@ export class ReedrichStore {
 	loadMock() {
 		this.snapshot = MOCK_SNAPSHOT;
 		this.categories = MOCK_CATEGORIES;
+		this.summary = MOCK_SUMMARY;
 		this.recurringTemplates = [];
 		this.isLive = false;
 		this.isLoading = false;
@@ -189,9 +194,10 @@ export class ReedrichStore {
 				dates?.startDate && dates?.endDate
 					? `?startDate=${encodeURIComponent(dates.startDate)}&endDate=${encodeURIComponent(dates.endDate)}`
 					: '';
-			const [accRes, catRes] = await Promise.all([
+			const [accRes, catRes, sumRes] = await Promise.all([
 				this.request(`${DEFAULT_API_URL}/api/v1/account-detail${dateQuery}`),
 				this.request(`${DEFAULT_API_URL}/api/v1/categories`).catch(() => null),
+				this.request(`${DEFAULT_API_URL}/api/v1/summary${dateQuery}`).catch(() => null),
 				this.fetchUserProfile().catch(() => null)
 			]);
 
@@ -203,8 +209,13 @@ export class ReedrichStore {
 			if (catRes && catRes.ok) {
 				this.categories = (await catRes.json()) as CategoryRecord[];
 			}
+			if (sumRes && sumRes.ok) {
+				this.summary = (await sumRes.json()) as FinancialSummary;
+			} else {
+				this.summary = MOCK_SUMMARY;
+			}
 			this.isLive = true;
-			this.statusMessage = 'Snapshot mutakhir berhasil dimuat dari API.';
+			this.statusMessage = 'Snapshot & Summary mutakhir berhasil dimuat dari API.';
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.warn('API fetch failed, falling back to mock:', msg);
@@ -214,6 +225,29 @@ export class ReedrichStore {
 			this.isLoading = false;
 		}
 	}
+	/**
+	 * Queries GET /api/v1/summary to retrieve financial runway & projections.
+	 */
+	async fetchSummary(dates?: { startDate?: string; endDate?: string }, baseCurrency = 'IDR'): Promise<FinancialSummary | null> {
+		try {
+			const queryParts: string[] = [`baseCurrency=${encodeURIComponent(baseCurrency)}`];
+			if (dates?.startDate) queryParts.push(`startDate=${encodeURIComponent(dates.startDate)}`);
+			if (dates?.endDate) queryParts.push(`endDate=${encodeURIComponent(dates.endDate)}`);
+			const qs = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+			const res = await this.request(`${DEFAULT_API_URL}/api/v1/summary${qs}`);
+			if (!res.ok) {
+				return null;
+			}
+			const data = (await res.json()) as FinancialSummary;
+			this.summary = data;
+			return data;
+		} catch (err) {
+			console.warn('Gagal memuat financial summary:', err);
+			return null;
+		}
+	}
+
 	/**
 	 * Queries GET /api/v1/me to retrieve sanitized verified user profile.
 	 */
@@ -764,6 +798,33 @@ export class ReedrichStore {
 			}
 		}, signal);
 	}
+	/**
+	 * Repay a debt or loan with optional wallet balance deduction.
+	 */
+	async repayDebtLoan(
+		id: string,
+		payload: RepayDebtLoanPayload
+	): Promise<unknown> {
+		const res = await this.request(
+			`${DEFAULT_API_URL}/api/v1/debts-loans/${encodeURIComponent(id)}/repay`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			}
+		);
+
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({}));
+			throw new Error(errData.message || `Gagal mencatat pembayaran hutang (HTTP ${res.status})`);
+		}
+
+		const json = await res.json();
+		await this.invalidateAndRefresh();
+		await this.fetchDebtsLoans();
+		return json;
+	}
+
 
 	/**
 	 * Standalone fetch of single wallet by ID.
@@ -1284,6 +1345,7 @@ export class ReedrichStore {
 
 	reset() {
 		this.snapshot = null;
+		this.summary = null;
 		this.categories = [];
 		this.allTransactions = [];
 		this.recurringTemplates = [];

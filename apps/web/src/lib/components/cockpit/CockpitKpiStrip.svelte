@@ -11,6 +11,12 @@
 	const wl = $derived(reedrichStore.snapshot?.wallets);
 	const cf = $derived(reedrichStore.snapshot?.monthlyCashFlow);
 	const netSav = $derived(cf?.netSavings ?? 0);
+	const summary = $derived(reedrichStore.summary);
+
+	const safeToSpend = $derived(summary?.safeToSpend ?? wl?.spendable.total ?? 0);
+	const dailySafe = $derived(summary?.dailySafeToSpend ?? 0);
+	const isDeficit = $derived(summary?.safeToSpendDetails?.isDeficit ?? safeToSpend < 0);
+	const remainingDays = $derived(summary?.safeToSpendDetails?.remainingDays ?? 0);
 </script>
 
 {#if reedrichStore.isLoading}
@@ -49,28 +55,37 @@
 			</div>
 		</div>
 
-		<!-- Spendable Cash Tile -->
+		<!-- Safe-to-Spend Runway Tile -->
 		<a
 			href="/accounts"
-			class="block rounded-lg border border-[#EAEAEA] bg-white p-3 no-underline shadow-2xs transition-colors hover:border-[#C8C6BF] sm:p-3.5"
+			class="block rounded-lg border bg-white p-3 no-underline shadow-2xs transition-colors hover:border-[#C8C6BF] sm:p-3.5 {isDeficit ? 'border-[#FDEBEC] bg-[#FFFBFB]' : 'border-[#EAEAEA]'}"
 		>
 			<div
 				class="flex items-center justify-between text-[11px] font-medium tracking-wider text-[#787774] uppercase"
 			>
 				<span class="flex items-center gap-1.5">
-					<Wallet class="size-3.5 text-[#346538]" weight="bold" />
+					<Wallet class="size-3.5 {isDeficit ? 'text-[#9F2F2D]' : 'text-[#346538]'}" weight="bold" />
 					{t('cockpit.safeToSpend')}
 				</span>
-				<span class="size-1.5 rounded-full bg-[#346538]"></span>
+				{#if isDeficit}
+					<span class="rounded bg-[#FDEBEC] px-1 py-0.5 text-[9px] font-semibold text-[#9F2F2D]">Defisit</span>
+				{:else}
+					<span class="size-1.5 rounded-full bg-[#346538]"></span>
+				{/if}
 			</div>
 			<div
-				class="mt-1 font-mono text-base font-semibold tracking-tight text-[#346538] tabular-nums sm:text-xl"
+				class="mt-1 font-mono text-base font-semibold tracking-tight tabular-nums sm:text-xl {isDeficit ? 'text-[#9F2F2D]' : 'text-[#346538]'}"
 			>
-				{fmtIDR(wl?.spendable.total)}
+				{fmtIDR(safeToSpend)}
 			</div>
 			<div class="mt-1 truncate text-[10px] text-[#787774] sm:text-[11px]">
-				{wl?.spendable.items.length ?? 0}
-				{t('accounts.walletCount', { count: wl?.spendable.items.length ?? 0 })}
+				{#if isDeficit}
+					<span class="font-medium text-[#9F2F2D]">Minus komitmen</span> · kas cair {fmtIDR(wl?.spendable.total)}
+				{:else if dailySafe > 0}
+					<span class="font-medium text-[#346538]">{fmtIDR(dailySafe)}</span>/hari{remainingDays > 0 ? ` · ${remainingDays} hari sisa` : ''}
+				{:else}
+					{wl?.spendable.items.length ?? 0} {t('accounts.walletCount', { count: wl?.spendable.items.length ?? 0 })}
+				{/if}
 			</div>
 		</a>
 
