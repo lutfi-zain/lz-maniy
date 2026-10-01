@@ -29,6 +29,7 @@ app.use(
 				origin === 'http://localhost:5173' ||
 				origin === 'http://localhost:4173' ||
 				origin === 'https://maniyy2.pages.dev' ||
+				origin === 'https://maniyy.membran.app' ||
 				origin.endsWith('.maniyy2.pages.dev') ||
 				origin === 'https://maniyy.lutfidmz.workers.dev' ||
 				origin === 'https://maniyy-agent.lutfidmz.workers.dev'
