@@ -316,11 +316,6 @@ export interface UpdateGoalPayload {
 	notes?: string | null;
 }
 
-export interface ContributeGoalPayload {
-	amount: number;
-	walletId?: string | null;
-}
-
 export interface RecurringTemplate {
 	templateId: string;
 	templateUserId?: string;

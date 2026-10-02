@@ -218,25 +218,6 @@ describe('ReedrichStore - Entity CRUD Operations', () => {
 			const result = await store.createGoal({ name: 'Liburan', targetAmount: 10000000 });
 			expect(result).toEqual(mockGoal);
 		});
-
-		it('contributeToGoal() sends POST to /contribute', async () => {
-			const mockGoal = { goalId: 'g-1', currentAmount: 500000 };
-			const mockFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
-				if (init?.method === 'POST') {
-					return Promise.resolve(new Response(JSON.stringify(mockGoal), { status: 200 }));
-				}
-				return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
-			});
-			vi.stubGlobal('fetch', mockFetch);
-
-			const result = await store.contributeToGoal('g-1', { amount: 500000 });
-			expect(result).toEqual(mockGoal);
-			expect(mockFetch).toHaveBeenCalledWith(
-				expect.stringContaining('/api/v1/goals/g-1/contribute'),
-				expect.anything()
-			);
-		});
-
 		it('linkGoalWallet() sends POST to /wallets', async () => {
 			const mockFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
 				if (init?.method === 'POST') {

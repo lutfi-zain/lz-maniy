@@ -1,7 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
 import {
 	DEFAULT_API_URL,
-	DEFAULT_TOKEN,
 	MOCK_CATEGORIES,
 	MOCK_SNAPSHOT
 } from '$lib/stores/mock-data';
@@ -11,7 +10,6 @@ import type {
 	ApplyRecurringTemplatePayload,
 	BudgetSnapshot,
 	CategoryRecord,
-	ContributeGoalPayload,
 	CreateBudgetPayload,
 	CreateCategoryPayload,
 	CreateGoalPayload,
@@ -43,7 +41,7 @@ import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
 	categories = $state<CategoryRecord[]>([]);
-	apiToken = $state<string>(DEFAULT_TOKEN);
+	apiToken = $state<string>('');
 	isLive = $state<boolean>(false);
 	isLoading = $state<boolean>(false);
 	statusMessage = $state<string>('Siap.');
@@ -1118,26 +1116,6 @@ export class ReedrichStore {
 		}
 
 		await this.invalidateAndRefresh();
-	}
-
-	async contributeToGoal(id: string, payload: ContributeGoalPayload): Promise<GoalSnapshot> {
-		const res = await this.request(
-			`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(id)}/contribute`,
-			{
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload)
-			}
-		);
-
-		if (!res.ok) {
-			const errData = await res.json().catch(() => ({}));
-			throw new Error(errData.message || `Gagal menyetor ke target (HTTP ${res.status})`);
-		}
-
-		const updated = (await res.json()) as GoalSnapshot;
-		await this.invalidateAndRefresh();
-		return updated;
 	}
 
 	async linkGoalWallet(goalId: string, walletId: string): Promise<void> {
