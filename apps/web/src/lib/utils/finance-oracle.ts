@@ -192,3 +192,105 @@ export const EXPECTED_FINANCIAL_JOURNAL: Array<{
 		tripGoalProgress: 70
 	}
 ];
+
+export interface OracleWalletItem {
+	walletId: string;
+	balance: number;
+	currency?: string;
+}
+
+export interface OracleTransactionItem {
+	transactionWalletId: string;
+	transactionTargetWalletId?: string | null;
+	transactionAmount: number;
+	transactionType: 'income' | 'expense' | 'transfer';
+	transactionDate: string;
+	transactionIsPlanned?: number;
+}
+
+/**
+ * Pure mathematical calculation of point-in-time wallet balances with zero UI or Svelte dependencies.
+ */
+export function calculatePointInTimeWalletBalances(params: {
+	wallets: OracleWalletItem[];
+	allTransactions: OracleTransactionItem[];
+	endDate?: string | null;
+	referenceDate?: string;
+}): Map<string, number> {
+	const { wallets, allTransactions, endDate, referenceDate } = params;
+
+	const balanceMap = new Map<string, number>();
+	for (const w of wallets) {
+		balanceMap.set(w.walletId, w.balance);
+	}
+
+	if (!endDate || endDate.trim() === '') {
+		return balanceMap;
+	}
+
+	const todayStr =
+		referenceDate ||
+		(() => {
+			const d = new Date();
+			const y = d.getFullYear();
+			const m = String(d.getMonth() + 1).padStart(2, '0');
+			const day = String(d.getDate()).padStart(2, '0');
+			return `${y}-${m}-${day}`;
+		})();
+
+	const currYearMonth = todayStr.slice(0, 7);
+	const endClean = endDate.slice(0, 10);
+	const endYearMonth = endClean.slice(0, 7);
+
+	// Future Horizon
+	if (endYearMonth > currYearMonth) {
+		for (const t of allTransactions) {
+			const tDate = t.transactionDate.slice(0, 10);
+			if (tDate > todayStr && tDate <= endClean) {
+				const srcId = t.transactionWalletId;
+				const currentSrc = balanceMap.get(srcId) ?? 0;
+
+				if (t.transactionType === 'income') {
+					balanceMap.set(srcId, currentSrc + t.transactionAmount);
+				} else if (t.transactionType === 'expense') {
+					balanceMap.set(srcId, currentSrc - t.transactionAmount);
+				} else if (t.transactionType === 'transfer') {
+					balanceMap.set(srcId, currentSrc - t.transactionAmount);
+					if (t.transactionTargetWalletId) {
+						const tgtId = t.transactionTargetWalletId;
+						const currentTgt = balanceMap.get(tgtId) ?? 0;
+						balanceMap.set(tgtId, currentTgt + t.transactionAmount);
+					}
+				}
+			}
+		}
+		return balanceMap;
+	}
+
+	// Historical Past Horizon
+	if (endYearMonth < currYearMonth) {
+		for (const t of allTransactions) {
+			const tDate = t.transactionDate.slice(0, 10);
+			if (tDate > endClean && t.transactionIsPlanned !== 1) {
+				const srcId = t.transactionWalletId;
+				const currentSrc = balanceMap.get(srcId) ?? 0;
+
+				if (t.transactionType === 'income') {
+					balanceMap.set(srcId, currentSrc - t.transactionAmount);
+				} else if (t.transactionType === 'expense') {
+					balanceMap.set(srcId, currentSrc + t.transactionAmount);
+				} else if (t.transactionType === 'transfer') {
+					balanceMap.set(srcId, currentSrc + t.transactionAmount);
+					if (t.transactionTargetWalletId) {
+						const tgtId = t.transactionTargetWalletId;
+						const currentTgt = balanceMap.get(tgtId) ?? 0;
+						balanceMap.set(tgtId, currentTgt - t.transactionAmount);
+					}
+				}
+			}
+		}
+		return balanceMap;
+	}
+
+	return balanceMap;
+}

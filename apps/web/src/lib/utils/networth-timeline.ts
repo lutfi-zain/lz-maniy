@@ -308,7 +308,7 @@ export function calculatePointInTimeWalletBalances(params: {
 		for (const t of allTransactions) {
 			const tDate = t.transactionDate.slice(0, 10);
 			// Deduct/reverse transactions that occurred between cutoff and today
-			if (tDate > endClean && tDate <= todayStr && t.transactionIsPlanned !== 1) {
+			if (tDate > endClean && t.transactionIsPlanned !== 1) {
 				const srcId = t.transactionWalletId;
 				const currentSrc = balanceMap.get(srcId) ?? 0;
 

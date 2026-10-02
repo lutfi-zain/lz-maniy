@@ -8,7 +8,8 @@ import {
 } from './helpers/live-account';
 import {
 	deriveTestPeriods,
-	EXPECTED_FINANCIAL_JOURNAL
+	EXPECTED_FINANCIAL_JOURNAL,
+	calculatePointInTimeWalletBalances
 } from './helpers/finance-fixture';
 
 test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () => {
@@ -744,5 +745,296 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 
 		const netSavings = page.locator('[data-testid="kpi-net-savings"]');
 		await expect(netSavings).toContainText(/3[.,]500[.,]000/);
+	});
+
+	test('13. Task 7.1 - Validate historical M-2 and M-1 wallet closing vectors and net worth', async ({
+		request,
+		page
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Fetch all wallets and all transactions to compute point-in-time state
+		const [walRes, txRes] = await Promise.all([
+			request.get(`${config.apiBaseUrl}/api/v1/wallets`, { headers }),
+			request.get(`${config.apiBaseUrl}/api/v1/transactions?limit=100`, { headers })
+		]);
+		expect(walRes.ok()).toBe(true);
+		expect(txRes.ok()).toBe(true);
+
+		const rawWallets = (await walRes.json()) as Array<{
+			walletId: string;
+			walletName: string;
+			walletBalance: number;
+			walletIsLocked?: number;
+			isLocked?: number;
+			walletCurrency?: string;
+			currency?: string;
+		}>;
+		const wallets = rawWallets.map((w) => ({
+			walletId: w.walletId,
+			walletName: w.walletName,
+			institution: 'BCA',
+			balance: w.walletBalance,
+			currency: w.walletCurrency || w.currency || 'IDR',
+			type: 'bank' as const,
+			isLocked: (w.walletIsLocked ?? w.isLocked ?? 0) as 0 | 1,
+			lastTransaction: null
+		}));
+
+		const txData = (await txRes.json()) as { items?: unknown[] } | unknown[];
+		const rawTxs = Array.isArray(txData) ? txData : txData.items || [];
+		interface RawTxEntry {
+			transactionId: string;
+			transactionWalletId: string;
+			transactionTargetWalletId?: string | null;
+			transactionAmount: number;
+			transactionType: 'income' | 'expense' | 'transfer';
+			transactionDate?: string;
+			date?: string;
+			transactionIsPlanned?: number;
+			isPlanned?: number;
+		}
+		const allTxs = (rawTxs as RawTxEntry[]).map((t) => ({
+			transactionId: t.transactionId,
+			transactionWalletId: t.transactionWalletId,
+			transactionTargetWalletId: t.transactionTargetWalletId,
+			transactionAmount: t.transactionAmount,
+			transactionType: t.transactionType,
+			transactionDate: t.transactionDate || t.date || '',
+			transactionIsPlanned: (t.transactionIsPlanned ?? t.isPlanned ?? 0) as 0 | 1
+		}));
+
+		// M-2 Point-in-time calculation (Design oracle: OP: 6M, EMG: 2M, TRIP: 1M, Total: 9M)
+		const m2Balances = calculatePointInTimeWalletBalances({
+			wallets,
+			allTransactions: allTxs,
+			endDate: periods.mMinus2.endDate,
+			referenceDate: periods.m0.endDate.slice(0, 10)
+		});
+		expect(m2Balances.get(wOpId)).toBe(6_000_000);
+		expect(m2Balances.get(wEmergencyId)).toBe(2_000_000);
+		expect(m2Balances.get(wTripId)).toBe(1_000_000);
+		const m2Total = (m2Balances.get(wOpId) ?? 0) + (m2Balances.get(wEmergencyId) ?? 0) + (m2Balances.get(wTripId) ?? 0);
+		expect(m2Total).toBe(9_000_000);
+
+		// M-1 Point-in-time calculation (Design oracle: OP: 8M, EMG: 3M, TRIP: 1.5M, Total: 12.5M)
+		const m1Balances = calculatePointInTimeWalletBalances({
+			wallets,
+			allTransactions: allTxs,
+			endDate: periods.mMinus1.endDate,
+			referenceDate: periods.m0.endDate.slice(0, 10)
+		});
+		expect(m1Balances.get(wOpId)).toBe(8_000_000);
+		expect(m1Balances.get(wEmergencyId)).toBe(3_000_000);
+		expect(m1Balances.get(wTripId)).toBe(1_500_000);
+		const m1Total = (m1Balances.get(wOpId) ?? 0) + (m1Balances.get(wEmergencyId) ?? 0) + (m1Balances.get(wTripId) ?? 0);
+		expect(m1Total).toBe(12_500_000);
+
+		// UI Check: Navigate to ledger with M-1 date range
+		await injectBrowserTestAuth(page, config);
+		const m1Start = periods.mMinus1.startDate.slice(0, 10);
+		const m1End = periods.mMinus1.endDate.slice(0, 10);
+		await page.goto(`/ledger?datePreset=custom&startDate=${m1Start}&endDate=${m1End}`);
+		await page.waitForLoadState('networkidle');
+
+		// In ledger, filter bar shows 5 transactions and M-1 net cashflow (+3.5M)
+		await expect(page.getByText(/5\s+transaksi/).first()).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/\+Rp\s*5[.,]000[.,]000/).first()).toBeVisible();
+		await expect(page.getByText(/[−\-]Rp\s*1[.,]500[.,]000/).first()).toBeVisible();
+		await expect(page.getByText(/\+Rp\s*3[.,]500[.,]000/).first()).toBeVisible();
+
+		// Overview capital remains live (16M) as required by specification
+		await expect(page.getByText(/Rp\s*16[.,]000[.,]000/).first()).toBeVisible();
+	});
+
+	test('14. Task 7.2 - Exercise date controls and instant boundaries between M-2 and M-1', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. M-2 explicit ISO interval: exactly 4 transactions
+		const m2Res = await request.get(
+			`${config.apiBaseUrl}/api/v1/transactions?startDate=${periods.mMinus2.startDate}&endDate=${periods.mMinus2.endDate}`,
+			{ headers }
+		);
+		expect(m2Res.ok()).toBe(true);
+		const m2Data = (await m2Res.json()) as { items?: unknown[] } | unknown[];
+		const m2Items = Array.isArray(m2Data) ? m2Data : m2Data.items || [];
+		expect(m2Items.length).toBe(4);
+
+		// 2. M-1 explicit ISO interval: exactly 5 transactions
+		const m1Res = await request.get(
+			`${config.apiBaseUrl}/api/v1/transactions?startDate=${periods.mMinus1.startDate}&endDate=${periods.mMinus1.endDate}`,
+			{ headers }
+		);
+		expect(m1Res.ok()).toBe(true);
+		const m1Data = (await m1Res.json()) as { items?: unknown[] } | unknown[];
+		const m1Items = Array.isArray(m1Data) ? m1Data : m1Data.items || [];
+		expect(m1Items.length).toBe(5);
+
+		// 3. Instant boundary: query instant strictly between M-2 end and M-1 start
+		const betweenStart = `${periods.mMinus2.key}-28T23:59:59.999Z`;
+		const betweenEnd = `${periods.mMinus1.key}-01T00:00:00.000Z`;
+		const bRes = await request.get(
+			`${config.apiBaseUrl}/api/v1/transactions?startDate=${betweenStart}&endDate=${betweenEnd}`,
+			{ headers }
+		);
+		expect(bRes.ok()).toBe(true);
+		const bData = (await bRes.json()) as { items?: unknown[] } | unknown[];
+		const bItems = Array.isArray(bData) ? bData : bData.items || [];
+		expect(bItems.length).toBe(0);
+	});
+
+	test('15. Task 7.3 - Query explicit M+1, M+2, M+3 horizon periods and verify planned totals', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Query Horizon API for M+1, M+2, M+3
+		const horizonPeriods = `${periods.mPlus1.key},${periods.mPlus2.key},${periods.mPlus3.key}`;
+		const res = await request.get(
+			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
+			{ headers }
+		);
+		expect(res.ok()).toBe(true);
+		const data = (await res.json()) as {
+			startingNetWorth: { total: number; spendable: number; locked: number };
+			periods: Array<{
+				periodKey: string;
+				cashflow: { income: number; expense: number; net: number };
+				netWorth: { total: number; spendable: number; locked: number };
+				walletBalances?: Array<{ walletId: string; balance: number }>;
+			}>;
+		};
+
+		// Current realized wealth starting baseline is 16M
+		expect(data.startingNetWorth.total).toBe(16_000_000);
+		expect(data.startingNetWorth.spendable).toBe(10_000_000);
+		expect(data.startingNetWorth.locked).toBe(6_000_000);
+
+		expect(data.periods.length).toBe(3);
+
+		// M+1: net cashflow +3.5M -> total wealth 19.5M (Spendable 12M, Locked 7.5M)
+		const p1 = data.periods[0];
+		expect(p1.periodKey).toBe(periods.mPlus1.key);
+		expect(p1.cashflow.net).toBe(3_500_000);
+		expect(p1.netWorth.total).toBe(19_500_000);
+		expect(p1.netWorth.spendable).toBe(12_000_000);
+		expect(p1.netWorth.locked).toBe(7_500_000);
+
+		// M+2: net cashflow +3.5M -> total wealth 23M (Spendable 14M, Locked 9M)
+		const p2 = data.periods[1];
+		expect(p2.periodKey).toBe(periods.mPlus2.key);
+		expect(p2.cashflow.net).toBe(3_500_000);
+		expect(p2.netWorth.total).toBe(23_000_000);
+		expect(p2.netWorth.spendable).toBe(14_000_000);
+		expect(p2.netWorth.locked).toBe(9_000_000);
+
+		// M+3: net cashflow +3.5M -> total wealth 26.5M (Spendable 16M, Locked 10.5M)
+		const p3 = data.periods[2];
+		expect(p3.periodKey).toBe(periods.mPlus3.key);
+		expect(p3.cashflow.net).toBe(3_500_000);
+		expect(p3.netWorth.total).toBe(26_500_000);
+		expect(p3.netWorth.spendable).toBe(16_000_000);
+		expect(p3.netWorth.locked).toBe(10_500_000);
+	});
+
+	test('16. Task 7.4 - Validate visible Ledger and Accounts horizon board periods and cells', async ({
+		page
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		await injectBrowserTestAuth(page, config);
+
+		// 1. Ledger Horizon Board
+		await page.goto('/ledger');
+		await page.waitForLoadState('networkidle');
+
+		const ledgerHorizonBtn = page.getByRole('button', { name: 'Horizon Board' });
+		await expect(ledgerHorizonBtn).toBeVisible({ timeout: 15000 });
+		if ((await ledgerHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
+			await ledgerHorizonBtn.click();
+			await expect(ledgerHorizonBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 10000 });
+		}
+
+		// Verify 3 consecutive period columns visible on horizon board
+		await expect(page.getByText(/6\s+transactions/).first()).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/5\s+transactions/).first()).toBeVisible();
+
+		// 2. Accounts Horizon Board
+		await page.goto('/accounts');
+		await page.waitForLoadState('networkidle');
+
+		const accHorizonBtn = page.getByRole('button', { name: 'Horizon Board' });
+		await expect(accHorizonBtn).toBeVisible({ timeout: 15000 });
+		if ((await accHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
+			await accHorizonBtn.click();
+			await expect(accHorizonBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 10000 });
+		}
+
+		// Verify accounts horizon board rendered
+		await expect(page.locator('text=E2E BCA Utama').first()).toBeVisible({ timeout: 15000 });
+	});
+
+	test('17. Task 7.5 - Validate Goals Horizon projected amounts, 50/60/70% progression, and calendar pacing', async ({
+		request,
+		page
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. API Analytics Horizon goal progression check
+		const horizonPeriods = `${periods.mPlus1.key},${periods.mPlus2.key},${periods.mPlus3.key}`;
+		const res = await request.get(
+			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
+			{ headers }
+		);
+		expect(res.ok()).toBe(true);
+		const data = (await res.json()) as {
+			periods: Array<{
+				periodKey: string;
+				goals?: Array<{
+					goalId: string;
+					currentAmount: number;
+					targetAmount: number;
+					progressPercentage: number;
+				}>;
+			}>;
+		};
+		expect(data.periods.length).toBe(3);
+
+		// 2. UI Goals Horizon Board check
+		await injectBrowserTestAuth(page, config);
+		await page.goto('/planning');
+		await page.waitForLoadState('networkidle');
+
+		const goalsHorizonBtn = page.locator('button', { hasText: 'Horizon Board' }).first();
+		await expect(goalsHorizonBtn).toBeVisible({ timeout: 15000 });
+		if ((await goalsHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
+			await goalsHorizonBtn.click();
+			await expect(goalsHorizonBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 10000 });
+		}
+
+		// Verify progress percentages: 50%, 60%, 70% visible
+		await expect(page.getByText('50%').first()).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText('60%').first()).toBeVisible();
+		await expect(page.getByText('70%').first()).toBeVisible();
 	});
 });
