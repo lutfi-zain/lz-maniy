@@ -63,6 +63,19 @@ describe('Credential Guard & Diagnostic Redaction', () => {
 		expect(result.valid).toBe(false);
 		expect(result.error).toContain('Destructive operations require REEDRICH_TEST_ALLOW_DESTRUCTIVE=true');
 	});
+	it('validateTestPreflight blocks when actualUserId does not match expectedUserId', () => {
+		const result = validateTestPreflight({
+			apiBaseUrl: 'https://staging.example.com',
+			token: 'test_token',
+			expectedUserId: 'usr_testbot_123',
+			actualUserId: 'usr_different_personal_account',
+			allowDestructive: true
+		});
+
+		expect(result.valid).toBe(false);
+		expect(result.error).toContain('Safety Violation: Authenticated user ID');
+	});
+
 
 	it('validateTestPreflight passes when all safety invariants are met', () => {
 		const result = validateTestPreflight({

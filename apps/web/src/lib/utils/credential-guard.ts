@@ -29,6 +29,7 @@ export interface TargetGuardOptions {
 	apiBaseUrl?: string;
 	token?: string;
 	expectedUserId?: string;
+	actualUserId?: string;
 	allowDestructive?: boolean;
 	allowProduction?: boolean;
 }
@@ -63,6 +64,13 @@ export function validateTestPreflight(options: TargetGuardOptions): GuardCheckRe
 			valid: false,
 			error:
 				'Safety Guard: Target environment is detected as Production, but REEDRICH_TEST_ALLOW_PRODUCTION is not explicitly set.'
+		};
+	}
+
+	if (options.expectedUserId && options.actualUserId && options.actualUserId !== options.expectedUserId) {
+		return {
+			valid: false,
+			error: `Safety Violation: Authenticated user ID (${options.actualUserId}) does not match expected test account ID (${options.expectedUserId}).`
 		};
 	}
 

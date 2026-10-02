@@ -29,7 +29,7 @@
 {:else}
 	<section id="kpis" class="mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
 		<!-- Net Worth Tile -->
-		<div class="rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-2xs sm:p-3.5">
+		<div data-testid="kpi-net-worth" class="rounded-lg border border-[#EAEAEA] bg-white p-3 shadow-2xs sm:p-3.5">
 			<div
 				class="flex items-center justify-between text-[11px] font-medium tracking-wider text-[#787774] uppercase"
 			>
@@ -51,6 +51,7 @@
 
 		<!-- Spendable Cash Tile -->
 		<a
+			data-testid="kpi-spendable"
 			href="/accounts"
 			class="block rounded-lg border border-[#EAEAEA] bg-white p-3 no-underline shadow-2xs transition-colors hover:border-[#C8C6BF] sm:p-3.5"
 		>
@@ -76,6 +77,7 @@
 
 		<!-- Locked Reserves Tile -->
 		<a
+			data-testid="kpi-locked"
 			href="/accounts"
 			class="block rounded-lg border border-[#EAEAEA] bg-white p-3 no-underline shadow-2xs transition-colors hover:border-[#C8C6BF] sm:p-3.5"
 		>
@@ -101,6 +103,7 @@
 
 		<!-- Monthly Net Savings Tile -->
 		<a
+			data-testid="kpi-net-savings"
 			href="/planning"
 			class="block rounded-lg border border-[#EAEAEA] bg-white p-3 no-underline shadow-2xs transition-colors hover:border-[#C8C6BF] sm:p-3.5"
 		>

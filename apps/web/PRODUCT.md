@@ -44,3 +44,10 @@ Maniyy V2 is a financial planning and account detail intelligence dashboard prov
 - **Execution Safeguards**: Tests verify target and account ownership before running mutating operations.
 - **Secret Scanning Command**: Run `bun run check:secrets` to scan working tree and staged files. Run `bun run check:secrets:history` to audit git history.
 - **Credential Rotation**: When rotating keys, update only private environment variables (`.env`, `.dev.vars`, or CI secrets) and verify with `bun run check:secrets`.
+- **Live Value Integration Tests**: Run `bun run test:integration` (or `bun run test:integration --list`) to execute single-owner live financial integration testing against authorized staging environments.
+- **Temporal & Status Matrix**:
+  - **Live Capital**: Current wallet balances (`/api/v1/account-detail`, `/api/v1/wallets`) represent point-in-time live wealth.
+  - **Selected-Period Cashflow**: Date-bounded queries (`startDate`, `endDate`) scope realized income, expenses, and overlapping budgets.
+  - **Historical Closing Capital**: Point-in-time wallet snapshots reconstruct historical balances without polluting live balances.
+  - **Planned-Only Projections**: Horizon projections in planned mode calculate forward roadmap with zero live capital baseline.
+  - **Combined Projections**: Forward roadmap rollforward combines live capital baseline with planned occurrences.

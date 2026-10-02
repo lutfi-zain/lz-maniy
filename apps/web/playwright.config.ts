@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
 	testDir: 'tests',
 	testMatch: /.*\.spec\.ts/,
+	testIgnore: ['**/integration/**'],
 	webServer: {
 		command: 'bun run build && bun run preview --port 4173',
 		port: 4173,
