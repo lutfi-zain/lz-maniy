@@ -1,18 +1,28 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { resolveGoalLifecycle } from '$lib/utils/lifecycle';
 	import { t } from '$lib/i18n/index.svelte';
 	import WarningCircle from 'phosphor-svelte/lib/WarningCircle';
 	import ArrowRight from 'phosphor-svelte/lib/ArrowRight';
 
 	const goals = $derived(reedrichStore.activeGoals);
 	const sewaGoal = $derived(goals.find((g) => g.goalName.toLowerCase().includes('sewa rumah')));
+	const lifecycle = $derived(sewaGoal ? resolveGoalLifecycle(sewaGoal) : null);
 	const deficit = $derived(
 		sewaGoal ? Math.max(0, sewaGoal.targetAmount - sewaGoal.currentAmount) : 0
 	);
+	const shouldShowAlert = $derived(
+		sewaGoal &&
+			lifecycle &&
+			!lifecycle.isCompleted &&
+			!lifecycle.isOverdue &&
+			(sewaGoal.daysRemaining ?? 0) > 0 &&
+			deficit > 0
+	);
 </script>
 
-{#if sewaGoal && deficit > 0}
+{#if shouldShowAlert && sewaGoal}
 	<div
 		class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#FBF3DB] bg-[#FDFCF7] px-4 py-3 text-xs"
 	>

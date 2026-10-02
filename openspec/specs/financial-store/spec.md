@@ -185,3 +185,11 @@ The financial store query builder MUST support `orderBy` and `direction` query p
 #### Scenario: Cockpit requests recent transactions with sorting
 - **WHEN** `fetchTransactions` is called with `orderBy: 'date'`, `direction: 'desc'`, and `status: 'realized'`
 - **THEN** the request URL MUST contain `orderBy=date`, `direction=desc`, and `status=realized`.
+
+### Requirement: Snapshot Budget Preservation on Standalone Fetch
+The financial store MUST preserve the temporally-filtered `snapshot.budgets` array when standalone budget queries (`fetchBudgets()`) are executed for historical management views.
+
+#### Scenario: Standalone budgets fetch does not pollute active snapshot
+- **WHEN** `reedrichStore.fetchBudgets()` is invoked to populate `/planning`
+- **THEN** the returned collection MUST update `allBudgets` without overwriting `this.snapshot.budgets`
+- **AND** returning to the Cockpit dashboard MUST continue displaying only the temporally-filtered budgets from `snapshot.budgets`.
