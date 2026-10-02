@@ -269,68 +269,79 @@ The system SHALL reconcile application financial state immediately following any
 - **THEN** budget selector options in transaction form drawers and ledger filter bars update to reflect the latest budget list
 
 ### Requirement: Goal Creation
-The system SHALL provide a drawer-based form to create new savings goals with either manual contribution tracking or automated derived balances via linked wallets.
+
+The system SHALL allow users to create financial goals with target amounts, target dates, currency, optional notes, and optional linked wallets. Linked goals SHALL derive progress from their wallet balances; unlinked goals SHALL retain supported stored-balance editing without a contribution endpoint.
 
 #### Scenario: Open Goal Creation Form
-- **WHEN** user clicks the `[+ Tambah Target]` or `[+ Buat Target]` button on the goals section or planning view
-- **THEN** a form drawer opens in create mode with fields for goal name, target amount, currency (defaulting to IDR), target date, category selection, linked wallets selector, and optional notes
-- **THEN** target amount input defaults to empty and current amount initializes according to linked wallets or manual starting amount
+- **WHEN** the user opens goal creation from the goals section or planning view
+- **THEN** the drawer presents the supported name, target amount, currency, target date, linked-wallet and notes fields in create mode
+- **AND** current amount initializes from linked wallets or the supported unlinked stored-balance state.
 
 #### Scenario: Create Manual Savings Goal
-- **WHEN** user fills required fields (name, target amount > 0, currency), leaves linked wallets empty, optionally provides an initial current amount and target date, and submits
-- **THEN** a `POST /api/v1/goals` request is sent with the payload containing `name`, `targetAmount`, `currentAmount`, `currency`, `targetDate`, `categoryId`, and `notes`
-- **THEN** on success, the drawer closes, a success notification appears, and the goal list and dashboard snapshot refresh showing the goal with `isDerived: false`
+- **WHEN** the user submits a valid goal without linked wallets
+- **THEN** the goal is persisted with its supported stored-balance state and is not derived
+- **AND** the drawer closes, success is shown, and the goal list and dashboard refresh without a contribution request.
 
 #### Scenario: Create Derived Goal with Linked Wallets
-- **WHEN** user fills required fields and selects one or more existing wallets in `walletIds[]`
-- **THEN** a `POST /api/v1/goals` request is sent with the selected `walletIds`
-- **THEN** on success, the created goal is flagged with `isDerived: true` and its current amount reflects the consolidated balance of the linked wallets converted to the goal currency
+- **WHEN** the user submits a valid goal with one or more linked wallets
+- **THEN** the goal is persisted with those associations and is derived
+- **AND** its current amount is the aggregate linked balance converted to the goal currency.
 
 #### Scenario: Validation Error on Goal Creation
-- **WHEN** user submits with empty name, non-positive target amount, or invalid target date in the past
-- **THEN** inline validation errors are displayed on the affected fields and no API request is sent
-
----
+- **WHEN** the user submits an empty name, non-positive target amount, or invalid date input
+- **THEN** inline errors are shown and the invalid create request is not submitted.
 
 ### Requirement: View Goal Details and Progress
-The system SHALL display detailed progress metrics, target date pacing, and linked wallet breakdowns in the goal detail drawer.
+
+The system SHALL display goal details and progress in the existing detail drawer, including linked wallet breakdown, pacing metrics, status, and supported edit/delete actions. It SHALL NOT advertise a retired contribution action.
 
 #### Scenario: Open Goal Detail Drawer
-- **WHEN** user clicks a goal card in the dashboard or planning view
-- **THEN** the goal detail drawer opens showing: goal name, target amount, current amount, percentage progress bar, remaining days to target date, derived status indicator, notes, and action buttons (`[Edit]`, `[Hapus]`, `[Setor / Kontribusi]`, and wallet management controls)
+- **WHEN** the user clicks a goal card in the Goals workspace or an allocation widget
+- **THEN** the detail drawer displays the goal name, target amount, current amount, progress, target date/day state, notes, derived indicator, and supported edit/delete/wallet-management actions
+- **AND** it displays available pacing metrics without a retired contribution action.
 
 #### Scenario: Display Linked Wallets Breakdown
-- **WHEN** the viewed goal is a derived goal (`isDerived: true`) with linked wallets
-- **THEN** the drawer displays each linked wallet's name, native balance, currency, converted amount in goal currency, and whether a currency peg was applied
-- **THEN** clicking a linked wallet opens that wallet's detail view
+- **WHEN** the viewed goal is derived with linked wallets
+- **THEN** the drawer shows each wallet's name, native balance/currency, converted amount and available peg metadata
+- **AND** the goal amount equals their aggregate converted balance and clicking a linked wallet opens its detail view.
 
 #### Scenario: Display Multi-Currency Converted Balance
-- **WHEN** a goal linked with wallets across multiple currencies (e.g., IDR and USD) is viewed
-- **THEN** each wallet's balance is displayed in its native currency alongside its normalized equivalent in the goal's target currency based on active exchange rates
+- **WHEN** the goal is linked to wallets with multiple currencies
+- **THEN** each native balance and its equivalent in the goal currency are shown using the active conversion reference.
 
----
+#### Scenario: Goal Actions Available
+- **WHEN** the goal detail drawer is open
+- **THEN** the user can edit or request deletion of the goal using supported actions
+- **AND** no action invokes a goal contribution endpoint.
 
 ### Requirement: Edit Goal
-The system SHALL allow updating goal metadata, target parameters, status, and linked categories.
+
+The system SHALL allow users to edit the documented goal fields and to manage wallet associations through supported link/unlink operations.
 
 #### Scenario: Enter Goal Edit Mode
-- **WHEN** user clicks `[Edit]` in the goal detail drawer
-- **THEN** the drawer transitions to edit mode, populating all form fields (name, target amount, currency, targetDate, categoryId, notes, and status) with current goal values
+- **WHEN** the user clicks Edit in the goal detail drawer
+- **THEN** supported editable metadata, target/date/currency, notes/status, and wallet associations are populated with current values.
 
 #### Scenario: Save Goal Updates
-- **WHEN** user modifies editable fields (e.g. adjusts target amount, changes target date, or sets status to `completed` or `archived`) and clicks `Simpan`
-- **THEN** a `PATCH /api/v1/goals/{id}` request is sent with the updated parameters
-- **THEN** on success, the drawer returns to detail view with updated values and financial snapshots are refreshed
+- **WHEN** the user saves valid changes to supported fields, including target/date or documented completed/cancelled status
+- **THEN** the goal update persists and wallet association changes use their supported link/unlink operations
+- **AND** the drawer returns to detail view with recalculated progress/pacing and refreshed financial state.
 
 #### Scenario: Cancel Goal Edit
-- **WHEN** user clicks `Batal` or presses `Escape` while in edit mode
-- **THEN** changes are discarded and the drawer reverts to detail view without sending any network request
+- **WHEN** the user cancels or presses Escape in edit mode
+- **THEN** unsaved changes are discarded and the drawer returns to detail without a mutation request.
 
 #### Scenario: Validation Error on Edit
-- **WHEN** user modifies target amount to zero or a negative value and clicks `Simpan`
-- **THEN** an inline error appears and no PATCH request is sent
+- **WHEN** the user tries to save a zero or negative target amount
+- **THEN** inline validation is shown and the invalid goal update is not submitted.
 
----
+#### Scenario: Link Additional Wallet to Existing Goal
+- **WHEN** the user adds a wallet to a goal in edit mode
+- **THEN** the supported wallet association is created and the goal's derived balance is refreshed.
+
+#### Scenario: Unlink Wallet from Goal
+- **WHEN** the user removes a linked wallet in edit mode
+- **THEN** the association is removed and the goal's derived balance is refreshed.
 
 ### Requirement: Delete Goal
 The system SHALL allow deleting a goal with explicit confirmation, automatically removing wallet associations without deleting user wallets or transactions.
@@ -347,33 +358,6 @@ The system SHALL allow deleting a goal with explicit confirmation, automatically
 #### Scenario: Dismiss Delete Confirmation
 - **WHEN** user cancels or dismisses the confirmation prompt
 - **THEN** no DELETE request is sent and the drawer remains in view mode
-
----
-
-### Requirement: Manual Goal Contribution
-The system SHALL support logging manual monetary contributions toward non-derived savings goals.
-
-#### Scenario: Open Contribution Form
-- **WHEN** user clicks `[Setor / Kontribusi]` on an active goal
-- **THEN** a contribution dialog or drawer opens prompting for contribution amount, optional funding source wallet, and contribution date
-
-#### Scenario: Submit Contribution with Source Wallet
-- **WHEN** user enters a valid contribution amount, selects a funding source wallet, and submits
-- **THEN** a `POST /api/v1/goals/{id}/contribute` request is sent with `amount` and `walletId`
-- **THEN** on success, the source wallet balance decreases, goal current amount increases, progress recalculates, and snapshot refreshes
-
-#### Scenario: Submit Standalone Contribution
-- **WHEN** user enters a contribution amount without selecting a source wallet (direct tracking)
-- **THEN** a `POST /api/v1/goals/{id}/contribute` request is sent with `amount`
-- **THEN** on success, the goal current amount increases by the contributed amount without altering any wallet balances
-
-#### Scenario: Contribution Validation Error
-- **WHEN** user submits a contribution with amount <= 0 or an amount exceeding selected wallet's available spendable balance
-- **THEN** an error message is displayed and the contribution is not submitted
-
-#### Scenario: Contribution to Completed Goal
-- **WHEN** user attempts to contribute to a goal that has already reached 100% or is marked `completed`
-- **THEN** the system prompts for confirmation to allow surplus savings or alerts the user that the target has been achieved before submitting
 
 ---
 
@@ -402,11 +386,16 @@ The system SHALL allow dynamically managing wallet associations for goals to con
 ---
 
 ### Requirement: Goal State Reconciliation
-After any successful goal mutation (create, edit, delete, contribute, link, unlink), the application state SHALL be reconciled.
+
+The system SHALL refresh goal, wallet, and snapshot state after goal create, update, delete, link/unlink, or relevant transaction/transfer mutations so that all goal surfaces display consistent amounts and lifecycle state.
 
 #### Scenario: Invalidate and Refresh After Mutation
-- **WHEN** any goal mutation succeeds
-- **THEN** `invalidateAndRefresh()` is triggered, invoking `fetchSnapshot()` to update active goals, net worth, spendable/locked allocations, and horizon board projections
+- **WHEN** any supported goal mutation succeeds
+- **THEN** related caches and account state refresh so active goals, net worth, wallet allocations and affected horizon projections reflect the new state.
+
+#### Scenario: Transfer Into Linked Wallet Updates Goal
+- **WHEN** a realized transfer changes a linked wallet's balance
+- **THEN** the corresponding goal amount and progress reflect that wallet change without a manual current-amount patch or contribution request.
 
 ### Requirement: Live Recurring Templates Integration on Planning View
 The system SHALL fetch and display live recurring templates from `GET /recurring-templates` in place of hardcoded mock data on the planning interface.
@@ -503,25 +492,31 @@ The interface SHALL allow deleting recurring templates upon explicit user confir
 - **THEN** an error alert is presented to the user and the recurring template remains in the view
 
 ### Requirement: Recurring Template Realization and Application
-The interface SHALL allow applying/realizing a recurring template occurrence into an actual transaction via `POST /recurring-templates/{id}/apply`.
+
+The system SHALL realize an existing materialized planned occurrence through the supported recurring realization operation. Creating a recurring template SHALL already materialize its planned occurrences; realizing one SHALL update that occurrence in place rather than create a duplicate transaction.
+
+#### Scenario: Creating Template Materializes Planned Occurrences
+- **WHEN** an active recurring template with an applicable schedule is created
+- **THEN** its scheduled transactions are available as planned occurrences
+- **AND** creation does not move realized wallet balances.
 
 #### Scenario: Successfully Apply Recurring Template with Default Amount
-- **WHEN** user triggers the apply action on a recurring template occurrence without altering the amount
-- **THEN** a request is sent to `POST /recurring-templates/{id}/apply` with the template's scheduled occurrence parameters
-- **THEN** upon success, a realized transaction is created in the ledger, the template's `nextRunDate` advances to the next cycle, and a success notification is shown
+- **WHEN** the user realizes an existing due planned occurrence without changing its amount
+- **THEN** that occurrence retains its ID, becomes realized, and moves the appropriate balance exactly once
+- **AND** its schedule advances under the supported contract and success is shown without a duplicate transaction.
 
 #### Scenario: Apply Recurring Template with Modified Actual Amount
-- **WHEN** user triggers apply and supplies an optional `actualAmount` that differs from the planned amount (e.g., utility bill variable usage)
-- **THEN** `POST /recurring-templates/{id}/apply` is submitted including `{ actualAmount }`
-- **THEN** the resulting realized transaction reflects the specified actual amount rather than the template base amount
+- **WHEN** the user realizes an existing occurrence with an actual amount different from its planned amount
+- **THEN** the same transaction becomes realized at the actual amount and retains planned metadata for variance
+- **AND** only the actual monetary effect is applied to its wallets.
 
 #### Scenario: Attempt to Apply Already-Realized Occurrence
-- **WHEN** user attempts to apply an occurrence that has already been realized for the current period (or if the server rejects due to duplicate realization)
-- **THEN** the system prevents duplicate realization or gracefully handles the rejection, notifying the user that this cycle has already been realized
+- **WHEN** the same occurrence is realized again
+- **THEN** the operation is rejected with an appropriate error and no further debit or duplicate transaction.
 
 #### Scenario: Apply Action API Failure
-- **WHEN** the apply request fails due to network outage or API error
-- **THEN** an error message is displayed to the user, no duplicate transaction is logged, and the template schedule remains unadvanced
+- **WHEN** realization fails due to network or domain error
+- **THEN** the error is surfaced without a new duplicate transaction or false successful schedule advancement.
 
 ### Requirement: User Profile Display and Inspection
 The application SHALL fetch and present the current authenticated user's profile details including first name, last name, email address, and WhatsApp contact number.
@@ -591,10 +586,30 @@ The E2E test suite SHALL verify budget creation, editing, category association, 
 - **THEN** the budget is removed from the active budgets view while associated transactions remain intact.
 
 ### Requirement: E2E Goal Lifecycle Management
-The E2E test suite SHALL verify savings goal creation, editing, target contribution, wallet association, and deletion.
+
+The system SHALL have browser E2E coverage for persisted goal creation, detail reading, editing, linking/unlinking, transaction-driven progress, and final deletion.
+
 #### Scenario: Goal creation, contribution, and deletion
-- **WHEN** the test creates a savings goal, links a wallet, records a contribution, updates goal parameters, and deletes the goal
-- **THEN** the progress and target updates reflect accurately in the UI and the goal is cleaned up from the test account.
+- **WHEN** the browser test creates a goal, links a wallet, funds that wallet with a supported transaction/transfer, edits the goal, validates dependent values, and finally deletes it
+- **THEN** progress and target changes persist and display correctly, and the goal is removed from the dedicated account
+- **AND** funding uses no retired contribution endpoint or manual synchronization of linked-wallet current amount.
+
+#### Scenario: Create and Verify Goal
+- **WHEN** the browser test submits a valid goal with a dedicated linked wallet
+- **THEN** the goal is persisted and both API reads and its rendered detail show the expected target, wallet association, and derived amount.
+
+#### Scenario: Edit and Verify Goal
+- **WHEN** the browser test updates a goal's target or wallet associations
+- **THEN** the updated state persists and the rendered progress reflects it.
+
+#### Scenario: Fund a Goal Through Its Wallet
+- **WHEN** the browser test records a transfer into a linked wallet
+- **THEN** its goal current amount and percentage increase by the independently calculated wallet delta
+- **AND** the test performs no contribution request or manual synchronization patch.
+
+#### Scenario: Delete Goal After Dependent Validation
+- **WHEN** numeric, historical, and forecast assertions involving the goal are complete
+- **THEN** the browser test deletes the goal and verifies its absence and removal of wallet associations.
 
 ### Requirement: E2E Recurring Template Lifecycle Management
 The E2E test suite SHALL verify live recurring transaction templates, replacing mock views with API-backed workflows.
@@ -609,21 +624,54 @@ The E2E test suite SHALL verify user profile updates against the live API.
 - **THEN** the updated profile details persist and match the submitted values, and are restored to baseline after the test.
 
 ### Requirement: Test Data Isolation and Determinism
-The E2E test suite SHALL guarantee deterministic test execution without collisions or leftover state across runs.
+
+The live CRUD suite SHALL exclusively own an explicitly authorized dedicated test account, erase its mutable financial data before setup, create fresh data, retain data through all dependent assertions, and clean it again after execution. Protected system categories and the user identity SHALL remain intact.
+
 #### Scenario: Automated test cleanup on failure or success
-- **WHEN** an E2E test finishes (either passing or failing)
-- **THEN** an isolated teardown hook deletes all created entities using their tracked IDs against the live test API.
+- **WHEN** an authorized live run finishes, whether successful or failed
+- **THEN** final teardown deletes its created IDs and any remaining mutable finance data in the approved dedicated account
+- **AND** lack of target/identity authorization never permits a destructive teardown.
 
 #### Scenario: Unique entity namespaces
-- **WHEN** test entities are instantiated in concurrent or sequential runs
-- **THEN** unique timestamped or UUID prefixes are applied to prevent naming conflicts with existing account data.
+- **WHEN** test entities are created in an authorized sequential run
+- **THEN** unique run-prefixed names avoid collisions while stable returned IDs identify entities
+- **AND** unique names are not treated as permission for concurrent account wiping.
+
+#### Scenario: Pre-Test Cleanup
+- **WHEN** identity and target authorization succeed before a live run
+- **THEN** stale transactions, recurring templates, wallet/goal associations, goals, budgets, debts/loans, user categories, and wallets are removed in dependency-safe order
+- **AND** pagination is exhausted and the empty-state verification succeeds before setup.
+
+#### Scenario: Retain Data Until Validation Completes
+- **WHEN** cross-entity, historical, or forecast assertions remain pending
+- **THEN** lifecycle Delete steps do not remove the fixture data they require.
+
+#### Scenario: Normal Final Cleanup
+- **WHEN** all dependent assertions complete
+- **THEN** browser Delete steps verify persistence removal and transaction balance reversals
+- **AND** final cleanup removes remaining mutable entities, resets unlinked wallets to zero before deletion, and verifies the authorized account is clean.
+
+#### Scenario: Partial Setup or Test Failure
+- **WHEN** a run fails after creating any subset of entities
+- **THEN** final cleanup still executes for that authorized account
+- **AND** cleanup failure is reported as failure rather than hidden by the original result.
+
+#### Scenario: Concurrent Run Is Not Authorized
+- **WHEN** another live run already owns the same dedicated account
+- **THEN** a second run does not wipe or mutate that account until exclusive ownership is available.
 
 ### Requirement: Store Unit Test Suite Coverage
-Every CRUD store method across wallets, categories, budgets, goals, recurring templates, and user profile SHALL have dedicated unit tests with mocked network responses.
+
+The system SHALL have deterministic unit tests for consumer-visible CRUD form validation, financial calculations, mutation error handling, and state/cache transitions. Mocked method/body forwarding alone SHALL NOT count as correctness coverage for persisted CRUD or financial values.
+
 #### Scenario: Unit tests cover successful store mutations
-- **WHEN** store methods for create, update, and delete are invoked with mocked successful responses
-- **THEN** the internal reactive state reconciles correctly and cache invalidation is triggered.
+- **WHEN** a supported create, update or delete completes successfully in isolated unit coverage
+- **THEN** consumer state and cache transitions are verified, rather than only mocked HTTP method/body forwarding.
 
 #### Scenario: Unit tests cover API failure and error states
-- **WHEN** a store mutation fails due to network disconnection or domain validation (4xx/5xx responses)
-- **THEN** the store captures the error, maintains previous consistent state, and exposes user-friendly error details without crashing.
+- **WHEN** a mutation fails with a network or API error
+- **THEN** the error is surfaced without crashing and prior consistent consumer state is preserved.
+
+#### Scenario: Financial Rule Boundary Is Tested Offline
+- **WHEN** a deterministic financial calculation or form validation has a meaningful boundary
+- **THEN** its unit test verifies the boundary's consumer-visible result without a live credential.

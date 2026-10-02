@@ -129,12 +129,24 @@ The application SHALL limit simultaneous in-flight HTTP requests to the Reedrich
 - **AND** as each active request completes, the next queued request is dequeued and executed without starving.
 
 ### Requirement: Temporal Snapshot Querying with Date Bounds
-The store SHALL pass `startDate` and `endDate` query parameters when querying `GET /api/v1/account-detail` and `GET /api/v1/summary`.
+
+The store SHALL pass `startDate` and `endDate` when querying supported date-bounded account reports. The account overview SHALL preserve the current Reedrich contract: its realized cashflow is selected-period data, its budget collection intersects the selected period, and its net worth, wallet capital, and linked-goal capital are live values. Historical wallet capital SHALL be obtained from point-in-time wallet snapshots rather than inferred from the live account overview. Calendar-period queries SHALL include their intended first and final instants without double-counting adjacent periods.
 
 #### Scenario: Synchronize Account Detail Snapshot with Date Range
-- **WHEN** user selects a timeframe in `dateFilterStore` (e.g., `2026-09-01` to `2026-09-30`)
-- **THEN** `fetchSnapshot()` appends `startDate` and `endDate` to `/api/v1/account-detail`
-- **AND** the backend delivers cashflow, balances, and allocations scoped to that period.
+- **WHEN** the user selects a timeframe such as September 1 through September 30
+- **THEN** the account-detail request includes date bounds that cover the intended calendar period
+- **AND** the store consumes realized cashflow for that period and the overlapping budget collection
+- **AND** live net worth, wallet capital, and linked-goal amounts are not falsely presented as reconstructed historical closing balances.
+
+#### Scenario: Historical Wallet Capital Uses Point-in-Time Snapshot
+- **WHEN** a historical wallet or account view needs its selected period's opening, movement, or closing balance
+- **THEN** it uses the date-bounded wallet snapshot fields for that period
+- **AND** it does not substitute a live `walletBalance` or live account-overview total for the requested historical value.
+
+#### Scenario: Calendar Boundary Values Are Not Lost
+- **WHEN** a selected calendar period contains transactions at its first and final valid UTC instants
+- **THEN** both are included in the intended period report
+- **AND** a transaction at the following period's first instant is excluded.
 
 ### Requirement: Single-Pipeline Transaction Reads
 Every transaction read path in the application SHALL route through the parameterized envelope query pipeline with concurrency-pool gating and abort support. No component SHALL issue raw `fetch()` calls to `/api/v1/transactions`.
