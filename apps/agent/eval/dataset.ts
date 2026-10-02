@@ -1,10 +1,21 @@
 export interface EvalTestCase {
 	id: string;
-	category: 'balance_query' | 'planning_projection' | 'transaction_filter' | 'ui_control' | 'financial_sanity' | 'multi_currency' | 'category_breakdown';
+	category:
+		| 'balance_query'
+		| 'planning_projection'
+		| 'transaction_filter'
+		| 'ui_control'
+		| 'financial_sanity'
+		| 'multi_currency'
+		| 'category_breakdown'
+		| 'wallet_management'
+		| 'debt_management'
+		| 'safe_to_spend';
 	prompt: string;
 	pageContext?: {
 		currentRoute: string;
 		activeTab: 'all' | 'spendable' | 'locked';
+		drawerOpen: boolean;
 		selectedInstitution: string | null;
 		summary: { totalNetWorth?: number; totalSpendable?: number; totalLocked?: number; walletCount: number; hasCashFlow: boolean };
 	};
@@ -76,6 +87,34 @@ export const EVAL_DATASET: EvalTestCase[] = [
 		expected: {
 			requiredTools: [],
 			mustContain: ['tidak', 'berkurang'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-07',
+		category: 'wallet_management',
+		prompt: 'Tolong buatkan dompet baru di Bank Jago namanya Dompet Belanja saldo awal nol',
+		expected: {
+			requiredTools: ['create_wallet'],
+			mustContain: ['Dompet Belanja'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-08',
+		category: 'debt_management',
+		prompt: 'Saya punya catatan hutang atau piutang apa saja saat ini?',
+		expected: {
+			requiredTools: ['list_debts_loans'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-09',
+		category: 'safe_to_spend',
+		prompt: 'Berapa dana aman yang bisa saya belanjakan (safe to spend) saat ini?',
+		expected: {
+			requiredTools: ['financial_summary'],
 			minSteps: 1
 		}
 	}

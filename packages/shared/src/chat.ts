@@ -57,15 +57,15 @@ export interface ModelConfig {
 export const DEFAULT_MODELS: ModelConfig[] = [
 	{
 		provider: 'gemini',
-		model: 'gemini-3.7-flash',
-		displayName: 'Gemini 3.7 Flash',
+		model: 'gemini-3.1-flash-lite',
+		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
 		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 	},
 	{
 		provider: 'gemini',
-		model: 'gemini-3.1-flash-lite',
-		displayName: 'Gemini 3.1 Flash Lite',
+		model: 'gemini-3.7-flash',
+		displayName: 'Gemini 3.7 Flash',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
 		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 	},
@@ -77,12 +77,32 @@ export const DEFAULT_MODELS: ModelConfig[] = [
 		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
 	},
 	{
+		provider: 'gemini',
+		model: 'gemini-3.1-pro-preview',
+		displayName: 'Gemini 3.1 Pro (Preview)',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
+	},
+	{
 		provider: 'groq',
 		model: 'openai/gpt-oss-20b',
 		displayName: 'GPT-OSS 20B (Groq Fast)',
 		capabilities: { vision: false, tool_calling: true }
+	},
+	{
+		provider: 'groq',
+		model: 'openai/gpt-oss-120b',
+		displayName: 'GPT-OSS 120B (Groq Large)',
+		capabilities: { vision: false, tool_calling: true }
 	}
 ];
+
+export interface AgentMemory {
+	walletNicknames?: Record<string, string>;
+	cashflowPattern?: string;
+	formattingPreferences?: string[];
+	customContext?: string;
+}
 
 export interface AgentSettings {
 	maxSteps: number;

@@ -2,41 +2,33 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { TransactionRecord } from '@maniyy/shared';
+import { createApiClient, extractErrorMessage } from './http.js';
 
 export function createMutationTools(reedrichUrl: string, token: string, fetcher?: Fetcher) {
-	const headers = {
-		Authorization: `Bearer ${token}`,
-		'X-Api-Key': token,
-		'Content-Type': 'application/json'
-	};
-
-	const doFetch = (url: string, init?: RequestInit) =>
-		fetcher
-			? fetcher.fetch(new Request(url, { ...init, headers: { ...headers, ...init?.headers } }))
-			: fetch(url, { ...init, headers: { ...headers, ...init?.headers } });
+	const { request } = createApiClient(reedrichUrl, token, fetcher);
 
 	return {
 		create_transaction: tool({
 			description: 'Catat transaksi baru (expense atau income). Selalu konfirmasi detail sebelum memanggil ini.',
 			parameters: z.object({
-				walletId: z.string().describe('ID wallet sumber'),
+				walletId: z.string().describe('ID wallet tempat transaksi'),
 				categoryId: z.string().describe('ID kategori'),
-				amount: z.number().positive().describe('Jumlah dalam Rupiah'),
-				type: z.enum(['expense', 'income']).describe('Jenis transaksi'),
-				date: z.string().describe('Tanggal transaksi format YYYY-MM-DD'),
-				description: z.string().optional().describe('Keterangan opsional'),
-				budgetId: z.string().optional().describe('ID budget opsional'),
-				adminFee: z.number().optional().describe('Biaya admin opsional'),
-				isPlanned: z.boolean().optional().describe('Apakah transaksi direncanakan')
+				amount: z.number().positive().describe('Nominal transaksi'),
+				type: z.enum(['expense', 'income']).default('expense'),
+				description: z.string().optional().describe('Keterangan transaksi'),
+				adminFee: z.number().default(0).describe('Biaya admin jika ada'),
+				budgetId: z.string().optional().describe('ID budget terkait'),
+				isPlanned: z.boolean().default(false).describe('True jika transaksi rencana/masa depan'),
+				date: z.string().describe('Tanggal transaksi format YYYY-MM-DD')
 			}),
 			execute: async (params) => {
-				const res = await doFetch(`${reedrichUrl}/api/v1/transactions`, {
+				const res = await request('/api/v1/transactions', {
 					method: 'POST',
 					body: JSON.stringify(params)
 				});
 				if (!res.ok) {
-					const err = await res.text();
-					throw new Error(`create_transaction failed: ${res.status} - ${err}`);
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`create_transaction failed: ${extractErrorMessage(err, res.status)}`);
 				}
 				return (await res.json()) as TransactionRecord;
 			}
@@ -45,23 +37,23 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 		create_transfer: tool({
 			description: 'Catat transfer antar wallet. Selalu konfirmasi detail sebelum memanggil ini.',
 			parameters: z.object({
-				sourceWalletId: z.string().describe('ID wallet sumber'),
+				sourceWalletId: z.string().describe('ID wallet asal'),
 				targetWalletId: z.string().describe('ID wallet tujuan'),
-				amount: z.number().positive().describe('Jumlah transfer dalam Rupiah'),
-				adminFee: z.number().optional().describe('Biaya admin/transfer opsional'),
-				description: z.string().optional().describe('Keterangan opsional'),
-				date: z.string().optional().describe('Tanggal transfer format YYYY-MM-DD')
+				amount: z.number().positive().describe('Nominal transfer'),
+				adminFee: z.number().default(0).describe('Biaya admin transfer'),
+				description: z.string().optional().describe('Keterangan transfer'),
+				date: z.string().optional().describe('Tanggal transfer YYYY-MM-DD (default hari ini)')
 			}),
 			execute: async (params) => {
-				const res = await doFetch(`${reedrichUrl}/api/v1/transfers`, {
+				const res = await request('/api/v1/transfers', {
 					method: 'POST',
 					body: JSON.stringify(params)
 				});
 				if (!res.ok) {
-					const err = await res.text();
-					throw new Error(`create_transfer failed: ${res.status} - ${err}`);
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`create_transfer failed: ${extractErrorMessage(err, res.status)}`);
 				}
-				return (await res.json()) as TransactionRecord;
+				return await res.json();
 			}
 		}),
 
@@ -70,20 +62,23 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 			parameters: z.object({
 				transactionId: z.string().describe('ID transaksi yang akan diubah'),
 				amount: z.number().positive().optional(),
+				adminFee: z.number().optional(),
+				type: z.enum(['expense', 'income', 'transfer']).optional(),
+				walletId: z.string().optional(),
+				targetWalletId: z.string().optional(),
 				categoryId: z.string().optional(),
-				budgetId: z.string().optional(),
 				description: z.string().optional(),
-				date: z.string().optional().describe('Format YYYY-MM-DD'),
+				date: z.string().optional(),
 				isPlanned: z.boolean().optional()
 			}),
 			execute: async ({ transactionId, ...delta }) => {
-				const res = await doFetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
+				const res = await request(`/api/v1/transactions/${transactionId}`, {
 					method: 'PATCH',
 					body: JSON.stringify(delta)
 				});
 				if (!res.ok) {
-					const err = await res.text();
-					throw new Error(`update_transaction failed: ${res.status} - ${err}`);
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`update_transaction failed: ${extractErrorMessage(err, res.status)}`);
 				}
 				return (await res.json()) as TransactionRecord;
 			}
@@ -93,20 +88,23 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 			description: 'Hapus transaksi. WAJIB minta konfirmasi eksplisit dari pengguna sebelum memanggil ini.',
 			parameters: z.object({
 				transactionId: z.string().describe('ID transaksi yang akan dihapus'),
-				confirmed: z.boolean().describe('Pengguna sudah konfirmasi penghapusan')
+				confirmed: z.boolean().describe('Harus bernilai true untuk konfirmasi')
 			}),
 			execute: async ({ transactionId, confirmed }) => {
 				if (!confirmed) {
-					return { success: false, message: 'Penghapusan dibatalkan karena belum dikonfirmasi.' };
+					return {
+						status: 'confirmation_required',
+						message: `Apakah Anda yakin ingin menghapus transaksi ${transactionId}? Mohon konfirmasi.`
+					};
 				}
-				const res = await doFetch(`${reedrichUrl}/api/v1/transactions/${transactionId}`, {
+				const res = await request(`/api/v1/transactions/${transactionId}`, {
 					method: 'DELETE'
 				});
 				if (!res.ok) {
-					const err = await res.text();
-					throw new Error(`delete_transaction failed: ${res.status} - ${err}`);
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`delete_transaction failed: ${extractErrorMessage(err, res.status)}`);
 				}
-				return { success: true, message: 'Transaksi berhasil dihapus.' };
+				return { status: 'deleted', transactionId };
 			}
 		})
 	};

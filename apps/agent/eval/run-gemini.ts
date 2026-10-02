@@ -1,7 +1,15 @@
 import { GoogleGenAI, type FunctionDeclaration, Type } from '@google/genai';
 import type { PageContext } from '@maniyy/shared';
 import { createFinancialTools } from '../src/agent/tools/financial.js';
+import { createMutationTools } from '../src/agent/tools/mutations.js';
+import { createWalletTools } from '../src/agent/tools/wallet-management.js';
+import { createBudgetTools } from '../src/agent/tools/budget-management.js';
+import { createDebtLoanTools } from '../src/agent/tools/debt-loan.js';
+import { createGoalTools } from '../src/agent/tools/goal-management.js';
+import { createRecurringTools } from '../src/agent/tools/recurring.js';
+import { createFeedbackTools } from '../src/agent/tools/feedback.js';
 import { createUICommandTools } from '../src/agent/tools/ui-commands.js';
+import { buildGeminiDeclarations, type ToolDefinitionLike } from '../src/agent/gemini-declarations.js';
 import { buildSystemPrompt } from '../src/agent/system-prompt.js';
 import { EVAL_DATASET } from './dataset.js';
 
@@ -17,91 +25,62 @@ if (!GEMINI_KEY) {
 }
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_KEY || 'dummy_key_for_init' });
-const financialTools = createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN);
-const uiCommandTools = createUICommandTools();
 
-const toolDeclarations: FunctionDeclaration[] = [
-	{
-		name: 'get_snapshot',
-		description: 'Ambil ringkasan portofolio: total net worth (beserta byCurrency), rincian saldo wallet, dan top alokasi kategori pengeluaran.',
-		parameters: {
-			type: Type.OBJECT,
-			properties: {}
-		}
-	},
-	{
-		name: 'list_transactions',
-		description: 'Ambil daftar transaksi dengan filter tanggal spesifik (misal rentang bulan tertentu), wallet, atau kategori.',
-		parameters: {
-			type: Type.OBJECT,
-			properties: {
-				startDate: { type: Type.STRING, description: 'Tanggal mulai format YYYY-MM-DD' },
-				endDate: { type: Type.STRING, description: 'Tanggal akhir format YYYY-MM-DD' },
-				limit: { type: Type.NUMBER, description: 'Batas jumlah' }
-			}
-		}
-	},
-	{
-		name: 'navigate_page',
-		description: 'Navigasi ke halaman lain di aplikasi (/planning, /ledger, /accounts, /).',
-		parameters: {
-			type: Type.OBJECT,
-			properties: {
-				route: { type: Type.STRING, description: 'Halaman tujuan' },
-				message: { type: Type.STRING, description: 'Pesan ke pengguna' }
-			},
-			required: ['route', 'message']
-		}
-	}
-];
+const tools: Record<string, ToolDefinitionLike> = {
+	...createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createMutationTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createWalletTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createBudgetTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createDebtLoanTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createGoalTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createRecurringTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createFeedbackTools(REEDRICH_URL, REEDRICH_TOKEN),
+	...createUICommandTools()
+};
+
+const toolDeclarations = buildGeminiDeclarations(tools);
 
 async function executeTool(name: string, args: Record<string, unknown>, toolCallId: string): Promise<unknown> {
-	switch (name) {
-		case 'get_snapshot':
-			return await financialTools.get_snapshot.execute({}, { toolCallId, messages: [] });
-		case 'list_transactions':
-			return await financialTools.list_transactions.execute(
-				{
-					startDate: typeof args.startDate === 'string' ? args.startDate : undefined,
-					endDate: typeof args.endDate === 'string' ? args.endDate : undefined,
-					limit: typeof args.limit === 'number' ? args.limit : 30
-				},
-				{ toolCallId, messages: [] }
-			);
-		case 'navigate_page':
-			return await uiCommandTools.navigate_page.execute(
-				args as { route: '/' | '/planning' | '/ledger' | '/accounts'; message: string },
-				{ toolCallId, messages: [] }
-			);
-		default:
-			return { message: `Tool ${name} executed` };
+	const toolDef = tools[name];
+	if (toolDef && typeof toolDef.execute === 'function') {
+		try {
+			return await toolDef.execute(args, { toolCallId, messages: [] });
+		} catch (err: unknown) {
+			const errorMsg = err instanceof Error ? err.message : String(err);
+			return { error: `Tool ${name} failed: ${errorMsg}` };
+		}
 	}
+	return { error: `Tool ${name} not found` };
 }
 
 console.log('\n======================================================');
 console.log('🚀 EVALUATING AGENT REASONING: Gemini 3.1 Flash Lite');
+console.log(`Registered Tools: ${toolDeclarations.length}`);
 console.log('======================================================\n');
 
 const results = [];
 
 for (const tc of EVAL_DATASET) {
-	console.log(`▶ Running [${tc.id}] ${tc.category}: "${tc.prompt}"...`);
+	console.log(`\n▶️ Running [${tc.id}] (${tc.category}): "${tc.prompt}"`);
 
-	const pageContext: PageContext = {
-		currentRoute: tc.pageContext?.currentRoute ?? '/',
-		activeTab: tc.pageContext?.activeTab ?? 'all',
-		selectedInstitution: tc.pageContext?.selectedInstitution ?? null,
+	const pageContext: PageContext = tc.pageContext || {
+		currentRoute: '/',
+		activeTab: 'all',
 		drawerOpen: false,
-		summary: tc.pageContext?.summary ?? {
-			totalNetWorth: 15266837.21,
-			totalSpendable: 705792.15,
-			totalLocked: 14561045.06,
-			walletCount: 17,
+		selectedInstitution: null,
+		summary: {
+			totalNetWorth: 15099441.5,
+			totalSpendable: 705000,
+			totalLocked: 14394441.5,
+			walletCount: 5,
 			hasCashFlow: true
 		}
 	};
 
-	const systemInstruction = buildSystemPrompt(pageContext, 'Lutfi Zain');
+	const { promise, resolve } = Promise.withResolvers<void>();
+	setTimeout(resolve, 2000);
+	await promise;
+	console.log(`\n▶️ Running [${tc.id}] (${tc.category}): "${tc.prompt}"`);
 
 	const chat = ai.chats.create({
 		model: 'gemini-3.1-flash-lite',
@@ -111,87 +90,92 @@ for (const tc of EVAL_DATASET) {
 		}
 	});
 
-	const calledTools: string[] = [];
+	const toolCallsMade: string[] = [];
+	let steps = 0;
+	let content = '';
 	const failures: string[] = [];
-	let finalContent = '';
-	let steps = 1;
 
 	try {
 		let response = await chat.sendMessage({ message: tc.prompt });
+		steps++;
 
-		let loops = 6;
+		let loops = 8;
 		while (loops-- > 0 && response.functionCalls && response.functionCalls.length > 0) {
-			steps++;
-			const fCalls = response.functionCalls;
 			const parts = [];
-
-			for (const fc of fCalls) {
+			for (const fc of response.functionCalls) {
 				const toolName = fc.name || '';
-				calledTools.push(toolName);
+				toolCallsMade.push(toolName);
 				const toolCallId = fc.id || `call_${crypto.randomUUID().slice(0, 8)}`;
-				const output = await executeTool(toolName, fc.args || {}, toolCallId);
+				const toolResult = await executeTool(toolName, (fc.args || {}) as Record<string, unknown>, toolCallId);
+
 				parts.push({
 					functionResponse: {
 						name: toolName,
-						response: { output }
+						response: { output: toolResult }
 					}
 				});
 			}
 
 			response = await chat.sendMessage({ message: parts });
+			steps++;
 		}
 
-		finalContent = response.text || '';
+		content = response.text || '';
+	} catch (err: unknown) {
+		failures.push(`Execution error: ${err instanceof Error ? err.message : String(err)}`);
+	}
 
-		let toolScore = 100;
-		const missingTools = tc.expected.requiredTools.filter((t) => !calledTools.includes(t));
-		if (missingTools.length > 0) {
-			toolScore = Math.max(0, 100 - (missingTools.length * 50));
-			failures.push(`Missing tools: ${missingTools.join(', ')}`);
-		}
+	// Validation
+	const missingTools = tc.expected.requiredTools.filter((t) => !toolCallsMade.includes(t));
+	if (missingTools.length > 0) {
+		failures.push(`Missing required tools: ${missingTools.join(', ')}`);
+	}
 
-		let contentScore = 100;
-		if (tc.expected.mustContain) {
-			for (const keyword of tc.expected.mustContain) {
-				if (!finalContent.toLowerCase().includes(keyword.toLowerCase())) {
-					contentScore -= Math.round(100 / tc.expected.mustContain.length);
-					failures.push(`Content missing keyword: "${keyword}"`);
-				}
+	if (tc.expected.minSteps && steps < tc.expected.minSteps) {
+		failures.push(`Step count too low: expected >= ${tc.expected.minSteps}, got ${steps}`);
+	}
+
+	if (tc.expected.mustContain) {
+		for (const mc of tc.expected.mustContain) {
+			if (!content.toLowerCase().includes(mc.toLowerCase())) {
+				failures.push(`Missing keyword: "${mc}"`);
 			}
 		}
+	}
 
-		let mathScore = 100;
-		if (tc.expected.mathCheck && !tc.expected.mathCheck(finalContent)) {
-			mathScore = 0;
-			failures.push(`Math verification failed`);
+	if (tc.expected.mustNotContain) {
+		for (const mnc of tc.expected.mustNotContain) {
+			if (content.toLowerCase().includes(mnc.toLowerCase())) {
+				failures.push(`Contained forbidden string: "${mnc}"`);
+			}
 		}
+	}
 
-		const totalScore = Math.max(0, Math.round((toolScore * 0.4) + (contentScore * 0.3) + (mathScore * 0.3)));
-		const passed = totalScore >= 70;
+	if (tc.expected.mathCheck && !tc.expected.mathCheck(content)) {
+		failures.push('Failed math/numerical validation check.');
+	}
 
-		results.push({
-			id: tc.id,
-			passed,
-			toolCalls: calledTools,
-			steps,
-			score: totalScore,
-			failures
-		});
+	const passed = failures.length === 0;
+	const score = passed ? 100 : Math.max(0, 100 - failures.length * 25);
 
-		console.log(`   ${passed ? '✅ PASSED' : '❌ FAILED'} | Score: ${totalScore}/100 | Steps: ${steps} | Tools: [${calledTools.join(', ')}]`);
-		if (failures.length > 0) {
-			console.log(`   Notes: ${failures.join('; ')}`);
+	results.push({
+		id: tc.id,
+		passed,
+		toolCalls: toolCallsMade,
+		missingTools,
+		content,
+		steps,
+		score,
+		failures
+	});
+
+	if (passed) {
+		console.log(`  ✅ PASSED (Score: ${score}/100, Steps: ${steps}, Tools: [${toolCallsMade.join(', ')}])`);
+	} else {
+		console.log(`  ❌ FAILED (Score: ${score}/100, Steps: ${steps}, Tools: [${toolCallsMade.join(', ')}])`);
+		for (const f of failures) {
+			console.log(`     - ${f}`);
 		}
-	} catch (err) {
-		console.log(`   ❌ ERROR: ${(err as Error).message}`);
-		results.push({
-			id: tc.id,
-			passed: false,
-			toolCalls: [],
-			steps: 0,
-			score: 0,
-			failures: [(err as Error).message]
-		});
 	}
 }
 

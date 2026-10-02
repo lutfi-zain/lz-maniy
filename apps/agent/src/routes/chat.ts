@@ -5,6 +5,13 @@ import { getModel, AVAILABLE_MODELS } from '../agent/models.js';
 import { buildSystemPrompt } from '../agent/system-prompt.js';
 import { createFinancialTools } from '../agent/tools/financial.js';
 import { createMutationTools } from '../agent/tools/mutations.js';
+import { createWalletTools } from '../agent/tools/wallet-management.js';
+import { createBudgetTools } from '../agent/tools/budget-management.js';
+import { createDebtLoanTools } from '../agent/tools/debt-loan.js';
+import { createGoalTools } from '../agent/tools/goal-management.js';
+import { createRecurringTools } from '../agent/tools/recurring.js';
+import { createFeedbackTools } from '../agent/tools/feedback.js';
+import { createMemoryTools } from '../agent/tools/memory.js';
 import { createUICommandTools } from '../agent/tools/ui-commands.js';
 import { createGeminiRunner } from '../agent/gemini-native.js';
 import {
@@ -12,7 +19,8 @@ import {
 	getConversation,
 	listMessages,
 	insertMessage,
-	touchConversation
+	touchConversation,
+	getAgentMemory
 } from '../db/queries.js';
 import type { Env } from '../types.js';
 import type { ChatStreamRequest } from '@maniyy/shared';
@@ -77,6 +85,8 @@ chatRouter.post('/', async (c) => {
 	const priorMessages: CoreMsg[] = prior
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+	// Retrieve agent memory
+	const agentMemory = await getAgentMemory(c.env.DB, user.userId);
 
 	// Route to native Gemini Runner if Gemini provider is selected
 	if (modelConfig.provider === 'gemini') {
@@ -84,7 +94,10 @@ chatRouter.post('/', async (c) => {
 			c.env.GEMINI_API_KEY,
 			c.env.REEDRICH_API_URL,
 			user.accessToken,
-			c.env.REEDRICH
+			c.env.REEDRICH,
+			c.env.DB,
+			user.userId,
+			agentMemory
 		);
 
 		const stream = runner.runGeminiStream(
@@ -148,11 +161,17 @@ chatRouter.post('/', async (c) => {
 	const tools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createWalletTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createBudgetTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createDebtLoanTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createGoalTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createRecurringTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createFeedbackTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
+		...createMemoryTools(c.env.DB, user.userId),
 		...createUICommandTools()
 	};
 
-	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName);
-
+	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory);
 	const result = streamText({
 		model: aiModel as unknown as LanguageModelV1,
 		system: systemPrompt,

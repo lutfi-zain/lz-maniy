@@ -22,30 +22,6 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 	},
 	{
 		provider: 'gemini',
-		model: 'gemini-3.6-flash',
-		displayName: 'Gemini 3.6 Flash',
-		capabilities: { vision: true, tool_calling: true }
-	},
-	{
-		provider: 'gemini',
-		model: 'gemini-3.5-flash',
-		displayName: 'Gemini 3.5 Flash',
-		capabilities: { vision: true, tool_calling: true }
-	},
-	{
-		provider: 'gemini',
-		model: 'gemini-3.5-flash-lite',
-		displayName: 'Gemini 3.5 Flash Lite',
-		capabilities: { vision: true, tool_calling: true }
-	},
-	{
-		provider: 'gemini',
-		model: 'gemini-flash-lite-latest',
-		displayName: 'Gemini Flash Lite (Latest)',
-		capabilities: { vision: true, tool_calling: true }
-	},
-	{
-		provider: 'gemini',
 		model: 'gemini-3.8-flash',
 		displayName: 'Gemini 3.8 Flash (High Tier)',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
@@ -68,17 +44,10 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 	},
 	{
 		provider: 'groq',
-		model: 'qwen/qwen3.8-27b',
-		displayName: 'Qwen 3.8 27B (Groq)',
-		capabilities: { vision: false, tool_calling: true }
-	},
-	{
-		provider: 'groq',
 		model: 'openai/gpt-oss-120b',
 		displayName: 'GPT-OSS 120B (Groq Large)',
 		capabilities: { vision: false, tool_calling: true }
-	},
-
+	}
 ];
 
 export function getModel(

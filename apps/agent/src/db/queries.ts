@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import type { ChatMessage, ConversationMeta, UserSettings } from '@maniyy/shared';
+import type { ChatMessage, ConversationMeta, UserSettings, AgentMemory } from '@maniyy/shared';
 
 export interface DBConversation {
 	id: string;
@@ -209,6 +209,92 @@ export async function upsertUserSettings(
 			   updated_at = excluded.updated_at`
 		)
 		.bind(userId, jsonStr, now)
+		.run();
+
+	return merged;
+}
+
+export const DEFAULT_AGENT_MEMORY: AgentMemory = {
+	walletNicknames: {},
+	cashflowPattern: '',
+	formattingPreferences: [],
+	customContext: ''
+};
+
+interface DBAgentMemoryRow {
+	user_id: string;
+	wallet_nicknames: string;
+	cashflow_pattern: string;
+	formatting_preferences: string;
+	custom_context: string;
+	updated_at: number;
+}
+
+export async function getAgentMemory(db: D1Database, userId: string): Promise<AgentMemory> {
+	const row = await db
+		.prepare('SELECT * FROM agent_memory WHERE user_id = ?')
+		.bind(userId)
+		.first<DBAgentMemoryRow>();
+
+	if (!row) {
+		return { ...DEFAULT_AGENT_MEMORY };
+	}
+
+	let walletNicknames = {};
+	try {
+		walletNicknames = JSON.parse(row.wallet_nicknames || '{}');
+	} catch {
+		/* ignore */
+	}
+
+	let formattingPreferences = [];
+	try {
+		formattingPreferences = JSON.parse(row.formatting_preferences || '[]');
+	} catch {
+		/* ignore */
+	}
+
+	return {
+		walletNicknames,
+		cashflowPattern: row.cashflow_pattern || '',
+		formattingPreferences,
+		customContext: row.custom_context || ''
+	};
+}
+
+export async function upsertAgentMemory(
+	db: D1Database,
+	userId: string,
+	partial: Partial<AgentMemory>
+): Promise<AgentMemory> {
+	const current = await getAgentMemory(db, userId);
+	const merged: AgentMemory = {
+		walletNicknames: { ...current.walletNicknames, ...partial.walletNicknames },
+		cashflowPattern: partial.cashflowPattern !== undefined ? partial.cashflowPattern : current.cashflowPattern,
+		formattingPreferences: partial.formattingPreferences !== undefined ? partial.formattingPreferences : current.formattingPreferences,
+		customContext: partial.customContext !== undefined ? partial.customContext : current.customContext
+	};
+
+	const now = Date.now();
+	await db
+		.prepare(
+			`INSERT INTO agent_memory (user_id, wallet_nicknames, cashflow_pattern, formatting_preferences, custom_context, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(user_id) DO UPDATE SET
+			   wallet_nicknames = excluded.wallet_nicknames,
+			   cashflow_pattern = excluded.cashflow_pattern,
+			   formatting_preferences = excluded.formatting_preferences,
+			   custom_context = excluded.custom_context,
+			   updated_at = excluded.updated_at`
+		)
+		.bind(
+			userId,
+			JSON.stringify(merged.walletNicknames || {}),
+			merged.cashflowPattern || '',
+			JSON.stringify(merged.formattingPreferences || []),
+			merged.customContext || '',
+			now
+		)
 		.run();
 
 	return merged;

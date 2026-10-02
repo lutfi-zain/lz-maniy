@@ -15,6 +15,17 @@ describe('ChatStore', () => {
 		expect(store.messages).toEqual([]);
 		expect(store.selectedModel.model).toBe('gemini-3.1-flash-lite');
 	});
+	it('has 6 curated default models', () => {
+		expect(store.availableModels.length).toBe(6);
+		const models = store.availableModels.map((m) => m.model);
+		expect(models).toContain('gemini-3.1-flash-lite');
+		expect(models).toContain('gemini-3.7-flash');
+		expect(models).toContain('gemini-3.8-flash');
+		expect(models).toContain('gemini-3.1-pro-preview');
+		expect(models).toContain('openai/gpt-oss-20b');
+		expect(models).toContain('openai/gpt-oss-120b');
+	});
+
 
 	it('toggles panel visibility', () => {
 		store.togglePanel();

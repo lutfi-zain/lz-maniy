@@ -3,6 +3,12 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
 import { createFinancialTools } from '../src/agent/tools/financial.js';
 import { createMutationTools } from '../src/agent/tools/mutations.js';
+import { createWalletTools } from '../src/agent/tools/wallet-management.js';
+import { createBudgetTools } from '../src/agent/tools/budget-management.js';
+import { createDebtLoanTools } from '../src/agent/tools/debt-loan.js';
+import { createGoalTools } from '../src/agent/tools/goal-management.js';
+import { createRecurringTools } from '../src/agent/tools/recurring.js';
+import { createFeedbackTools } from '../src/agent/tools/feedback.js';
 import { createUICommandTools } from '../src/agent/tools/ui-commands.js';
 import { buildSystemPrompt } from '../src/agent/system-prompt.js';
 import { EVAL_DATASET, type EvalTestCase } from './dataset.js';
@@ -46,6 +52,12 @@ export async function runEval(providerType: 'gemini' | 'groq', modelName: string
 	const tools = {
 		...createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN),
 		...createMutationTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createWalletTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createBudgetTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createDebtLoanTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createGoalTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createRecurringTools(REEDRICH_URL, REEDRICH_TOKEN),
+		...createFeedbackTools(REEDRICH_URL, REEDRICH_TOKEN),
 		...createUICommandTools()
 	};
 

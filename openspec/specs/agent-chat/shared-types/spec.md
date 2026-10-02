@@ -38,6 +38,7 @@ The shared types package SHALL define standard types for chat messages, roles, t
 - **THEN** the interface defines:
   - `variants?: Array<{ content: string; toolInvocations?: ToolInvocationItem[]; timestamp: number; error?: string }>` (alternative assistant generations)
   - `activeVariantIndex?: number` (currently selected 0-based variant index)
+
 ### Requirement: UI Command Protocol Types
 The shared types package SHALL define the discriminated union for `UICommand` payloads returned by the agent.
 
@@ -91,6 +92,7 @@ The shared types package SHALL define configurations and capability flags for AI
 - **WHEN** consumer imports `AVAILABLE_MODELS` from `@maniyy/shared`
 - **THEN** non-functional upstream OpenCode models (`muse-spark-1.3-contributor-free`, `deepseek-v4-flash-free`) are omitted from active model choices
 - **THEN** active entries prioritize verified Google Gemini and Groq models
+
 ### Requirement: Re-Export of Core Domain Types
 The shared types package SHALL re-export all core Reedrich financial entity and DTO types.
 
@@ -104,6 +106,7 @@ The shared package SHALL contain zero external runtime dependencies and build as
 #### Scenario: Dependency Verification
 - **WHEN** `@maniyy/shared` package is inspected
 - **THEN** its `package.json` contains no runtime `dependencies`, only `devDependencies` for TypeScript compilation and validation
+
 ### Requirement: Thinking Level and Stream Request Configuration
 The shared types package SHALL define request parameters for selecting thinking effort levels during streaming generation.
 
@@ -111,3 +114,30 @@ The shared types package SHALL define request parameters for selecting thinking 
 - **WHEN** consumer constructs a `ChatStreamRequest`
 - **THEN** the payload accepts an optional `thinkingLevel?: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'`
 - **THEN** the payload accepts `model?: { provider: 'gemini' | 'groq' | 'opencode'; model: string }`
+
+### Requirement: Curated Model Configuration Types
+
+The shared types package SHALL define `AVAILABLE_MODELS` as a curated list of exactly 6 models: `gemini-3.1-flash-lite`, `gemini-3.7-flash`, `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `groq/openai/gpt-oss-20b`, and `groq/openai/gpt-oss-120b`. The `DEFAULT_MODELS` fallback list SHALL be a subset matching the curated backend list.
+
+#### Scenario: Shared package exports curated model list
+
+- **WHEN** a consumer imports `DEFAULT_MODELS` from `@maniyy/shared`
+- **THEN** the list contains no superseded models (3.5, 3.6, flash-lite-latest) and no niche models (qwen3.8-27b)
+
+### Requirement: Extended Financial Tool Parameter and Result Types
+
+The shared types package SHALL define TypeScript types for all new tool parameters and results: `WalletCreateParams`, `WalletUpdateParams`, `BudgetParams`, `DebtLoanParams`, `DebtLoanRepayParams`, `GoalParams`, `GoalWalletLinkParams`, `RecurringTemplateParams`, `FeedbackParams`, `HorizonParams`, and their corresponding response types matching the Reedrich REST API v1.17.0 OpenAPI schema.
+
+#### Scenario: New tool types are importable
+
+- **WHEN** the agent backend imports wallet/budget/goal parameter types from `@maniyy/shared`
+- **THEN** TypeScript compilation succeeds with strict type checking and the types match the Reedrich OpenAPI schema
+
+### Requirement: Agent Memory Type Definition
+
+The shared types package SHALL define an `AgentMemory` interface containing: `walletNicknames` (map of walletId to human nickname), `cashflowPattern` (string description of user's money flow), `formattingPreferences` (array of formatting directives), and `customContext` (freeform string for user-specific financial context such as recurring obligations, family members, account numbers).
+
+#### Scenario: Agent memory type is used in system prompt builder
+
+- **WHEN** the system prompt builder receives an `AgentMemory` object
+- **THEN** it can access all fields without type errors and inject them into the dynamic prompt sections
