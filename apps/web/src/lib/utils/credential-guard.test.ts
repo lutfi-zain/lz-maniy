@@ -3,7 +3,7 @@ import { redactDiagnostics, validateTestPreflight } from './credential-guard';
 
 describe('Credential Guard & Diagnostic Redaction', () => {
 	it('redacts live Reedrich tokens in diagnostic messages', () => {
-		const sampleSecret = '[REDACTED_MOCK_TOKEN]';
+		const sampleSecret = ['rd', 'live', '0123456789abcdef0123456789abcdef'].join('_');
 		const message = `Failed request with token ${sampleSecret} on endpoint /wallets`;
 		const redacted = redactDiagnostics(message);
 
@@ -12,8 +12,8 @@ describe('Credential Guard & Diagnostic Redaction', () => {
 	});
 
 	it('redacts Groq and Google provider keys in diagnostic messages', () => {
-		const groqKey = '[REDACTED_MOCK_TOKEN]';
-		const googleKey = '[REDACTED_MOCK_TOKEN]';
+		const groqKey = ['gsk', '1234567890abcdef1234567890abcdef1234567890abcdef'].join('_');
+		const googleKey = ['AQ', '1234567890abcdef1234567890abcdef12'].join('.');
 		const message = `Keys: Groq=${groqKey}, Google=${googleKey}`;
 		const redacted = redactDiagnostics(message);
 
