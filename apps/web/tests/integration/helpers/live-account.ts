@@ -182,13 +182,25 @@ export async function verifyEmptyAccountState(
 	const headers = { Authorization: `Bearer ${config.token}` };
 	const base = config.apiBaseUrl;
 
-	const [walRes, txRes, gRes, bRes, recRes] = await Promise.all([
-		request.get(`${base}/api/v1/wallets`, { headers }),
-		request.get(`${base}/api/v1/transactions?limit=50`, { headers }),
-		request.get(`${base}/api/v1/goals`, { headers }),
-		request.get(`${base}/api/v1/budgets`, { headers }),
-		request.get(`${base}/api/v1/recurring-templates`, { headers })
-	]);
+	async function safeGet(url: string) {
+		for (let i = 0; i < 3; i++) {
+			try {
+				return await request.get(url, { headers });
+			} catch (err) {
+				if (i === 2) throw err;
+				const { promise, resolve } = Promise.withResolvers<void>();
+				setTimeout(resolve, 600 * (i + 1));
+				await promise;
+			}
+		}
+		throw new Error(`Failed to GET ${url}`);
+	}
+
+	const walRes = await safeGet(`${base}/api/v1/wallets`);
+	const txRes = await safeGet(`${base}/api/v1/transactions?limit=50`);
+	const gRes = await safeGet(`${base}/api/v1/goals`);
+	const bRes = await safeGet(`${base}/api/v1/budgets`);
+	const recRes = await safeGet(`${base}/api/v1/recurring-templates`);
 
 	const wallets = walRes.ok() ? ((await walRes.json()) as unknown[]) : [];
 	let txs: unknown[] = [];

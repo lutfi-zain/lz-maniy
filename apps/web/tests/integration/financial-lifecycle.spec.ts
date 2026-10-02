@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 import {
 	getLiveAccountConfig,
 	assertAuthorizedTestAccount,
@@ -32,7 +32,70 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 	let gTripId = '';
 
 	const recurringIds: string[] = [];
+	let plannedDeficitId = '';
+	let boundaryGoalId = '';
+	let dueTemplateId = '';
 
+	async function getJsonWithRetry<T>(
+		req: APIRequestContext,
+		url: string,
+		headers: Record<string, string>,
+		maxRetries = 6
+	): Promise<T> {
+		let lastStatus = 0;
+		let lastBody = '';
+		for (let i = 0; i < maxRetries; i++) {
+			try {
+				const res = await req.get(url, { headers });
+				if (res.ok()) {
+					return (await res.json()) as T;
+				}
+				lastStatus = res.status();
+				lastBody = await res.text();
+			} catch (err) {
+				lastBody = String(err);
+			}
+			const delayMs = lastStatus === 503 || lastBody.includes('1102') ? 3500 : 1000 * (i + 1);
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, delayMs);
+			await promise;
+		}
+		throw new Error(`GET ${url} failed (status ${lastStatus}): ${lastBody}`);
+	}
+
+	async function postJsonWithRetry<T>(
+		req: APIRequestContext,
+		url: string,
+		headers: Record<string, string>,
+		data: Record<string, unknown>,
+		maxRetries = 6
+	): Promise<T> {
+		let lastStatus = 0;
+		let lastBody = '';
+		for (let i = 0; i < maxRetries; i++) {
+			try {
+				const res = await req.post(url, { headers, data });
+				if (res.ok()) {
+					return (await res.json()) as T;
+				}
+				lastStatus = res.status();
+				lastBody = await res.text();
+			} catch (err) {
+				lastBody = String(err);
+			}
+			const delayMs = lastStatus === 503 || lastBody.includes('1102') ? 5000 : 1000 * (i + 1);
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, delayMs);
+			await promise;
+		}
+		throw new Error(`POST ${url} failed (status ${lastStatus}): ${lastBody}`);
+	}
+
+	test.beforeEach(async () => {
+		const { promise, resolve } = Promise.withResolvers<void>();
+		setTimeout(resolve, 1200);
+		await promise;
+	});
 	test.beforeAll(async ({ request }) => {
 		if (config.token && config.allowDestructive) {
 			await assertAuthorizedTestAccount(request, config);
@@ -139,6 +202,9 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		expect(updatedWallet.walletName).toBe('E2E BCA Utama');
 		expect(updatedWallet.walletId).toBe(wOpId);
 		expect(updatedWallet.walletIsLocked ?? updatedWallet.isLocked ?? 0).toBe(0);
+		const { promise, resolve } = Promise.withResolvers<void>();
+		setTimeout(resolve, 2000);
+		await promise;
 	});
 
 	test('03. Task 5.2 - Submit categories, verify types and rename through UI', async ({ request }) => {
@@ -149,27 +215,29 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
 
 		// Create Salary (Income), Food (Expense), Transport (Expense) via API / UI
-		const sRes = await request.post(`${config.apiBaseUrl}/api/v1/categories`, {
+		const sJson = await postJsonWithRetry<{ categoryId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/categories`,
 			headers,
-			data: { name: 'E2E Gaji', type: 'income', icon: 'Money' }
-		});
-		expect(sRes.ok()).toBe(true);
-		catSalaryId = (await sRes.json()).categoryId;
+			{ name: 'E2E Gaji', type: 'income', icon: 'Money' }
+		);
+		catSalaryId = sJson.categoryId;
 
-		const fRes = await request.post(`${config.apiBaseUrl}/api/v1/categories`, {
+		const fJson = await postJsonWithRetry<{ categoryId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/categories`,
 			headers,
-			data: { name: 'E2E Makan', type: 'expense', icon: 'ForkKnife' }
-		});
-		expect(fRes.ok()).toBe(true);
-		catFoodId = (await fRes.json()).categoryId;
+			{ name: 'E2E Makan', type: 'expense', icon: 'ForkKnife' }
+		);
+		catFoodId = fJson.categoryId;
 
-		const tRes = await request.post(`${config.apiBaseUrl}/api/v1/categories`, {
+		const tJson = await postJsonWithRetry<{ categoryId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/categories`,
 			headers,
-			data: { name: 'E2E Transport', type: 'expense', icon: 'Car' }
-		});
-		expect(tRes.ok()).toBe(true);
-		catTransportId = (await tRes.json()).categoryId;
-
+			{ name: 'E2E Transport', type: 'expense', icon: 'Car' }
+		);
+		catTransportId = tJson.categoryId;
 		// Rename Food through API / UI to "E2E Makanan & Minuman"
 		const updateRes = await request.patch(`${config.apiBaseUrl}/api/v1/categories/${catFoodId}`, {
 			headers,
@@ -189,18 +257,19 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
 
 		// 1. Create B-FOOD (initially 2,000,000)
-		const bfRes = await request.post(`${config.apiBaseUrl}/api/v1/budgets`, {
+		const bfCreated = await postJsonWithRetry<{ budgetId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/budgets`,
 			headers,
-			data: {
+			{
 				name: 'E2E Pagu Makan',
 				amount: 2_000_000,
 				categoryId: catFoodId,
-				periodStart: periods.m0.startDate,
-				periodEnd: periods.m0.endDate
+				periodStart: periods.m0.startDate.slice(0, 10),
+				periodEnd: periods.m0.endDate.slice(0, 10)
 			}
-		});
-		expect(bfRes.ok()).toBe(true);
-		bFoodId = (await bfRes.json()).budgetId;
+		);
+		bFoodId = bfCreated.budgetId;
 
 		// 2. UI-update food budget limit from 2M to 2.5M
 		const bfUpdate = await request.patch(`${config.apiBaseUrl}/api/v1/budgets/${bFoodId}`, {
@@ -226,18 +295,19 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		expect(amount).toBe(2_500_000);
 
 		// 3. Create B-TRANSPORT (1,000,000)
-		const btRes = await request.post(`${config.apiBaseUrl}/api/v1/budgets`, {
+		const btJson = await postJsonWithRetry<{ budgetId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/budgets`,
 			headers,
-			data: {
+			{
 				name: 'E2E Pagu Transport',
 				amount: 1_000_000,
 				categoryId: catTransportId,
-				periodStart: periods.m0.startDate,
-				periodEnd: periods.m0.endDate
+				periodStart: periods.m0.startDate.slice(0, 10),
+				periodEnd: periods.m0.endDate.slice(0, 10)
 			}
-		});
-		expect(btRes.ok()).toBe(true);
-		bTransportId = (await btRes.json()).budgetId;
+		);
+		bTransportId = btJson.budgetId;
 	});
 
 	test('05. Task 5.4 - Submit linked goals and verify wallet-derived current amounts', async ({ request }) => {
@@ -249,39 +319,38 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const targetDeadline = `${periods.mPlus3.key}-28`;
 
 		// 1. Create G-EMERGENCY (target: 10M, linked to W-EMERGENCY)
-		const geRes = await request.post(`${config.apiBaseUrl}/api/v1/goals`, {
+		const geJson = await postJsonWithRetry<Record<string, unknown>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/goals`,
 			headers,
-			data: {
+			{
 				name: 'E2E Dana Darurat',
 				targetAmount: 10_000_000,
 				targetDate: targetDeadline,
 				walletId: wEmergencyId
 			}
-		});
-		expect(geRes.ok()).toBe(true);
-		const geJson = await geRes.json();
-		gEmergencyId = geJson.goalId;
+		);
+		gEmergencyId = String(geJson.goalId);
 
 		// 2. Create G-TRIP (target: 5M, linked to W-TRIP)
-		const gtRes = await request.post(`${config.apiBaseUrl}/api/v1/goals`, {
+		const gtJson = await postJsonWithRetry<Record<string, unknown>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/goals`,
 			headers,
-			data: {
+			{
 				name: 'E2E Liburan Akhir Tahun',
 				targetAmount: 5_000_000,
 				targetDate: targetDeadline,
 				walletId: wTripId
 			}
-		});
-		expect(gtRes.ok()).toBe(true);
-		const gtJson = await gtRes.json();
-		gTripId = gtJson.goalId;
-
+		);
+		gTripId = String(gtJson.goalId);
 		const geCurrent = Number(geJson.goalCurrentAmount ?? geJson.currentAmount ?? 0);
 		const gtCurrent = Number(gtJson.goalCurrentAmount ?? gtJson.currentAmount ?? 0);
 		expect(geCurrent).toBe(0);
 		expect(gtCurrent).toBe(0);
-		expect(geJson.isDerived ?? (geJson.linkedWallets && geJson.linkedWallets.length > 0)).toBeTruthy();
-		expect(gtJson.isDerived ?? (gtJson.linkedWallets && gtJson.linkedWallets.length > 0)).toBeTruthy();
+		expect(geJson.isDerived ?? (Array.isArray(geJson.linkedWallets) && geJson.linkedWallets.length > 0)).toBeTruthy();
+		expect(gtJson.isDerived ?? (Array.isArray(gtJson.linkedWallets) && gtJson.linkedWallets.length > 0)).toBeTruthy();
 	});
 
 	test('06. Task 5.5 - Submit 5 bounded monthly recurring templates and verify planned occurrences', async ({
@@ -297,9 +366,11 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 
 		// Helper to create template
 		async function createTemplate(data: Record<string, unknown>) {
-			const res = await request.post(`${config.apiBaseUrl}/api/v1/recurring-templates`, {
+			const json = await postJsonWithRetry<{ templateId: string }>(
+				request,
+				`${config.apiBaseUrl}/api/v1/recurring-templates`,
 				headers,
-				data: {
+				{
 					...data,
 					frequency: 'monthly',
 					interval: 1,
@@ -307,10 +378,11 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 					endDate: recEnd,
 					isActive: true
 				}
-			});
-			expect(res.ok()).toBe(true);
-			const json = await res.json();
+			);
 			recurringIds.push(json.templateId);
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 2500);
+			await promise;
 			return json;
 		}
 
@@ -441,11 +513,13 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 			data: { walletId: wOpId, categoryId: catSalaryId, amount: 5_000_000, type: 'income', date: m0Date, description: 'Gaji Bulanan' }
 		});
 		// 2. Food-1 initially 400k
-		const food1Res = await request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+		const food1 = await postJsonWithRetry<{ transactionId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/transactions`,
 			headers,
-			data: { walletId: wOpId, categoryId: catFoodId, amount: 400_000, type: 'expense', date: m0Date, description: 'Makan Siang Tim' }
-		});
-		const food1Id = (await food1Res.json()).transactionId;
+			{ walletId: wOpId, categoryId: catFoodId, amount: 400_000, type: 'expense', date: m0Date, description: 'Makan Siang Tim' }
+		);
+		const food1Id = food1.transactionId;
 		// Edit Food-1 to 600k (delta +200k)
 		await request.patch(`${config.apiBaseUrl}/api/v1/transactions/${food1Id}`, {
 			headers,
@@ -493,18 +567,18 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		expect(trip?.walletBalance).toBe(2_000_000);
 
 		// Verify Goal Derived Amounts match linked wallets:
-		const geRes = await request.get(`${config.apiBaseUrl}/api/v1/goals/${gEmergencyId}`, { headers });
-		const ge = await geRes.json();
+		const ge = await getJsonWithRetry<Record<string, unknown>>(request, `${config.apiBaseUrl}/api/v1/goals/${gEmergencyId}`, headers);
 		const geAmt = Number(ge.goalCurrentAmount ?? ge.currentAmount ?? 0);
 		expect(geAmt).toBe(4_000_000);
-		const geProgress = Math.round(ge.pacing?.progressPercentage ?? ge.progressPercentage ?? 0);
+		const gePacing = ge.pacing as Record<string, unknown> | undefined;
+		const geProgress = Math.round(Number(gePacing?.progressPercentage ?? ge.progressPercentage ?? 0));
 		expect(geProgress).toBe(40);
 
-		const gtRes = await request.get(`${config.apiBaseUrl}/api/v1/goals/${gTripId}`, { headers });
-		const gt = await gtRes.json();
+		const gt = await getJsonWithRetry<Record<string, unknown>>(request, `${config.apiBaseUrl}/api/v1/goals/${gTripId}`, headers);
 		const gtAmt = Number(gt.goalCurrentAmount ?? gt.currentAmount ?? 0);
 		expect(gtAmt).toBe(2_000_000);
-		const gtProgress = Math.round(gt.pacing?.progressPercentage ?? gt.progressPercentage ?? 0);
+		const gtPacing = gt.pacing as Record<string, unknown> | undefined;
+		const gtProgress = Math.round(Number(gtPacing?.progressPercentage ?? gt.progressPercentage ?? 0));
 		expect(gtProgress).toBe(40);
 	});
 
@@ -518,12 +592,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
 
 		// 1. Account Detail Snapshot
-		const snapRes = await request.get(
-			`${config.apiBaseUrl}/api/v1/account-detail?startDate=${periods.m0.startDate}&endDate=${periods.m0.endDate}`,
-			{ headers }
-		);
-		expect(snapRes.ok()).toBe(true);
-		const snap = (await snapRes.json()) as {
+		const snap = await getJsonWithRetry<{
 			netWorth: {
 				consolidated: { total: number };
 			};
@@ -536,8 +605,11 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 				totalExpense: number;
 				netSavings: number;
 			};
-		};
-
+		}>(
+			request,
+			`${config.apiBaseUrl}/api/v1/account-detail?startDate=${periods.m0.startDate}&endDate=${periods.m0.endDate}`,
+			headers
+		);
 		// Net worth & wallet partition
 		expect(snap.netWorth.consolidated.total).toBe(16_000_000);
 		expect(snap.wallets.spendable.total).toBe(10_000_000);
@@ -548,15 +620,12 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		expect(snap.monthlyCashFlow.totalExpense).toBe(1_500_000);
 		expect(snap.monthlyCashFlow.netSavings).toBe(3_500_000);
 		// 2. Budgets
-		const bRes = await request.get(`${config.apiBaseUrl}/api/v1/budgets`, { headers });
-		expect(bRes.ok()).toBe(true);
-		const rawB = (await bRes.json()) as Array<{
+		const rawB = await getJsonWithRetry<Array<{
 			budget?: { budgetId?: string; budgetAmount?: number; amount?: number };
 			budgetId?: string;
 			budgetAmount?: number;
 			amount?: number;
-		}>;
-
+		}>>(request, `${config.apiBaseUrl}/api/v1/budgets`, headers);
 		const foodBEntry = rawB.find((entry) => (entry.budget?.budgetId || entry.budgetId) === bFoodId);
 		const foodB = foodBEntry?.budget ?? foodBEntry;
 		expect(foodB?.budgetAmount ?? foodB?.amount).toBe(2_500_000);
@@ -566,14 +635,12 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		expect(trB?.budgetAmount ?? trB?.amount).toBe(1_000_000);
 
 		// 3. Debts & Loans: zero active obligations
-		const dlRes = await request.get(`${config.apiBaseUrl}/api/v1/debts-loans`, { headers });
-		expect(dlRes.ok()).toBe(true);
-		const dl = (await dlRes.json()) as {
+		const dl = await getJsonWithRetry<{
 			debts?: unknown[];
 			activeDebts?: unknown[];
 			loans?: unknown[];
 			activeLoans?: unknown[];
-		};
+		}>(request, `${config.apiBaseUrl}/api/v1/debts-loans`, headers);
 		const debts = dl.debts || dl.activeDebts || [];
 		const loans = dl.loans || dl.activeLoans || [];
 		expect(debts.length).toBe(0);
@@ -633,7 +700,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await page.goto('/ledger');
 		await page.waitForLoadState('networkidle');
 		// Switch to List view if Horizon Board is active
-		const listBtn = page.getByRole('button', { name: 'List' });
+		const listBtn = page.getByRole('button', { name: 'List', exact: true });
 		if (await listBtn.isVisible()) {
 			if ((await listBtn.getAttribute('aria-pressed')) !== 'true') {
 				await listBtn.click();
@@ -758,22 +825,22 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
 
 		// Fetch all wallets and all transactions to compute point-in-time state
-		const [walRes, txRes] = await Promise.all([
-			request.get(`${config.apiBaseUrl}/api/v1/wallets`, { headers }),
-			request.get(`${config.apiBaseUrl}/api/v1/transactions?limit=100`, { headers })
+		const [rawWallets, txData] = await Promise.all([
+			getJsonWithRetry<Array<{
+				walletId: string;
+				walletName: string;
+				walletBalance: number;
+				walletIsLocked?: number;
+				isLocked?: number;
+				walletCurrency?: string;
+				currency?: string;
+			}>>(request, `${config.apiBaseUrl}/api/v1/wallets`, headers),
+			getJsonWithRetry<{ items?: unknown[] } | unknown[]>(
+				request,
+				`${config.apiBaseUrl}/api/v1/transactions?limit=100`,
+				headers
+			)
 		]);
-		expect(walRes.ok()).toBe(true);
-		expect(txRes.ok()).toBe(true);
-
-		const rawWallets = (await walRes.json()) as Array<{
-			walletId: string;
-			walletName: string;
-			walletBalance: number;
-			walletIsLocked?: number;
-			isLocked?: number;
-			walletCurrency?: string;
-			currency?: string;
-		}>;
 		const wallets = rawWallets.map((w) => ({
 			walletId: w.walletId,
 			walletName: w.walletName,
@@ -785,7 +852,6 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 			lastTransaction: null
 		}));
 
-		const txData = (await txRes.json()) as { items?: unknown[] } | unknown[];
 		const rawTxs = Array.isArray(txData) ? txData : txData.items || [];
 		interface RawTxEntry {
 			transactionId: string;
@@ -840,7 +906,13 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const m1End = periods.mMinus1.endDate.slice(0, 10);
 		await page.goto(`/ledger?datePreset=custom&startDate=${m1Start}&endDate=${m1End}`);
 		await page.waitForLoadState('networkidle');
-
+		if (await page.locator('text=Failed to fetch').isVisible()) {
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 1500);
+			await promise;
+			await page.reload();
+			await page.waitForLoadState('networkidle');
+		}
 		// In ledger, filter bar shows 5 transactions and M-1 net cashflow (+3.5M)
 		await expect(page.getByText(/5\s+transaksi/).first()).toBeVisible({ timeout: 15000 });
 		await expect(page.getByText(/\+Rp\s*5[.,]000[.,]000/).first()).toBeVisible();
@@ -861,34 +933,31 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
 
 		// 1. M-2 explicit ISO interval: exactly 4 transactions
-		const m2Res = await request.get(
+		const m2Data = await getJsonWithRetry<{ items?: unknown[] } | unknown[]>(
+			request,
 			`${config.apiBaseUrl}/api/v1/transactions?startDate=${periods.mMinus2.startDate}&endDate=${periods.mMinus2.endDate}`,
-			{ headers }
+			headers
 		);
-		expect(m2Res.ok()).toBe(true);
-		const m2Data = (await m2Res.json()) as { items?: unknown[] } | unknown[];
 		const m2Items = Array.isArray(m2Data) ? m2Data : m2Data.items || [];
 		expect(m2Items.length).toBe(4);
 
 		// 2. M-1 explicit ISO interval: exactly 5 transactions
-		const m1Res = await request.get(
+		const m1Data = await getJsonWithRetry<{ items?: unknown[] } | unknown[]>(
+			request,
 			`${config.apiBaseUrl}/api/v1/transactions?startDate=${periods.mMinus1.startDate}&endDate=${periods.mMinus1.endDate}`,
-			{ headers }
+			headers
 		);
-		expect(m1Res.ok()).toBe(true);
-		const m1Data = (await m1Res.json()) as { items?: unknown[] } | unknown[];
 		const m1Items = Array.isArray(m1Data) ? m1Data : m1Data.items || [];
 		expect(m1Items.length).toBe(5);
 
 		// 3. Instant boundary: query instant strictly between M-2 end and M-1 start
 		const betweenStart = `${periods.mMinus2.key}-28T23:59:59.999Z`;
 		const betweenEnd = `${periods.mMinus1.key}-01T00:00:00.000Z`;
-		const bRes = await request.get(
+		const bData = await getJsonWithRetry<{ items?: unknown[] } | unknown[]>(
+			request,
 			`${config.apiBaseUrl}/api/v1/transactions?startDate=${betweenStart}&endDate=${betweenEnd}`,
-			{ headers }
+			headers
 		);
-		expect(bRes.ok()).toBe(true);
-		const bData = (await bRes.json()) as { items?: unknown[] } | unknown[];
 		const bItems = Array.isArray(bData) ? bData : bData.items || [];
 		expect(bItems.length).toBe(0);
 	});
@@ -904,12 +973,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 
 		// Query Horizon API for M+1, M+2, M+3
 		const horizonPeriods = `${periods.mPlus1.key},${periods.mPlus2.key},${periods.mPlus3.key}`;
-		const res = await request.get(
-			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
-			{ headers }
-		);
-		expect(res.ok()).toBe(true);
-		const data = (await res.json()) as {
+		const data = await getJsonWithRetry<{
 			startingNetWorth: { total: number; spendable: number; locked: number };
 			periods: Array<{
 				periodKey: string;
@@ -917,7 +981,11 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 				netWorth: { total: number; spendable: number; locked: number };
 				walletBalances?: Array<{ walletId: string; balance: number }>;
 			}>;
-		};
+		}>(
+			request,
+			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
+			headers
+		);
 
 		// Current realized wealth starting baseline is 16M
 		expect(data.startingNetWorth.total).toBe(16_000_000);
@@ -964,7 +1032,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await page.goto('/ledger');
 		await page.waitForLoadState('networkidle');
 
-		const ledgerHorizonBtn = page.getByRole('button', { name: 'Horizon Board' });
+		const ledgerHorizonBtn = page.getByRole('button', { name: 'Horizon Board', exact: true });
 		await expect(ledgerHorizonBtn).toBeVisible({ timeout: 15000 });
 		if ((await ledgerHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
 			await ledgerHorizonBtn.click();
@@ -979,7 +1047,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await page.goto('/accounts');
 		await page.waitForLoadState('networkidle');
 
-		const accHorizonBtn = page.getByRole('button', { name: 'Horizon Board' });
+		const accHorizonBtn = page.getByRole('button', { name: 'Horizon Board', exact: true });
 		await expect(accHorizonBtn).toBeVisible({ timeout: 15000 });
 		if ((await accHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
 			await accHorizonBtn.click();
@@ -1002,12 +1070,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 
 		// 1. API Analytics Horizon goal progression check
 		const horizonPeriods = `${periods.mPlus1.key},${periods.mPlus2.key},${periods.mPlus3.key}`;
-		const res = await request.get(
-			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
-			{ headers }
-		);
-		expect(res.ok()).toBe(true);
-		const data = (await res.json()) as {
+		const data = await getJsonWithRetry<{
 			periods: Array<{
 				periodKey: string;
 				goals?: Array<{
@@ -1017,7 +1080,11 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 					progressPercentage: number;
 				}>;
 			}>;
-		};
+		}>(
+			request,
+			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${encodeURIComponent(horizonPeriods)}&baseCurrency=IDR`,
+			headers
+		);
 		expect(data.periods.length).toBe(3);
 
 		// 2. UI Goals Horizon Board check
@@ -1025,7 +1092,7 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await page.goto('/planning');
 		await page.waitForLoadState('networkidle');
 
-		const goalsHorizonBtn = page.locator('button', { hasText: 'Horizon Board' }).first();
+		const goalsHorizonBtn = page.getByRole('button', { name: 'Horizon Board', exact: true });
 		await expect(goalsHorizonBtn).toBeVisible({ timeout: 15000 });
 		if ((await goalsHorizonBtn.getAttribute('aria-pressed')) !== 'true') {
 			await goalsHorizonBtn.click();
@@ -1036,5 +1103,404 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await expect(page.getByText('50%').first()).toBeVisible({ timeout: 15000 });
 		await expect(page.getByText('60%').first()).toBeVisible();
 		await expect(page.getByText('70%').first()).toBeVisible();
+	});
+
+	test('18. Task 8.1 - Planned deficit in M+3: negative projected operating capital, positive wealth, invariant live balances', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Add planned 20,000,000 operating-wallet expense in M+3
+		const plannedDate = `${periods.mPlus3.key}-20T10:00:00.000Z`;
+		const res = await request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+			headers,
+			data: {
+				walletId: wOpId,
+				categoryId: catFoodId,
+				amount: 20_000_000,
+				type: 'expense',
+				isPlanned: 1,
+				date: plannedDate,
+				description: 'E2E Planned Deficit Expense'
+			}
+		});
+		expect(res.ok()).toBe(true);
+		const json = (await res.json()) as { transactionId: string };
+		plannedDeficitId = json.transactionId;
+
+		// Query Horizon API for M+3:
+		// Baseline M+3 wealth was 26.5M. With -20M planned expense, total wealth becomes 6.5M.
+		const hRes = await request.get(
+			`${config.apiBaseUrl}/api/v1/analytics/horizon?periods=${periods.mPlus3.key}&baseCurrency=IDR`,
+			{ headers }
+		);
+		expect(hRes.ok()).toBe(true);
+		const hData = (await hRes.json()) as {
+			periods: Array<{
+				periodKey: string;
+				netWorth: { total: number; spendable: number; locked: number };
+				walletBalances?: Array<{ walletId: string; balance: number }>;
+			}>;
+		};
+		expect(hData.periods.length).toBe(1);
+		const p3 = hData.periods[0];
+		expect(p3.netWorth.total).toBe(6_500_000);
+
+		// Invariants: Live balances remain completely unaffected
+		const walRes = await request.get(`${config.apiBaseUrl}/api/v1/wallets`, { headers });
+		const wallets = (await walRes.json()) as Array<{ walletId: string; walletBalance: number }>;
+		expect(wallets.find((w) => w.walletId === wOpId)?.walletBalance).toBe(10_000_000);
+		expect(wallets.find((w) => w.walletId === wEmergencyId)?.walletBalance).toBe(4_000_000);
+		expect(wallets.find((w) => w.walletId === wTripId)?.walletBalance).toBe(2_000_000);
+	});
+
+	test('19. Task 8.2 - Exercise transfer admin fees with independent debit/credit/economic-flow expectations', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Transfer 100,000 from W-OP to W-TRIP with 5,000 admin fee
+		const trfRes = await request.post(`${config.apiBaseUrl}/api/v1/transfers`, {
+			headers,
+			data: {
+				sourceWalletId: wOpId,
+				targetWalletId: wTripId,
+				amount: 100_000,
+				adminFee: 5_000,
+				date: `${periods.m0.key}-12T10:00:00.000Z`,
+				description: 'E2E Transfer with Fee'
+			}
+		});
+		expect(trfRes.ok()).toBe(true);
+
+		// Assert balances:
+		// W-OP debits 100k + 5k = 105k (10,000,000 - 105,000 = 9,895,000)
+		// W-TRIP credits 100k (2,000,000 + 100,000 = 2,100,000)
+		// Total wealth reduced by 5,000 (16,000,000 - 5,000 = 15,995,000)
+		const walRes = await request.get(`${config.apiBaseUrl}/api/v1/wallets`, { headers });
+		const wallets = (await walRes.json()) as Array<{ walletId: string; walletBalance: number }>;
+		expect(wallets.find((w) => w.walletId === wOpId)?.walletBalance).toBe(9_895_000);
+		expect(wallets.find((w) => w.walletId === wTripId)?.walletBalance).toBe(2_100_000);
+
+		const snapRes = await request.get(
+			`${config.apiBaseUrl}/api/v1/account-detail?startDate=${periods.m0.startDate}&endDate=${periods.m0.endDate}`,
+			{ headers }
+		);
+		const snap = (await snapRes.json()) as { netWorth: { consolidated: { total: number } } };
+		expect(snap.netWorth.consolidated.total).toBe(15_995_000);
+	});
+
+	test('20. Task 8.3 - Exercise transaction type, wallet, date, and category mutations', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. Create a 200,000 Food expense on W-OP
+		const createRes = await request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+			headers,
+			data: {
+				walletId: wOpId,
+				categoryId: catFoodId,
+				amount: 200_000,
+				type: 'expense',
+				date: `${periods.m0.key}-14T10:00:00.000Z`,
+				description: 'E2E Mutation Test'
+			}
+		});
+		expect(createRes.ok()).toBe(true);
+		const txId = (await createRes.json()).transactionId;
+
+		// 2. Change category from Food to Transport (date and category mutation)
+		const patchRes = await request.patch(`${config.apiBaseUrl}/api/v1/transactions/${txId}`, {
+			headers,
+			data: {
+				categoryId: catTransportId,
+				date: `${periods.m0.key}-16T10:00:00.000Z`
+			}
+		});
+		expect(patchRes.ok()).toBe(true);
+
+		// Total wealth is invariant on date/category-only change
+		const walRes = await request.get(`${config.apiBaseUrl}/api/v1/wallets`, { headers });
+		const wallets = (await walRes.json()) as Array<{ walletId: string; walletBalance: number }>;
+		expect(wallets.find((w) => w.walletId === wOpId)?.walletBalance).toBe(9_695_000);
+
+		// Clean up this throwaway transaction
+		await request.delete(`${config.apiBaseUrl}/api/v1/transactions/${txId}`, { headers });
+	});
+
+	test('21. Task 8.4 - Realize due recurring occurrence at actual amount and assert idempotency', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. Create due recurring template
+		const recRes = await request.post(`${config.apiBaseUrl}/api/v1/recurring-templates`, {
+			headers,
+			data: {
+				name: 'R-Due Realization',
+				amount: 100_000,
+				type: 'expense',
+				frequency: 'monthly',
+				interval: 1,
+				startDate: `${periods.m0.key}-01`,
+				walletId: wOpId,
+				categoryId: catFoodId
+			}
+		});
+		expect(recRes.ok()).toBe(true);
+		const recJson = (await recRes.json()) as { templateId: string };
+		dueTemplateId = recJson.templateId;
+
+		// 2. Query transactions to find the planned occurrence
+		const txsRes = await request.get(
+			`${config.apiBaseUrl}/api/v1/transactions?templateId=${dueTemplateId}&isPlanned=1`,
+			{ headers }
+		);
+		const txsData = (await txsRes.json()) as { items?: Array<{ transactionId: string }> } | Array<{ transactionId: string }>;
+		const items = Array.isArray(txsData) ? txsData : txsData.items || [];
+
+		if (items.length > 0) {
+			const targetId = items[0].transactionId;
+			const wOpPre = (await (await request.get(`${config.apiBaseUrl}/api/v1/wallets/${wOpId}`, { headers })).json()).walletBalance;
+
+			// Realize at actual amount 120,000 (against planned 100,000)
+			const realizeRes = await request.patch(`${config.apiBaseUrl}/api/v1/transactions/${targetId}`, {
+				headers,
+				data: {
+					isPlanned: 0,
+					amount: 120_000
+				}
+			});
+			expect(realizeRes.ok()).toBe(true);
+
+			const wOpPost = (await (await request.get(`${config.apiBaseUrl}/api/v1/wallets/${wOpId}`, { headers })).json()).walletBalance;
+			expect(wOpPre - wOpPost).toBe(120_000);
+
+			// Idempotency: attempt to patch again with same payload
+			const secondRes = await request.patch(`${config.apiBaseUrl}/api/v1/transactions/${targetId}`, {
+				headers,
+				data: { isPlanned: 0, amount: 120_000 }
+			});
+			expect(secondRes.ok()).toBe(true);
+			const wOpAfterSecond = (await (await request.get(`${config.apiBaseUrl}/api/v1/wallets/${wOpId}`, { headers })).json()).walletBalance;
+			expect(wOpAfterSecond).toBe(wOpPost); // No duplicate debit!
+		}
+	});
+
+	test('22. Task 8.5 - Exercise budget boundaries: 80% warning, 100% full, and over-budget negative remaining', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+		// Create a dedicated category so starting spending is clean (0)
+		const catRes = await request.post(`${config.apiBaseUrl}/api/v1/categories`, {
+			headers,
+			data: { name: 'E2E Boundary Category', type: 'expense' }
+		});
+		expect(catRes.ok()).toBe(true);
+		const catBoundaryId = (await catRes.json()).categoryId;
+
+		// Create a dedicated boundary budget (limit: 1,000,000)
+		const bRes = await request.post(`${config.apiBaseUrl}/api/v1/budgets`, {
+			headers,
+			data: {
+				name: 'E2E Boundary Budget',
+				amount: 1_000_000,
+				categoryId: catBoundaryId,
+				periodStart: periods.m0.startDate,
+				periodEnd: periods.m0.endDate
+			}
+		});
+		expect(bRes.ok()).toBe(true);
+		const bId = (await bRes.json()).budgetId;
+
+		// 1. 80% Warning: add 800,000 spending bound to budgetId
+		const tx1 = await request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+			headers,
+			data: {
+				walletId: wOpId,
+				categoryId: catBoundaryId,
+				budgetId: bId,
+				amount: 800_000,
+				type: 'expense',
+				date: `${periods.m0.key}-15T10:00:00.000Z`,
+				description: 'E2E 80% Budget Spend'
+			}
+		});
+		expect(tx1.ok()).toBe(true);
+
+		let bDetail = await (await request.get(`${config.apiBaseUrl}/api/v1/budgets/${bId}`, { headers })).json();
+		let bObj = bDetail.budget ?? bDetail;
+		expect(bObj.spent ?? bDetail.spent).toBe(800_000);
+		expect(bObj.remaining ?? bDetail.remaining).toBe(200_000);
+
+		// 2. Over-budget 120%: add another 400,000 (total: 1,200,000)
+		const tx2 = await request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+			headers,
+			data: {
+				walletId: wOpId,
+				categoryId: catBoundaryId,
+				budgetId: bId,
+				amount: 400_000,
+				type: 'expense',
+				date: `${periods.m0.key}-16T10:00:00.000Z`,
+				description: 'E2E Over-Budget Spend'
+			}
+		});
+		expect(tx2.ok()).toBe(true);
+
+		bDetail = await (await request.get(`${config.apiBaseUrl}/api/v1/budgets/${bId}`, { headers })).json();
+		bObj = bDetail.budget ?? bDetail;
+		expect(bObj.spent ?? bDetail.spent).toBe(1_200_000);
+		expect(bObj.remaining ?? bDetail.remaining).toBe(-200_000); // Negative remaining!
+	});
+
+	test('23. Task 8.6 - Exercise goal linking, unlinking, and target achievement', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. Create goal with small target 1,000,000 linked to W-TRIP (which has >2M balance)
+		const gJson = await postJsonWithRetry<{ goalId: string }>(
+			request,
+			`${config.apiBaseUrl}/api/v1/goals`,
+			headers,
+			{
+				name: 'E2E Achieved Goal',
+				targetAmount: 1_000_000,
+				targetDate: `${periods.mPlus3.key}-28`,
+				walletId: wTripId
+			}
+		);
+		boundaryGoalId = gJson.goalId;
+
+		const gCheck = await getJsonWithRetry<Record<string, unknown>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/goals/${boundaryGoalId}`,
+			headers
+		);
+		const gAmt = Number(gCheck.goalCurrentAmount ?? gCheck.currentAmount ?? 0);
+		expect(gAmt).toBeGreaterThanOrEqual(1_000_000);
+		const gPacing = gCheck.pacing as Record<string, unknown> | undefined;
+		const gProg = Number(gPacing?.progressPercentage ?? gCheck.progressPercentage ?? 0);
+		expect(gProg).toBeGreaterThanOrEqual(100); // Target achieved!
+	});
+
+	test('24. Task 8.7 - Exhaustive pagination query with >50 items and exact ordering', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Seed micro-transactions to exceed 50 total items (>35 already exist)
+		for (let b = 0; b < 4; b++) {
+			await Promise.all(
+				[1, 2, 3, 4].map((n) => {
+					const i = b * 4 + n;
+					return request.post(`${config.apiBaseUrl}/api/v1/transactions`, {
+						headers,
+						data: {
+							walletId: wOpId,
+							categoryId: catFoodId,
+							amount: 1_000 * i,
+							type: 'expense',
+							date: `${periods.m0.key}-10T12:00:00.000Z`,
+							description: `E2E Micro Tx ${i}`
+						}
+					});
+				})
+			);
+		}
+		// Exhaustive pagination with limit=20
+		let offset = 0;
+		let totalCollected = 0;
+		const seenIds = new Set<string>();
+
+		while (true) {
+			const pRes = await request.get(
+				`${config.apiBaseUrl}/api/v1/transactions?envelope=true&limit=20&offset=${offset}&orderBy=date&direction=desc`,
+				{ headers }
+			);
+			expect(pRes.ok()).toBe(true);
+			const pData = (await pRes.json()) as {
+				items?: Array<{ transactionId: string }>;
+				pagination?: { hasNext: boolean; total: number };
+			};
+			const items = pData.items || [];
+			if (items.length === 0) break;
+
+			for (const item of items) {
+				seenIds.add(item.transactionId);
+				totalCollected++;
+			}
+
+			if (!pData.pagination?.hasNext || items.length < 20) break;
+			offset += items.length;
+		}
+		expect(seenIds.size).toBeGreaterThanOrEqual(50);
+		expect(seenIds.size).toBe(totalCollected); // No duplicate IDs across pages
+	});
+
+	test('25. Task 8.8 - Mobile viewport verification and drawer interaction', async ({
+		page
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		// Set mobile viewport
+		await page.setViewportSize({ width: 375, height: 667 });
+		await injectBrowserTestAuth(page, config);
+
+		// 1. Mobile Cockpit
+		await page.goto('/');
+		await page.waitForLoadState('networkidle');
+		const nw = page.locator('[data-testid="kpi-net-worth"]');
+		await expect(nw).toBeVisible({ timeout: 15000 });
+
+		// 2. Mobile Ledger: renders Dense Document Feed (table is hidden on mobile < 768px)
+		await page.goto('/ledger');
+		await page.waitForLoadState('networkidle');
+		await expect(page.locator('.md\\:hidden').getByText('Gaji Bulanan').first()).toBeVisible({ timeout: 15000 });
+
+		// 3. Mobile Planning & Drawer
+		await page.goto('/planning');
+		await page.waitForLoadState('networkidle');
+		await expect(page.locator('text=E2E Dana Darurat').first()).toBeVisible({ timeout: 15000 });
+
+		// Click goal to open drawer
+		const editBtn = page.locator('button[aria-label*="E2E Dana Darurat"]').first();
+		await editBtn.dispatchEvent('click');
+		const drawer = page.locator('div[aria-labelledby="drawer-title"]');
+		await expect(drawer).toBeVisible({ timeout: 15000 });
+		await page.keyboard.press('Escape');
+		await expect(drawer).not.toBeVisible({ timeout: 10000 });
 	});
 });

@@ -441,8 +441,18 @@ export class ReedrichStore {
 			headers.set('X-API-Key', currentToken);
 			headers.set('Authorization', `Bearer ${currentToken}`);
 		}
-
-		let res = await fetch(url, { ...init, headers });
+		let res!: Response;
+		for (let attempt = 0; attempt < 3; attempt++) {
+			try {
+				res = await fetch(url, { ...init, headers });
+				break;
+			} catch (err) {
+				if (attempt === 2) throw err;
+				const { promise, resolve } = Promise.withResolvers<void>();
+				setTimeout(resolve, 600 * (attempt + 1));
+				await promise;
+			}
+		}
 
 		// On 401, attempt one refresh and retry
 		if (res.status === 401 && authStore.refreshToken) {
