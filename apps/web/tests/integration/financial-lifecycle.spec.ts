@@ -4,6 +4,7 @@ import {
 	getLiveAccountConfig,
 	assertAuthorizedTestAccount,
 	sweepLiveAccount,
+	verifyEmptyAccountState,
 	injectBrowserTestAuth
 } from './helpers/live-account';
 import {
@@ -1502,5 +1503,177 @@ test.describe.serial('Financial Lifecycle & Cross-Surface Value Validation', () 
 		await expect(drawer).toBeVisible({ timeout: 15000 });
 		await page.keyboard.press('Escape');
 		await expect(drawer).not.toBeVisible({ timeout: 10000 });
+	});
+
+	test('26. Task 9.1 - Delete transaction fixtures and verify balance rollback / planned invariance', async ({
+		request
+	}) => {
+		test.setTimeout(180000);
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. Delete planned deficit transaction in M+3: live balance MUST NOT change
+		if (plannedDeficitId) {
+			const wOpPre = (await getJsonWithRetry<{ walletBalance: number }>(request, `${config.apiBaseUrl}/api/v1/wallets/${wOpId}`, headers)).walletBalance;
+			const delRes = await request.delete(`${config.apiBaseUrl}/api/v1/transactions/${plannedDeficitId}`, { headers });
+			expect(delRes.ok()).toBe(true);
+			const wOpPost = (await getJsonWithRetry<{ walletBalance: number }>(request, `${config.apiBaseUrl}/api/v1/wallets/${wOpId}`, headers)).walletBalance;
+			expect(wOpPost).toBe(wOpPre); // Planned deletion leaves live balance invariant!
+		}
+
+		// 2. Delete all remaining transactions
+		while (true) {
+			const txsData = await getJsonWithRetry<{ items?: Array<{ transactionId: string }> } | Array<{ transactionId: string }>>(
+				request,
+				`${config.apiBaseUrl}/api/v1/transactions?limit=50`,
+				headers
+			);
+			const items = Array.isArray(txsData) ? txsData : txsData.items || [];
+			if (items.length === 0) break;
+			for (let i = 0; i < items.length; i += 5) {
+				const chunk = items.slice(i, i + 5);
+				await Promise.all(
+					chunk.map((t) => request.delete(`${config.apiBaseUrl}/api/v1/transactions/${t.transactionId}`, { headers }))
+				);
+			}
+		}
+
+		// Verify 0 transactions remain
+		const checkTxs = await getJsonWithRetry<{ items?: unknown[] } | unknown[]>(
+			request,
+			`${config.apiBaseUrl}/api/v1/transactions?limit=10`,
+			headers
+		);
+		const remaining = Array.isArray(checkTxs) ? checkTxs : checkTxs.items || [];
+		expect(remaining.length).toBe(0);
+	});
+
+	test('27. Task 9.2 - Delete recurring templates and verify persistence absence and plan cancellation', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Delete all recurring templates
+		const recs = await getJsonWithRetry<Array<{ templateId?: string; id?: string }>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/recurring-templates`,
+			headers
+		);
+		const templates = Array.isArray(recs) ? recs : [];
+		for (const r of templates) {
+			const id = r.templateId || r.id;
+			if (id) {
+				await request.delete(`${config.apiBaseUrl}/api/v1/recurring-templates/${id}`, { headers });
+			}
+		}
+
+		// Verify 0 recurring templates remain
+		const checkRec = await getJsonWithRetry<unknown[]>(
+			request,
+			`${config.apiBaseUrl}/api/v1/recurring-templates`,
+			headers
+		);
+		expect(Array.isArray(checkRec) ? checkRec.length : 0).toBe(0);
+	});
+
+	test('28. Task 9.3 - Delete goals, budgets, and custom categories', async ({ request }) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// 1. Delete goals
+		const goals = await getJsonWithRetry<Array<{ goalId?: string; id?: string }>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/goals`,
+			headers
+		);
+		for (const g of Array.isArray(goals) ? goals : []) {
+			const id = g.goalId || g.id;
+			if (id) {
+				await request.delete(`${config.apiBaseUrl}/api/v1/goals/${id}`, { headers });
+			}
+		}
+
+		// 2. Delete budgets
+		const budgets = await getJsonWithRetry<Array<{ budgetId?: string; id?: string; budget?: { budgetId?: string } }>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/budgets`,
+			headers
+		);
+		for (const b of Array.isArray(budgets) ? budgets : []) {
+			const id = b.budget?.budgetId || b.budgetId || b.id;
+			if (id) {
+				await request.delete(`${config.apiBaseUrl}/api/v1/budgets/${id}`, { headers });
+			}
+		}
+
+		// 3. Delete custom categories (preserving protected system categories)
+		const cats = await getJsonWithRetry<Array<{ categoryId: string; categoryName: string }>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/categories`,
+			headers
+		);
+		for (const c of Array.isArray(cats) ? cats : []) {
+			if (c.categoryName.toLowerCase() !== 'adjustment') {
+				await request.delete(`${config.apiBaseUrl}/api/v1/categories/${c.categoryId}`, { headers });
+			}
+		}
+
+		// Verify absence
+		const checkGoals = await getJsonWithRetry<unknown[]>(request, `${config.apiBaseUrl}/api/v1/goals`, headers);
+		const checkBudgets = await getJsonWithRetry<unknown[]>(request, `${config.apiBaseUrl}/api/v1/budgets`, headers);
+		expect(Array.isArray(checkGoals) ? checkGoals.length : 0).toBe(0);
+		expect(Array.isArray(checkBudgets) ? checkBudgets.length : 0).toBe(0);
+	});
+
+	test('29. Task 9.4 - Zero-patch remaining wallets and exercise wallet UI/API Delete', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		const headers = { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' };
+
+		// Fetch all remaining wallets
+		const wallets = await getJsonWithRetry<Array<{ walletId: string; walletBalance: number }>>(
+			request,
+			`${config.apiBaseUrl}/api/v1/wallets`,
+			headers
+		);
+		for (const w of Array.isArray(wallets) ? wallets : []) {
+			// Zero patch as required before delete
+			if (w.walletBalance !== 0) {
+				await request.patch(`${config.apiBaseUrl}/api/v1/wallets/${w.walletId}`, {
+					headers,
+					data: { balance: 0 }
+				});
+			}
+			// Delete wallet
+			await request.delete(`${config.apiBaseUrl}/api/v1/wallets/${w.walletId}`, { headers });
+		}
+
+		// Verify 0 wallets remain
+		const checkWallets = await getJsonWithRetry<unknown[]>(request, `${config.apiBaseUrl}/api/v1/wallets`, headers);
+		expect(Array.isArray(checkWallets) ? checkWallets.length : 0).toBe(0);
+	});
+
+	test('30. Task 9.5 - Account-wide empty state verification and protected entity retention', async ({
+		request
+	}) => {
+		if (!config.token) {
+			test.skip(true, 'Skipping live integration test: REEDRICH_TEST_API_TOKEN is not set.');
+			return;
+		}
+		await verifyEmptyAccountState(request, config);
 	});
 });

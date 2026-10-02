@@ -81,12 +81,15 @@ export async function sweepLiveAccount(request: APIRequestContext, config: LiveA
 	const txRes = await request.get(`${base}/api/v1/transactions?limit=100`, { headers });
 	if (txRes.ok()) {
 		const txData = await txRes.json();
-		const items = Array.isArray(txData) ? txData : txData.items || [];
-		for (const t of items) {
-			const id = t.transactionId || t.id;
-			if (id) {
-				await request.delete(`${base}/api/v1/transactions/${id}`, { headers });
-			}
+		const items = (Array.isArray(txData) ? txData : txData.items || []) as Array<{ transactionId?: string; id?: string }>;
+		for (let i = 0; i < items.length; i += 5) {
+			const chunk = items.slice(i, i + 5);
+			await Promise.all(
+				chunk.map((t) => {
+					const id = t.transactionId || t.id;
+					return id ? request.delete(`${base}/api/v1/transactions/${id}`, { headers }) : Promise.resolve();
+				})
+			);
 		}
 	}
 

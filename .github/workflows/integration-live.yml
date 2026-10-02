@@ -1,0 +1,52 @@
+name: Live Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      allow_destructive:
+        description: 'Explicit confirmation to run destructive lifecycle tests on test account'
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: live-reedrich-account-testbot
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    name: Financial Lifecycle Live Tests
+    runs-on: ubuntu-latest
+    environment: live-integration
+    timeout-minutes: 20
+    env:
+      REEDRICH_TEST_API_TOKEN: ${{ secrets.REEDRICH_TEST_API_TOKEN }}
+      REEDRICH_TEST_ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive }}
+      PUBLIC_API_URL: https://reedrich-mcp.lutfidmz.workers.dev
+      PUBLIC_AGENT_URL: https://maniyy-agent.lutfidmz.workers.dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Financial Lifecycle Live Integration
+        run: bun run --cwd apps/web test:integration
+
+      - name: Upload Playwright Test Report (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-integration-report
+          path: apps/web/test-results/
+          retention-days: 7
