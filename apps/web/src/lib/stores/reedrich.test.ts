@@ -504,5 +504,38 @@ describe('ReedrichStore', () => {
 			expect(store.activeDebts.length).toBe(1);
 			expect(store.activeLoans.length).toBe(1);
 		});
+
+		it('fetchBudgets populates allBudgets without overwriting snapshot.budgets', async () => {
+			// Pre-set snapshot budgets (e.g. filtered by server to 0 items)
+			store.snapshot = {
+				...store.snapshot!,
+				budgets: []
+			};
+
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/budgets');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							budgetId: 'b-hist-1',
+							budgetName: 'Liburan Sep 2026',
+							budgetAmount: 5000000,
+							spent: 4900000,
+							status: 'completed'
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const items = await store.fetchBudgets();
+			expect(items.length).toBe(1);
+			expect(store.allBudgets.length).toBe(1);
+			expect(store.allBudgets[0].budgetName).toBe('Liburan Sep 2026');
+			// Ensure snapshot.budgets is intact and not overwritten
+			expect(store.snapshot?.budgets.length).toBe(0);
+			expect(store.activeBudgets.length).toBe(0);
+		});
 	});
 });

@@ -59,7 +59,9 @@
 		planningFilterStore.budgetFilter = budgetFilter;
 	});
 
-	const budgets = $derived(reedrichStore.activeBudgets);
+	const budgets = $derived(
+		reedrichStore.allBudgets.length > 0 ? reedrichStore.allBudgets : reedrichStore.activeBudgets
+	);
 	const goals = $derived(reedrichStore.activeGoals);
 	const goalsWithLifecycle = $derived(
 		goals.map((g) => ({

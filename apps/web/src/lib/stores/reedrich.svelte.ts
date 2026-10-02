@@ -85,6 +85,8 @@ export class ReedrichStore {
 	private transactionCache = new SvelteMap<string, TransactionRecord[]>();
 
 	// Dedicated standalone entity state
+	allBudgets = $state<BudgetSnapshot[]>([]);
+	isBudgetsLoading = $state<boolean>(false);
 	activeWallets = $state<WalletItem[]>([]);
 	isWalletsLoading = $state<boolean>(false);
 	rawDebts = $state<ActiveDebt[] | null>(null);
@@ -584,7 +586,9 @@ export class ReedrichStore {
 	 * Standalone fetch of all budgets.
 	 */
 	async fetchBudgets(): Promise<BudgetSnapshot[]> {
-		const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets`);
+		this.isBudgetsLoading = true;
+		try {
+			const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets`);
 		if (!res.ok) {
 			const errData = await res.json().catch(() => ({}));
 			throw new Error(errData.message || `Gagal memuat daftar anggaran (HTTP ${res.status})`);
@@ -630,10 +634,11 @@ export class ReedrichStore {
 			};
 		});
 
-		if (this.snapshot) {
-			this.snapshot.budgets = items;
+			this.allBudgets = items;
+			return items;
+		} finally {
+			this.isBudgetsLoading = false;
 		}
-		return items;
 	}
 
 	/**
@@ -1286,6 +1291,8 @@ export class ReedrichStore {
 		this.snapshot = null;
 		this.categories = [];
 		this.allTransactions = [];
+		this.allBudgets = [];
+		this.activeWallets = [];
 		this.recurringTemplates = [];
 		this.transactionCache.clear();
 		this.loadMock();

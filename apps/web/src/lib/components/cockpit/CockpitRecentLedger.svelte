@@ -69,7 +69,7 @@
 	}
 </script>
 
-<div class="max-w-full overflow-hidden rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
+<div class="relative max-w-full rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
 	<!-- Card Header with Date Range Filter -->
 	<div
 		class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EAEAEA] pb-2.5"
@@ -128,7 +128,7 @@
 		</div>
 	{:else}
 		{#if recentTransactions.length === 0}
-			<div class="py-8 text-center font-mono text-xs text-[#787774]">
+			<div class="flex min-h-[160px] items-center justify-center font-mono text-xs text-[#787774]">
 				{t('common.empty')}
 			</div>
 		{:else}

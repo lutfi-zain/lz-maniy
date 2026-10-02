@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
 	import { fmtIDR } from '$lib/utils/currency';
+	import { resolveBudgetPeriod } from '$lib/utils/lifecycle';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import ChartBar from 'phosphor-svelte/lib/ChartBar';
 	import ChartPieSlice from 'phosphor-svelte/lib/ChartPieSlice';
@@ -9,7 +11,56 @@
 
 	const cf = $derived(reedrichStore.snapshot?.monthlyCashFlow);
 	const categories = $derived(cf?.categoryBreakdown?.slice(0, 6) ?? []);
-	const budgets = $derived(reedrichStore.activeBudgets);
+
+	// If viewing a specific date range (e.g. Bulan Lalu / Sep 2026), anchor referenceDate to that timeframe
+	const referenceDate = $derived.by(() => {
+		if (dateFilterStore.endDate) {
+			const d = new Date(dateFilterStore.endDate);
+			if (!isNaN(d.getTime())) return d;
+		}
+		return new Date();
+	});
+
+	const budgets = $derived(
+		(reedrichStore.activeBudgets ?? []).filter((b) => {
+			// If backend account-detail was explicitly queried for a date range and returned this budget, display it;
+			// Otherwise check if it is active against the reference date.
+			if (dateFilterStore.preset !== 'this_month' && dateFilterStore.preset !== 'all') {
+				return true;
+			}
+			return resolveBudgetPeriod(b, referenceDate).isActive;
+		})
+	);
+
+	function getStatusBadge(status?: string, percentUsed = 0) {
+		switch (status) {
+			case 'exceeded':
+				return { label: 'Melebihi', class: 'bg-[#FDEBEC] text-[#9F2F2D]' };
+			case 'warning':
+				return { label: 'Mendekati', class: 'bg-[#FBF3DB] text-[#956400]' };
+			case 'completed':
+				return { label: 'Selesai', class: 'bg-[#EFEFED] text-[#787774]' };
+			case 'upcoming':
+				return { label: 'Akan Datang', class: 'bg-[#E1F3FE] text-[#1F6C9F]' };
+			case 'on_track':
+			default:
+				if (percentUsed >= 100) return { label: 'Melebihi', class: 'bg-[#FDEBEC] text-[#9F2F2D]' };
+				if (percentUsed >= 80) return { label: 'Mendekati', class: 'bg-[#FBF3DB] text-[#956400]' };
+				return { label: 'Terkendali', class: 'bg-[#EDF3EC] text-[#346538]' };
+		}
+	}
+
+	function handleBudgetClick(b: (typeof budgets)[0]) {
+		const badge = getStatusBadge(b.status, b.percentUsed || 0);
+		reedrichStore.openDrawer({
+			type: 'budget',
+			title: b.budgetName,
+			subtitle: `Kategori: ${b.categoryName || 'General'} · Status: ${badge.label}`,
+			badge: 'BUDGET & PAGU',
+			data: { budget: b }
+		});
+		reedrichStore.fetchTransactionsForDrawer({ budgetId: b.budgetId, limit: 50 });
+	}
 </script>
 
 <div class="space-y-4 rounded-lg border border-[#EAEAEA] bg-white p-4 shadow-2xs">
@@ -95,19 +146,44 @@
 			<div class="space-y-2.5">
 				{#each budgets as b (b.budgetId)}
 					{@const p = b.percentUsed || 0}
-					<div class="rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2.5 text-xs">
-						<div class="flex items-center justify-between font-semibold text-[#111111]">
-							<span class="truncate">{b.budgetName}</span>
-							<span class="font-mono text-[11px] font-normal">{p}%</span>
+					{@const badge = getStatusBadge(b.status, p)}
+					<button
+						type="button"
+						onclick={() => handleBudgetClick(b)}
+						class="group w-full cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] p-2.5 text-left text-xs transition-colors hover:border-[#C8C6BF] hover:bg-white"
+					>
+						<div class="flex items-center justify-between gap-2">
+							<div class="flex min-w-0 items-center gap-1.5">
+								<span class="truncate font-semibold text-[#111111] group-hover:underline">
+									{b.budgetName}
+								</span>
+								<span
+									class="py-0.2 shrink-0 rounded-full px-1.5 font-mono text-[9px] font-semibold tracking-wider uppercase {badge.class}"
+								>
+									{badge.label}
+								</span>
+							</div>
+							<span class="shrink-0 font-mono text-[11px] font-medium text-[#111111] tabular-nums">
+								{p}%
+							</span>
 						</div>
 						<div class="my-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#F0EFEC]">
-							<div class="h-full bg-[#111111]" style="width: {Math.min(100, p)}%"></div>
+							<div
+								class="h-full transition-all {p >= 100
+									? 'bg-[#9F2F2D]'
+									: p >= 80
+										? 'bg-[#956400]'
+										: 'bg-[#111111]'}"
+								style="width: {Math.min(100, p)}%"
+							></div>
 						</div>
-						<div class="flex items-center justify-between text-[11px] text-[#787774]">
+						<div class="flex items-center justify-between font-mono text-[11px] text-[#787774]">
 							<span>Terpakai {fmtIDR(b.spent)}</span>
-							<span class="font-mono text-[#346538]">Sisa {fmtIDR(b.remaining)}</span>
+							<span class={p >= 100 ? 'text-[#9F2F2D]' : 'text-[#346538]'}>
+								Sisa {fmtIDR(b.remaining)}
+							</span>
 						</div>
-					</div>
+					</button>
 				{:else}
 					<div class="py-2 font-mono text-[11px] text-[#787774]">Tidak ada pagu aktif.</div>
 				{/each}

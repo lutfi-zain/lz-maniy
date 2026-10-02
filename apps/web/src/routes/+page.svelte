@@ -1,12 +1,39 @@
 <script lang="ts">
+	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import CockpitKpiStrip from '$lib/components/cockpit/CockpitKpiStrip.svelte';
 	import CockpitAlertBanner from '$lib/components/cockpit/CockpitAlertBanner.svelte';
 	import CockpitBankWidget from '$lib/components/cockpit/CockpitBankWidget.svelte';
 	import CockpitRecentLedger from '$lib/components/cockpit/CockpitRecentLedger.svelte';
 	import CockpitAllocationWidget from '$lib/components/cockpit/CockpitAllocationWidget.svelte';
+
+	let activeController: AbortController | null = null;
+
+	// Synchronize account detail snapshot reactively with dateFilterStore
+	$effect(() => {
+		const start = dateFilterStore.startDate;
+		const end = dateFilterStore.endDate;
+		const preset = dateFilterStore.preset;
+
+		activeController?.abort();
+		const controller = new AbortController();
+		activeController = controller;
+
+		// Call fetchSnapshot passing temporal bounds when set
+		reedrichStore.fetchSnapshot(
+			{
+				startDate: start || undefined,
+				endDate: end || undefined
+			}
+		);
+
+		return () => {
+			controller.abort();
+		};
+	});
 </script>
 
-<div class="max-w-full space-y-4 overflow-hidden">
+<div class="max-w-full space-y-4">
 	<!-- Top Executive KPI Strip -->
 	<CockpitKpiStrip />
 
