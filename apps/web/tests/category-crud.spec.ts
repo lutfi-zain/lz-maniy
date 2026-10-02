@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_TOKEN = '$REEDRICH_TEST_API_TOKEN';
+const TEST_TOKEN = process.env.REEDRICH_TEST_API_TOKEN || process.env.TEST_TOKEN || '';
 const TEST_USER = JSON.stringify({
-	userId: 'usr_muhwbsfe_722e117da986448e',
-	email: 'testbot@maniyy.dev',
+	userId: process.env.REEDRICH_TEST_USER_ID || 'usr_muhwbsfe_722e117da986448e',
+	email: process.env.REEDRICH_TEST_USER_EMAIL || 'testbot@maniyy.dev',
 	fullName: 'Maniyy TestBot'
 });
 

@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PUBLIC_API_URL: https://reedrich-mcp.lutfidmz.workers.dev
-      PUBLIC_API_TOKEN: mock_token
       PUBLIC_AGENT_URL: https://maniyy-agent.lutfidmz.workers.dev
     steps:
       - uses: actions/checkout@v4

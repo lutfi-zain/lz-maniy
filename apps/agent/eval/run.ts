@@ -18,21 +18,31 @@ interface EvalResult {
 	failures: string[];
 }
 
-const REEDRICH_URL = 'https://reedrich-mcp.lutfidmz.workers.dev';
-const REEDRICH_TOKEN = '$REEDRICH_API_TOKEN';
+const REEDRICH_URL = process.env.REEDRICH_API_BASE || process.env.REEDRICH_URL || 'https://reedrich-mcp.lutfidmz.workers.dev';
+const REEDRICH_TOKEN = process.env.REEDRICH_TEST_API_TOKEN || process.env.REEDRICH_TOKEN || '';
 
 export async function runEval(providerType: 'gemini' | 'groq', modelName: string) {
 	console.log(`\n======================================================`);
 	console.log(`🚀 EVALUATING AGENT REASONING: ${providerType} (${modelName})`);
 	console.log(`======================================================\n`);
 
-	const geminiKey = '$GEMINI_API_KEY';
-	const groqKey = '$GROQ_API_KEY';
+	if (!REEDRICH_TOKEN) {
+		throw new Error('Preflight Error: Missing REEDRICH_TEST_API_TOKEN (or REEDRICH_TOKEN) environment variable.');
+	}
+
+	const geminiKey = process.env.GEMINI_API_KEY || '';
+	const groqKey = process.env.GROQ_API_KEY || '';
+
+	if (providerType === 'gemini' && !geminiKey) {
+		throw new Error('Preflight Error: Missing GEMINI_API_KEY environment variable.');
+	}
+	if (providerType === 'groq' && !groqKey) {
+		throw new Error('Preflight Error: Missing GROQ_API_KEY environment variable.');
+	}
 
 	const model = providerType === 'gemini'
 		? createGoogleGenerativeAI({ apiKey: geminiKey })(modelName)
 		: createGroq({ apiKey: groqKey })(modelName);
-
 	const tools = {
 		...createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN),
 		...createMutationTools(REEDRICH_URL, REEDRICH_TOKEN),

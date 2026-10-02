@@ -1,9 +1,9 @@
 import type { AccountDetail, CategoryRecord } from '$lib/types/account-detail';
 
-import { PUBLIC_API_URL, PUBLIC_API_TOKEN } from '$env/static/public';
+import { PUBLIC_API_URL } from '$env/static/public';
 
 export const DEFAULT_API_URL = PUBLIC_API_URL || 'https://reedrich-mcp.lutfidmz.workers.dev';
-export const DEFAULT_TOKEN = PUBLIC_API_TOKEN || '';
+export const DEFAULT_TOKEN = '';
 
 export const MOCK_SNAPSHOT: AccountDetail = {
 	netWorth: {

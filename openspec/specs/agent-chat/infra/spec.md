@@ -88,4 +88,4 @@ The repository SHALL support automated integration testing of Cloudflare Worker 
 
 #### Scenario: Dedicated Test Account Configuration
 - **WHEN** executing end-to-end smoke verification against staging/Reedrich live endpoints
-- **THEN** the test suite uses dedicated test credentials (`apiKey=$REEDRICH_TEST_API_TOKEN`, `userId=usr_muhwbsfe_722e117da986448e`) to avoid interfering with production user data
+- **THEN** the test suite uses private dedicated test credentials (`apiKey=$REEDRICH_TEST_API_TOKEN`, `userId=$REEDRICH_TEST_USER_ID`) to avoid interfering with production user data

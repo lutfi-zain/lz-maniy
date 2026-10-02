@@ -5,11 +5,18 @@ import { createUICommandTools } from '../src/agent/tools/ui-commands.js';
 import { buildSystemPrompt } from '../src/agent/system-prompt.js';
 import { EVAL_DATASET } from './dataset.js';
 
-const REEDRICH_URL = 'https://reedrich-mcp.lutfidmz.workers.dev';
-const REEDRICH_TOKEN = '$REEDRICH_API_TOKEN';
-const GEMINI_KEY = '$GEMINI_API_KEY';
+const REEDRICH_URL = process.env.REEDRICH_API_BASE || process.env.REEDRICH_URL || 'https://reedrich-mcp.lutfidmz.workers.dev';
+const REEDRICH_TOKEN = process.env.REEDRICH_TEST_API_TOKEN || process.env.REEDRICH_TOKEN || '';
+const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+if (!REEDRICH_TOKEN) {
+	console.warn('[WARN] REEDRICH_TEST_API_TOKEN is not set. Real finance API calls in eval will fail.');
+}
+if (!GEMINI_KEY) {
+	console.warn('[WARN] GEMINI_API_KEY is not set. Gemini API initialization will fail if invoked.');
+}
+
+const ai = new GoogleGenAI({ apiKey: GEMINI_KEY || 'dummy_key_for_init' });
 const financialTools = createFinancialTools(REEDRICH_URL, REEDRICH_TOKEN);
 const uiCommandTools = createUICommandTools();
 

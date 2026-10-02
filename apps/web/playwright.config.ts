@@ -11,28 +11,32 @@ export default defineConfig({
 	use: {
 		baseURL: 'http://localhost:4173',
 		trace: 'on-first-retry',
-		storageState: {
-			cookies: [],
-			origins: [
-				{
-					origin: 'http://localhost:4173',
-					localStorage: [
+		storageState: process.env.REEDRICH_TEST_API_TOKEN || process.env.TEST_TOKEN
+			? {
+					cookies: [],
+					origins: [
 						{
-							name: 'reedrich_access_token',
-							value: '$REEDRICH_API_TOKEN'
-						},
-						{
-							name: 'reedrich_expires_at',
-							value: '2524608000000'
-						},
-						{
-							name: 'reedrich_user',
-							value: '{"name":"Lutfi Zain","email":"lutfi@reedrich.dev"}'
+							origin: 'http://localhost:4173',
+							localStorage: [
+								{
+									name: 'reedrich_access_token',
+									value: process.env.REEDRICH_TEST_API_TOKEN || process.env.TEST_TOKEN || ''
+								},
+								{
+									name: 'reedrich_expires_at',
+									value: '2524608000000'
+								},
+								{
+									name: 'reedrich_user',
+									value:
+										process.env.REEDRICH_TEST_USER_INFO ||
+										'{"name":"Maniyy TestBot","email":"testbot@maniyy.dev","id":"usr_muhwbsfe_722e117da986448e"}'
+								}
+							]
 						}
 					]
 				}
-			]
-		}
+			: undefined
 	},
 	projects: [
 		{
