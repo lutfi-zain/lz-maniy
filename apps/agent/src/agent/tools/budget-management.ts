@@ -17,6 +17,21 @@ export function createBudgetTools(reedrichUrl: string, token: string, fetcher?: 
 			}
 		}),
 
+		get_budget: tool({
+			description: 'Ambil detail lengkap satu pagu anggaran (budget) berdasarkan ID budget.',
+			parameters: z.object({
+				budgetId: z.string().describe('ID UUID anggaran yang ingin dilihat detailnya')
+			}),
+			execute: async ({ budgetId }) => {
+				const res = await request(`/api/v1/budgets/${budgetId}`);
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`get_budget failed: ${extractErrorMessage(err, res.status)}`);
+				}
+				return await res.json();
+			}
+		}),
+
 		create_budget: tool({
 			description: 'Buat pagu anggaran (budget) baru untuk kategori atau pos pengeluaran tertentu.',
 			parameters: z.object({

@@ -20,6 +20,21 @@ export function createGoalTools(reedrichUrl: string, token: string, fetcher?: Fe
 			}
 		}),
 
+		get_goal: tool({
+			description: 'Ambil detail lengkap satu target tabungan (goal) berdasarkan ID goal.',
+			parameters: z.object({
+				goalId: z.string().describe('ID UUID target tabungan yang ingin dilihat detailnya')
+			}),
+			execute: async ({ goalId }) => {
+				const res = await request(`/api/v1/goals/${goalId}`);
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`get_goal failed: ${extractErrorMessage(err, res.status)}`);
+				}
+				return await res.json();
+			}
+		}),
+
 		create_goal: tool({
 			description: 'Buat target tabungan (goal) baru, misal "Sewa Rumah 2026", "Dana Darurat", "Tabungan Lebaran".',
 			parameters: z.object({

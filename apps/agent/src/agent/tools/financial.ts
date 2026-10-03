@@ -87,20 +87,34 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		}),
 
 		list_transactions: tool({
-			description: 'Ambil daftar transaksi dengan filter tanggal spesifik (misal rentang bulan tertentu), wallet, atau kategori.',
+			description: 'Ambil daftar transaksi dengan filter tanggal, kata kunci pencarian, status, jenis, wallet, atau kategori.',
 			parameters: z.object({
+				q: z.string().optional().describe('Kata kunci pencarian deskripsi atau catatan transaksi'),
+				search: z.string().optional().describe('Alias untuk q (pencarian teks transaksi)'),
+				type: z.enum(['expense', 'income', 'transfer']).optional().describe('Filter tipe transaksi'),
+				isPlanned: z.union([z.boolean(), z.number()]).optional().describe('Filter status rencana: true/1 untuk rencana, false/0 untuk riil'),
 				startDate: z.string().optional().describe('Tanggal mulai format YYYY-MM-DD'),
 				endDate: z.string().optional().describe('Tanggal akhir format YYYY-MM-DD'),
-				walletId: z.string().optional().describe('Filter ID wallet'),
-				categoryId: z.string().optional().describe('Filter ID kategori'),
+				walletId: z.string().optional().describe('Filter ID wallet asal/sumber'),
+				targetWalletId: z.string().optional().describe('Filter ID wallet tujuan (untuk transfer)'),
+				categoryId: z.string().optional().describe('Filter ID kategori transaksi'),
+				budgetId: z.string().optional().describe('Filter ID budget yang terikat'),
+				orderBy: z.enum(['date_desc', 'date_asc', 'amount_desc', 'amount_asc']).optional().describe('Urutan pengurutan data transaksi'),
 				limit: z.number().int().min(1).max(100).default(50)
 			}),
 			execute: async (params) => {
 				const qs = new URLSearchParams();
+				const queryText = params.q || params.search;
+				if (queryText) qs.set('q', queryText);
+				if (params.type) qs.set('type', params.type);
+				if (params.isPlanned !== undefined) qs.set('isPlanned', String(params.isPlanned));
 				if (params.startDate) qs.set('startDate', params.startDate);
 				if (params.endDate) qs.set('endDate', params.endDate);
 				if (params.walletId) qs.set('walletId', params.walletId);
+				if (params.targetWalletId) qs.set('targetWalletId', params.targetWalletId);
 				if (params.categoryId) qs.set('categoryId', params.categoryId);
+				if (params.budgetId) qs.set('budgetId', params.budgetId);
+				if (params.orderBy) qs.set('orderBy', params.orderBy);
 				qs.set('limit', String(params.limit));
 
 				const res = await request(`/api/v1/transactions?${qs}`);
@@ -113,14 +127,33 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 						: [];
 
 				return items.map((t) => ({
-					date: t.transactionDate ? t.transactionDate.slice(0, 10) : '',
+					id: t.transactionId,
+					date: t.transactionDate,
 					amount: t.transactionAmount,
+					adminFee: t.transactionAdminFee ?? undefined,
 					walletId: t.transactionWalletId,
-					targetWalletId: t.transactionTargetWalletId,
+					targetWalletId: t.transactionTargetWalletId ?? undefined,
+					categoryId: t.transactionCategoryId ?? undefined,
+					budgetId: t.transactionBudgetId ?? undefined,
 					type: t.transactionType,
 					isPlanned: t.transactionIsPlanned === 1,
-					desc: (t.transactionDescription ?? '').slice(0, 50)
+					desc: (t.transactionDescription ?? '').slice(0, 100)
 				}));
+			}
+		}),
+
+		get_transaction: tool({
+			description: 'Ambil detail lengkap satu transaksi berdasarkan ID transaksi.',
+			parameters: z.object({
+				transactionId: z.string().describe('ID UUID transaksi yang ingin dilihat detailnya')
+			}),
+			execute: async ({ transactionId }) => {
+				const res = await request(`/api/v1/transactions/${transactionId}`);
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`get_transaction failed: ${extractErrorMessage(err, res.status)}`);
+				}
+				return (await res.json()) as TransactionRecord;
 			}
 		}),
 

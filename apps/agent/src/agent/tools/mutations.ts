@@ -17,9 +17,10 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 				type: z.enum(['expense', 'income']).default('expense'),
 				description: z.string().optional().describe('Keterangan transaksi'),
 				adminFee: z.number().default(0).describe('Biaya admin jika ada'),
-				budgetId: z.string().optional().describe('ID budget terkait'),
+				budgetId: z.string().nullable().optional().describe('ID UUID budget terkait (opsional)'),
 				isPlanned: z.boolean().default(false).describe('True jika transaksi rencana/masa depan'),
-				date: z.string().describe('Tanggal transaksi format YYYY-MM-DD')
+				date: z.string().optional().describe('Tanggal & waktu transaksi. Format ISO-8601 lengkap (YYYY-MM-DDTHH:mm:ss+07:00) jika ada jam/menit, atau YYYY-MM-DD. Default waktu adalah WIB (+07:00).'),
+				transactionDate: z.string().optional().describe('Alias untuk date (format ISO-8601)')
 			}),
 			execute: async (params) => {
 				const res = await request('/api/v1/transactions', {
@@ -40,9 +41,11 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 				sourceWalletId: z.string().describe('ID wallet asal'),
 				targetWalletId: z.string().describe('ID wallet tujuan'),
 				amount: z.number().positive().describe('Nominal transfer'),
-				adminFee: z.number().default(0).describe('Biaya admin transfer'),
+				adminFee: z.number().default(0).describe('Biaya admin transfer jika ada'),
+				categoryId: z.string().optional().describe('ID kategori transaksi transfer jika ada'),
 				description: z.string().optional().describe('Keterangan transfer'),
-				date: z.string().optional().describe('Tanggal transfer YYYY-MM-DD (default hari ini)')
+				date: z.string().optional().describe('Tanggal & waktu transfer format ISO-8601 (YYYY-MM-DDTHH:mm:ss+07:00) atau YYYY-MM-DD (default hari ini)'),
+				transactionDate: z.string().optional().describe('Alias untuk date (format ISO-8601)')
 			}),
 			execute: async (params) => {
 				const res = await request('/api/v1/transfers', {
@@ -65,10 +68,12 @@ export function createMutationTools(reedrichUrl: string, token: string, fetcher?
 				adminFee: z.number().optional(),
 				type: z.enum(['expense', 'income', 'transfer']).optional(),
 				walletId: z.string().optional(),
-				targetWalletId: z.string().optional(),
-				categoryId: z.string().optional(),
-				description: z.string().optional(),
-				date: z.string().optional(),
+				targetWalletId: z.string().nullable().optional(),
+				categoryId: z.string().nullable().optional(),
+				budgetId: z.string().nullable().optional().describe('ID UUID budget terkait'),
+				description: z.string().nullable().optional(),
+				date: z.string().optional().describe('Tanggal & waktu transaksi baru. Format ISO-8601 lengkap (YYYY-MM-DDTHH:mm:ss+07:00) jika mengubah jam/menit, atau YYYY-MM-DD.'),
+				transactionDate: z.string().optional().describe('Alias untuk date (format ISO-8601)'),
 				isPlanned: z.boolean().optional()
 			}),
 			execute: async ({ transactionId, ...delta }) => {

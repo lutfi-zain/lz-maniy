@@ -27,6 +27,20 @@ export function createWalletTools(reedrichUrl: string, token: string, fetcher?: 
 				return await res.json();
 			}
 		}),
+		get_wallet: tool({
+			description: 'Ambil detail lengkap satu dompet/rekening berdasarkan ID wallet.',
+			parameters: z.object({
+				walletId: z.string().describe('ID UUID dompet yang ingin dilihat detailnya')
+			}),
+			execute: async ({ walletId }) => {
+				const res = await request(`/api/v1/wallets/${walletId}`);
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(`get_wallet failed: ${extractErrorMessage(err, res.status)}`);
+				}
+				return await res.json();
+			}
+		}),
 
 		create_wallet: tool({
 			description: 'Buat dompet/rekening baru di Reedrich. Selalu konfirmasi rincian ke pengguna sebelum memanggil tool ini!',
