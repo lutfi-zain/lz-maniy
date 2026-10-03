@@ -11,27 +11,24 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 		model: 'google-antigravity/gemini-3.1-flash-lite',
 		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	},
 	{
 		provider: 'omp',
 		model: 'google-antigravity/gemini-3.7-flash',
 		displayName: 'Gemini 3.7 Flash',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	},
 	{
 		provider: 'omp',
 		model: 'google-antigravity/gemini-3.8-flash',
 		displayName: 'Gemini 3.8 Flash (High Tier)',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
-	},
-	{
-		provider: 'omp',
-		model: 'opencode-zen/muse-spark-1.3-contributor-free',
-		displayName: 'OpenCode Spark 1.3 Free',
-		capabilities: { vision: true, tool_calling: true, thinking: false }
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	}
 ];
 
@@ -47,10 +44,6 @@ export function getModel(
 			apiKey: env.OMP_GATEWAY_KEY
 		});
 		return gateway(model);
-	}
-	if (provider === 'opencode') {
-		const groq = createGroq({ apiKey: env.GROQ_API_KEY });
-		return groq('openai/gpt-oss-20b');
 	}
 	if (provider === 'groq') {
 		const groq = createGroq({ apiKey: env.GROQ_API_KEY });

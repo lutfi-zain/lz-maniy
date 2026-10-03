@@ -14,7 +14,17 @@
 			const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
 			if (isDesktop) {
 				tick().then(() => {
-					textareaEl?.focus();
+					const active = typeof document !== 'undefined' ? document.activeElement : null;
+					const isInOtherInput =
+						active &&
+						active !== document.body &&
+						active !== textareaEl &&
+						(active.tagName === 'INPUT' ||
+							active.tagName === 'TEXTAREA' ||
+							active.getAttribute('contenteditable') === 'true');
+					if (!isInOtherInput) {
+						textareaEl?.focus();
+					}
 				});
 			}
 		}
@@ -71,8 +81,11 @@
 			bind:value={inputText}
 			onkeydown={onKeydown}
 			oninput={autoResize}
-			placeholder="Tulis pesan..."
-			disabled={chatStore.isStreaming}
+			placeholder={chatStore.creditsRemaining !== null && chatStore.creditsRemaining <= 0
+				? 'Kredit habis. Hubungi admin untuk top-up.'
+				: 'Tulis pesan...'}
+			disabled={chatStore.isStreaming ||
+				(chatStore.creditsRemaining !== null && chatStore.creditsRemaining <= 0)}
 			rows={1}
 			data-chat-input
 			class="max-h-36 flex-1 resize-none overflow-y-auto bg-transparent py-1 font-sans text-[13px] text-[#111111] placeholder-[#787774] outline-none disabled:opacity-50"
@@ -98,7 +111,8 @@
 		{:else}
 			<button
 				onclick={send}
-				disabled={!inputText.trim() && !stagedImage}
+				disabled={(!inputText.trim() && !stagedImage) ||
+					(chatStore.creditsRemaining !== null && chatStore.creditsRemaining <= 0)}
 				class="rounded bg-[#111111] p-1.5 text-white transition-colors hover:bg-[#333] disabled:opacity-30"
 				aria-label="Kirim pesan"
 			>

@@ -3,14 +3,13 @@ import { getModel, AVAILABLE_MODELS } from '../models.js';
 import type { Env } from '../../types.js';
 
 describe('models', () => {
-	it('has exactly 4 curated OMP models in AVAILABLE_MODELS', () => {
-		expect(AVAILABLE_MODELS.length).toBe(4);
+	it('has exactly 3 curated OMP Gemini models in AVAILABLE_MODELS', () => {
+		expect(AVAILABLE_MODELS.length).toBe(3);
 		const ids = AVAILABLE_MODELS.map((m) => m.model);
 		expect(ids).toEqual([
 			'google-antigravity/gemini-3.1-flash-lite',
 			'google-antigravity/gemini-3.7-flash',
-			'google-antigravity/gemini-3.8-flash',
-			'opencode-zen/muse-spark-1.3-contributor-free'
+			'google-antigravity/gemini-3.8-flash'
 		]);
 	});
 

@@ -9,6 +9,8 @@ export interface DBConversation {
 	provider: string;
 	created_at: number;
 	updated_at: number;
+	compacted_at?: number | null;
+	compaction_summary?: string | null;
 }
 
 export interface DBMessage {
@@ -137,11 +139,48 @@ export async function insertMessage(
 }
 
 export async function listMessages(db: D1Database, conversationId: string): Promise<ChatMessage[]> {
-	const result = await db
-		.prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC')
+	// Check if conversation has a compaction summary
+	const conv = await db
+		.prepare('SELECT compacted_at, compaction_summary FROM conversations WHERE id = ?')
 		.bind(conversationId)
-		.all<DBMessage>();
-	return (result.results ?? []).map(rowToMessage);
+		.first<{ compacted_at: number | null; compaction_summary: string | null }>();
+
+	let query = 'SELECT * FROM messages WHERE conversation_id = ?';
+	const bindings: unknown[] = [conversationId];
+
+	if (conv?.compacted_at) {
+		query += ' AND created_at >= ?';
+		bindings.push(conv.compacted_at);
+	}
+	query += ' ORDER BY created_at ASC';
+
+	const result = await db.prepare(query).bind(...bindings).all<DBMessage>();
+	const messages = (result.results ?? []).map(rowToMessage);
+
+	if (conv?.compaction_summary) {
+		const summaryMessage: ChatMessage = {
+			id: `summary-${conversationId}`,
+			conversationId,
+			role: 'system',
+			content: `[Conversation Summary]\n${conv.compaction_summary}`,
+			timestamp: conv.compacted_at ?? Date.now()
+		};
+		return [summaryMessage, ...messages];
+	}
+
+	return messages;
+}
+
+export async function setConversationCompaction(
+	db: D1Database,
+	conversationId: string,
+	summary: string,
+	compactedAt: number
+): Promise<void> {
+	await db
+		.prepare('UPDATE conversations SET compacted_at = ?, compaction_summary = ? WHERE id = ?')
+		.bind(compactedAt, summary, conversationId)
+		.run();
 }
 
 export async function bulkInsertConversationWithMessages(

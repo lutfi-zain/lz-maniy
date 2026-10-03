@@ -16,9 +16,14 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, ne
 			Authorization: `Bearer ${token}`,
 			'X-Api-Key': token
 		};
-		const res = c.env.REEDRICH
-			? await c.env.REEDRICH.fetch(new Request(url, { headers }))
-			: await fetch(url, { headers });
+		// Always use global fetch if REEDRICH service binding is not locally connected
+		let res: Response;
+		try {
+			res = await fetch(url, { headers });
+		} catch (fetchErr: unknown) {
+			console.error('authMiddleware fetch error:', fetchErr);
+			return c.json({ error: 'unauthorized', message: 'Failed to connect to authentication provider' }, 401);
+		}
 
 		if (!res.ok) {
 			return c.json(
@@ -27,7 +32,8 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, ne
 			);
 		}
 		profile = (await res.json()) as { userId: string; email: string; fullName: string };
-	} catch {
+	} catch (err: unknown) {
+		console.error('authMiddleware generic error:', err);
 		return c.json({ error: 'unauthorized', message: 'Auth validation failed' }, 401);
 	}
 

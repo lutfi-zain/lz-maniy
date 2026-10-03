@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { streamText, type LanguageModelV1 } from 'ai';
+import { createGroq } from '@ai-sdk/groq';
 import { authMiddleware } from '../middleware/auth.js';
 import { getModel, AVAILABLE_MODELS } from '../agent/models.js';
 import { buildSystemPrompt } from '../agent/system-prompt.js';
@@ -22,6 +23,15 @@ import {
 	touchConversation,
 	getAgentMemory
 } from '../db/queries.js';
+import {
+	getOrCreateUserCredits,
+	deductCredits,
+	recordCreditTransaction,
+	getCreditPricing,
+	calculateCreditsUsed
+} from '../db/credits.js';
+import { estimateTokens, shouldCompact } from '../agent/compaction.js';
+import { compactConversation } from '../agent/compaction-worker.js';
 import type { Env } from '../types.js';
 import type { ChatStreamRequest } from '@maniyy/shared';
 
@@ -37,14 +47,43 @@ chatRouter.post('/', async (c) => {
 		return c.json({ error: 'bad_request', message: 'Message is required' }, 400);
 	}
 
-	// Resolve model
-	const requestedProvider = body.model?.provider ?? 'omp';
-	const requestedModel = body.model?.model ?? 'google-antigravity/gemini-3.1-flash-lite';
-	const modelConfig = AVAILABLE_MODELS.find(
-		(m) => m.provider === requestedProvider && m.model === requestedModel
-	) ?? AVAILABLE_MODELS[0];
+	// 1. Credit Pre-check
+	const creditState = await getOrCreateUserCredits(c.env.DB, user.userId);
+	if (creditState.balance <= 0) {
+		return c.json(
+			{
+				error: 'insufficient_credits',
+				message: 'Kredit habis. Hubungi admin untuk top-up.',
+				balance: creditState.balance
+			},
+			402
+		);
+	}
 
-	// Resolve or create conversation
+	// 2. Resolve model (with legacy opencode fallback and default gemini-3.7-flash)
+	let requestedProvider = body.model?.provider ?? 'omp';
+	let requestedModel = body.model?.model ?? 'google-antigravity/gemini-3.7-flash';
+
+	// Silent fallback for legacy opencode provider
+	if ((requestedProvider as string) === 'opencode') {
+		requestedProvider = 'omp';
+		requestedModel = 'google-antigravity/gemini-3.7-flash';
+	}
+
+	let modelConfig =
+		AVAILABLE_MODELS.find(
+			(m) => m.provider === requestedProvider && m.model === requestedModel
+		) ??
+		AVAILABLE_MODELS.find((m) => m.model === 'google-antigravity/gemini-3.7-flash') ??
+		AVAILABLE_MODELS[0];
+
+	// Vision Fallback check: if image is present and model lacks vision, fallback to Groq qwen3.8-27b
+	let isGroqVisionFallback = false;
+	if (body.image && !modelConfig.capabilities.vision) {
+		isGroqVisionFallback = true;
+	}
+
+	// 3. Resolve or create conversation
 	let conversationId = body.conversationId;
 	let isNewConversation = false;
 	if (conversationId) {
@@ -66,7 +105,7 @@ chatRouter.post('/', async (c) => {
 		isNewConversation = true;
 	}
 
-	// Persist user message
+	// 4. Persist user message
 	const userMsgId = crypto.randomUUID();
 	await insertMessage(c.env.DB, {
 		id: userMsgId,
@@ -78,17 +117,47 @@ chatRouter.post('/', async (c) => {
 
 	const activeConvId = conversationId!;
 
-	// Retrieve conversation history
-	const history = await listMessages(c.env.DB, conversationId);
+	// 5. Retrieve conversation history & check for auto-compaction
+	let history = await listMessages(c.env.DB, activeConvId);
+	const contextWindow = modelConfig.contextWindow ?? 1_000_000;
+	const estimatedTokenCount = estimateTokens(history);
+
+	if (shouldCompact(estimatedTokenCount, contextWindow)) {
+		c.executionCtx.waitUntil(
+			(async () => {
+				await compactConversation(c.env.DB, c.env, activeConvId, history);
+			})()
+		);
+		// Reload history after triggering compaction check
+		history = await listMessages(c.env.DB, activeConvId);
+	}
+
 	const prior = history.filter((m) => m.id !== userMsgId);
 	type CoreMsg = { role: 'user' | 'assistant'; content: string };
 	const priorMessages: CoreMsg[] = prior
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
 	// Retrieve agent memory
 	const agentMemory = await getAgentMemory(c.env.DB, user.userId);
 
-	// Route to native Gemini Runner if Gemini provider is selected
+	// Helper for credit settlement on stream completion
+	const settleCredits = async (promptTokens: number, completionTokens: number) => {
+		const pricing = await getCreditPricing(c.env.DB, modelConfig.model);
+		const creditsUsed = calculateCreditsUsed(promptTokens, completionTokens, pricing);
+		const remaining = await deductCredits(c.env.DB, user.userId, creditsUsed);
+		await recordCreditTransaction(c.env.DB, {
+			userId: user.userId,
+			model: modelConfig.model,
+			inputTokens: promptTokens,
+			outputTokens: completionTokens,
+			creditsUsed,
+			conversationId: activeConvId
+		});
+		return { creditsUsed, creditsRemaining: remaining };
+	};
+
+	// 6. Route to native Gemini Runner if Gemini provider is selected
 	if (modelConfig.provider === 'gemini') {
 		const runner = createGeminiRunner(
 			c.env.GEMINI_API_KEY,
@@ -106,7 +175,8 @@ chatRouter.post('/', async (c) => {
 			body.pageContext,
 			user.fullName,
 			priorMessages,
-			body.thinkingLevel
+			body.thinkingLevel,
+			body.image
 		);
 		let fullAssistantText = '';
 
@@ -129,17 +199,23 @@ chatRouter.post('/', async (c) => {
 					controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error).message)}\n`));
 				} finally {
 					controller.close();
-					if (fullAssistantText) {
-						c.executionCtx.waitUntil((async () => {
-							await insertMessage(c.env.DB, {
-								id: crypto.randomUUID(),
-								conversationId: activeConvId,
-								role: 'assistant',
-								content: fullAssistantText
-							});
-							await touchConversation(c.env.DB, activeConvId);
-						})());
-					}
+					c.executionCtx.waitUntil(
+						(async () => {
+							if (fullAssistantText) {
+								await insertMessage(c.env.DB, {
+									id: crypto.randomUUID(),
+									conversationId: activeConvId,
+									role: 'assistant',
+									content: fullAssistantText
+								});
+								await touchConversation(c.env.DB, activeConvId);
+							}
+							// Post-stream credit deduction
+							const estPrompt = estimateTokens(history);
+							const estCompletion = Math.round(fullAssistantText.split(/\s+/).length * 1.3);
+							await settleCredits(estPrompt, estCompletion);
+						})()
+					);
 				}
 			}
 		});
@@ -154,10 +230,22 @@ chatRouter.post('/', async (c) => {
 		});
 	}
 
-	// Fallback to AI SDK for Groq / other providers
-	const aiModel = getModel(c.env, modelConfig.provider, modelConfig.model);
+	// 7. AI SDK Path (Groq / OMP Gateway)
+	let aiModel: LanguageModelV1;
+	let responseHeaders: Record<string, string> = {
+		'X-Conversation-Id': activeConvId,
+		'X-Is-New-Conversation': isNewConversation ? '1' : '0',
+		'Access-Control-Expose-Headers': 'X-Conversation-Id, X-Is-New-Conversation, X-Model-Fallback'
+	};
 
-	// History already retrieved above
+	if (isGroqVisionFallback) {
+		const groqClient = createGroq({ apiKey: c.env.GROQ_API_KEY });
+		aiModel = groqClient('qwen/qwen3.8-27b') as unknown as LanguageModelV1;
+		responseHeaders['X-Model-Fallback'] = 'groq/qwen3.8-27b';
+	} else {
+		aiModel = getModel(c.env, modelConfig.provider, modelConfig.model) as unknown as LanguageModelV1;
+	}
+
 	const tools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
@@ -173,43 +261,61 @@ chatRouter.post('/', async (c) => {
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory);
 
-	const providerOptions = modelConfig.capabilities.thinking && body.thinkingLevel && body.thinkingLevel !== 'off'
-		? { openai: { reasoningEffort: body.thinkingLevel === 'minimal' ? 'low' : body.thinkingLevel } }
-		: undefined;
+	const providerOptions =
+		modelConfig.capabilities.thinking && body.thinkingLevel && body.thinkingLevel !== 'off'
+			? { openai: { reasoningEffort: body.thinkingLevel === 'minimal' ? 'low' : body.thinkingLevel } }
+			: undefined;
+
+	// Build user message content array with image part if present
+	const userMessageContent: Array<
+		{ type: 'text'; text: string } | { type: 'image'; image: string; mimeType: string }
+	> = [{ type: 'text', text: body.message }];
+
+	if (body.image) {
+		userMessageContent.push({
+			type: 'image',
+			image: body.image.data,
+			mimeType: body.image.mimeType
+		});
+	}
 
 	const result = streamText({
-		model: aiModel as unknown as LanguageModelV1,
+		model: aiModel,
 		system: systemPrompt,
 		messages: [
 			...priorMessages,
-			{ role: 'user', content: [{ type: 'text', text: body.message }] }
+			{ role: 'user', content: userMessageContent }
 		],
 		tools,
 		maxSteps: 10,
 		...(providerOptions ? { providerOptions } : {}),
 		onFinish: (ev) => {
-			c.executionCtx.waitUntil((async () => {
-				const finalContent = ev.text || '';
-				if (finalContent) {
-					await insertMessage(c.env.DB, {
-						id: crypto.randomUUID(),
-						conversationId: activeConvId,
-						role: 'assistant',
-						content: finalContent
-					});
-					await touchConversation(c.env.DB, activeConvId);
-				}
-			})());
+			c.executionCtx.waitUntil(
+				(async () => {
+					const finalContent = ev.text || '';
+					if (finalContent) {
+						await insertMessage(c.env.DB, {
+							id: crypto.randomUUID(),
+							conversationId: activeConvId,
+							role: 'assistant',
+							content: finalContent
+						});
+						await touchConversation(c.env.DB, activeConvId);
+					}
+
+					// Settle credit usage from reported or estimated tokens
+					const promptTokens = ev.usage?.promptTokens ?? estimateTokens(history);
+					const completionTokens =
+						ev.usage?.completionTokens ?? Math.round(finalContent.split(/\s+/).length * 1.3);
+					await settleCredits(promptTokens, completionTokens);
+				})()
+			);
 		}
 	});
 
 	return result.toDataStreamResponse({
 		getErrorMessage: (err) => (err as Error)?.message || String(err),
-		headers: {
-			'X-Conversation-Id': activeConvId,
-			'X-Is-New-Conversation': isNewConversation ? '1' : '0',
-			'Access-Control-Expose-Headers': 'X-Conversation-Id, X-Is-New-Conversation'
-		}
+		headers: responseHeaders
 	});
 });
 

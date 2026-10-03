@@ -59,7 +59,8 @@ export function createGeminiRunner(
 		pageContext: PageContext,
 		userName: string,
 		priorMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [],
-		thinkingLevel?: ThinkingLevel
+		thinkingLevel?: ThinkingLevel,
+		image?: { data: string; mimeType: string }
 	): AsyncGenerator<string> {
 		yield `f:{"messageId":"msg-${crypto.randomUUID()}"}\n`;
 
@@ -101,9 +102,17 @@ export function createGeminiRunner(
 			}
 		});
 
+		const messageParts = image
+			? [
+					{ text: userMessage },
+					{ inlineData: { data: image.data, mimeType: image.mimeType } }
+				]
+			: userMessage;
+
 		let response;
 		try {
-			response = await chat.sendMessage({ message: userMessage });
+			const messageArg = messageParts as unknown as string;
+			response = await chat.sendMessage({ message: messageArg });
 		} catch (err: unknown) {
 			const errMsg = (err as Error)?.message || String(err);
 			if (errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE')) {
@@ -154,7 +163,29 @@ export function createGeminiRunner(
 			let nextFunctionCalls: typeof response.functionCalls | undefined;
 
 			for await (const chunk of stream) {
-				if (chunk.text) {
+				let streamedPart = false;
+				if (chunk && typeof chunk === 'object' && 'candidates' in chunk && Array.isArray(chunk.candidates)) {
+					const firstCand = chunk.candidates[0];
+					if (firstCand && typeof firstCand === 'object' && 'content' in firstCand && firstCand.content) {
+						const contentObj = firstCand.content;
+						if (typeof contentObj === 'object' && 'parts' in contentObj && Array.isArray(contentObj.parts)) {
+							for (const part of contentObj.parts) {
+								if (part && typeof part === 'object') {
+									const isThought = 'thought' in part && Boolean(part.thought);
+									const textVal = 'text' in part && typeof part.text === 'string' ? part.text : '';
+									if (isThought && textVal) {
+										yield `g:${JSON.stringify(textVal)}\n`;
+										streamedPart = true;
+									} else if (!isThought && textVal) {
+										yield `0:${JSON.stringify(textVal)}\n`;
+										streamedPart = true;
+									}
+								}
+							}
+						}
+					}
+				}
+				if (!streamedPart && chunk.text) {
 					yield `0:${JSON.stringify(chunk.text)}\n`;
 				}
 				if (chunk.functionCalls && chunk.functionCalls.length > 0) {
@@ -162,7 +193,6 @@ export function createGeminiRunner(
 					response = chunk;
 				}
 			}
-
 			if (!nextFunctionCalls || nextFunctionCalls.length === 0) {
 				yield `e:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100},"isContinued":false}\n`;
 				yield `d:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100}}\n`;

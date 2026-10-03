@@ -2,6 +2,8 @@
 	import { X, List, Plus } from 'phosphor-svelte';
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import ChatModelPicker from './ChatModelPicker.svelte';
+	import CreditIndicator from './CreditIndicator.svelte';
+	import ContextGauge from './ContextGauge.svelte';
 
 	let { isMobile = false }: { isMobile?: boolean } = $props();
 </script>
@@ -19,6 +21,8 @@
 		{chatStore.activeConversation?.title ?? 'Percakapan Baru'}
 	</span>
 
+	<CreditIndicator />
+	<ContextGauge />
 	<ChatModelPicker />
 
 	<button

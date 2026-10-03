@@ -42,6 +42,26 @@
 			<div class="whitespace-pre-wrap">{message.content || '...'}</div>
 		{:else}
 			<!-- Assistant message -->
+			<!-- Model Thinking Accordion -->
+			{#if message.thinking}
+				<details
+					class="mb-2.5 rounded border border-[#EAEAEA] bg-[#FAFAFA] text-xs text-[#787774]"
+					open={chatStore.isStreaming && !message.content}
+				>
+					<summary
+						class="flex cursor-pointer items-center gap-1.5 px-2.5 py-1.5 font-medium select-none hover:text-[#111111]"
+					>
+						<span class="inline-block size-1.5 rounded-full bg-[#787774]"></span>
+						<span>{chatStore.isStreaming && !message.content ? 'Sedang berpikir...' : 'Proses berpikir'}</span>
+					</summary>
+					<div
+						class="max-h-48 overflow-y-auto border-t border-[#EAEAEA] px-2.5 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-[#555555]"
+					>
+						{message.thinking}
+					</div>
+				</details>
+			{/if}
+
 			<!-- Tool Invocations (Collapsible Cards) -->
 			{#if message.toolInvocations && message.toolInvocations.length > 0}
 				<div class="mb-2 flex flex-col gap-1.5">

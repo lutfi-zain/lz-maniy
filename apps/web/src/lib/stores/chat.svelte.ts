@@ -9,7 +9,9 @@ import {
 	type ModelConfig,
 	type PageContext,
 	type ThinkingLevel,
-	type UICommand
+	type UICommand,
+	type ContextUsage,
+	type CreditBalance
 } from '@maniyy/shared';
 import { authStore } from './auth.svelte.js';
 import { reedrichStore } from './reedrich.svelte.js';
@@ -32,12 +34,17 @@ export class ChatStore {
 	panelWidth = $state<number>(360);
 	availableModels = $state<ModelConfig[]>([...DEFAULT_MODELS]);
 	showConversationList = $state<boolean>(false);
-	thinkingLevel = $state<ThinkingLevel>('low');
+	thinkingLevel = $state<ThinkingLevel>('medium');
+	creditsRemaining = $state<number | null>(null);
+	lastCreditsUsed = $state<number | null>(null);
+	contextUsage = $state<ContextUsage | null>(null);
 	selectedModel = $state<ModelConfig>({
 		provider: 'omp',
-		model: 'google-antigravity/gemini-3.1-flash-lite',
-		displayName: 'Gemini 3.1 Flash Lite',
-		capabilities: { vision: true, tool_calling: true, thinking: true }
+		model: 'google-antigravity/gemini-3.7-flash',
+		displayName: 'Gemini 3.7 Flash',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	});
 
 	private abortController: AbortController | null = null;
@@ -60,6 +67,24 @@ export class ChatStore {
 
 	togglePanel = (force?: boolean) => {
 		this.panelOpen = force !== undefined ? force : !this.panelOpen;
+		if (this.panelOpen) {
+			this.loadCredits();
+		}
+	};
+
+	loadCredits = async () => {
+		if (!authStore.accessToken) return;
+		try {
+			const res = await fetch(`${PUBLIC_AGENT_URL}/api/credits`, {
+				headers: { Authorization: `Bearer ${authStore.accessToken}` }
+			});
+			if (res.ok) {
+				const data = (await res.json()) as CreditBalance;
+				this.creditsRemaining = data.balance;
+			}
+		} catch {
+			/* ignore */
+		}
 	};
 
 	setPanelWidth = (widthPx: number) => {
@@ -256,12 +281,18 @@ export class ChatStore {
 			msg.variants && msg.variants.length > 0
 				? [...msg.variants]
 				: [
-						{ content: msg.content, toolInvocations: msg.toolInvocations, timestamp: msg.timestamp }
+						{
+							content: msg.content,
+							toolInvocations: msg.toolInvocations,
+							thinking: msg.thinking,
+							timestamp: msg.timestamp
+						}
 					];
 		const activeIndex = msg.activeVariantIndex ?? variants.length - 1;
 		variants[activeIndex] = {
 			content: msg.content,
 			toolInvocations: msg.toolInvocations ? [...msg.toolInvocations] : [],
+			thinking: msg.thinking,
 			timestamp: Date.now()
 		};
 		return {
@@ -280,6 +311,7 @@ export class ChatStore {
 				...m,
 				activeVariantIndex: index,
 				content: targetVariant.content,
+				thinking: targetVariant.thinking,
 				toolInvocations: targetVariant.toolInvocations ? [...targetVariant.toolInvocations] : []
 			};
 		});
@@ -426,7 +458,22 @@ export class ChatStore {
 					const prefix = raw.slice(0, colonIndex);
 					const payloadStr = raw.slice(colonIndex + 1);
 
-					if (prefix === '0') {
+					if (prefix === 'g') {
+						// Thinking delta
+						try {
+							const thinkingDelta = JSON.parse(payloadStr) as string;
+							this.messages = this.messages.map((m) =>
+								m.id === assistantId
+									? this.syncActiveVariant({
+											...m,
+											thinking: (m.thinking ?? '') + thinkingDelta
+										})
+									: m
+							);
+						} catch {
+							/* ignore */
+						}
+					} else if (prefix === '0') {
 						// Text delta
 						try {
 							const delta = JSON.parse(payloadStr) as string;
@@ -435,6 +482,29 @@ export class ChatStore {
 									? this.syncActiveVariant({ ...m, content: m.content + delta })
 									: m
 							);
+						} catch {
+							/* ignore */
+						}
+					} else if (prefix === 'd') {
+						// Finish metadata event: { finishReason, usage, creditsUsed, creditsRemaining, contextUsage }
+						try {
+							const finishData = JSON.parse(payloadStr) as {
+								creditsUsed?: number;
+								creditsRemaining?: number;
+								contextUsage?: ContextUsage;
+							};
+							if (typeof finishData.creditsRemaining === 'number') {
+								this.creditsRemaining = finishData.creditsRemaining;
+							}
+							if (typeof finishData.creditsUsed === 'number') {
+								this.lastCreditsUsed = finishData.creditsUsed;
+								setTimeout(() => {
+									this.lastCreditsUsed = null;
+								}, 3000);
+							}
+							if (finishData.contextUsage) {
+								this.contextUsage = finishData.contextUsage;
+							}
 						} catch {
 							/* ignore */
 						}

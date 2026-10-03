@@ -5,6 +5,7 @@ import { modelsRouter } from './routes/models.js';
 import { conversationsRouter } from './routes/conversations.js';
 import { chatRouter } from './routes/chat.js';
 import { settingsRouter } from './routes/settings.js';
+import { creditsRouter } from './routes/credits.js';
 import type { Env } from './types.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -49,6 +50,7 @@ app.route('/api/models', modelsRouter);
 app.route('/api/conversations', conversationsRouter);
 app.route('/api/chat', chatRouter);
 app.route('/api/settings', settingsRouter);
+app.route('/api/credits', creditsRouter);
 
 // Health check
 app.get('/', (c) => c.json({ status: 'ok', service: 'maniyy-agent' }));

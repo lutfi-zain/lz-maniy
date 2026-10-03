@@ -11,6 +11,7 @@ export interface ToolInvocationItem {
 export interface AssistantVariant {
 	content: string;
 	toolInvocations?: ToolInvocationItem[];
+	thinking?: string;
 	timestamp: number;
 	error?: string;
 }
@@ -24,6 +25,7 @@ export interface ChatMessage {
 	toolCalls?: unknown[];
 	toolResults?: unknown[];
 	imageRef?: string; // ephemeral ref only, never base64 in DB
+	thinking?: string;
 	variants?: AssistantVariant[];
 	activeVariantIndex?: number;
 	timestamp: number;
@@ -39,7 +41,7 @@ export interface ConversationMeta {
 	messageCount?: number;
 }
 
-export type ModelProvider = 'gemini' | 'groq' | 'opencode' | 'omp';
+export type ModelProvider = 'gemini' | 'groq' | 'omp';
 export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 
 export interface ModelConfig {
@@ -52,6 +54,7 @@ export interface ModelConfig {
 		thinking?: boolean;
 	};
 	thinkingLevels?: ThinkingLevel[];
+	contextWindow?: number;
 }
 
 export const DEFAULT_MODELS: ModelConfig[] = [
@@ -60,27 +63,24 @@ export const DEFAULT_MODELS: ModelConfig[] = [
 		model: 'google-antigravity/gemini-3.1-flash-lite',
 		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	},
 	{
 		provider: 'omp',
 		model: 'google-antigravity/gemini-3.7-flash',
 		displayName: 'Gemini 3.7 Flash',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	},
 	{
 		provider: 'omp',
 		model: 'google-antigravity/gemini-3.8-flash',
 		displayName: 'Gemini 3.8 Flash (High Tier)',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high']
-	},
-	{
-		provider: 'omp',
-		model: 'opencode-zen/muse-spark-1.3-contributor-free',
-		displayName: 'OpenCode Spark 1.3 Free',
-		capabilities: { vision: true, tool_calling: true, thinking: false }
+		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
 	}
 ];
 
@@ -127,4 +127,40 @@ export interface ExportedConversation extends ConversationMeta {
 export interface ImportResult {
 	imported: number;
 	skipped: number;
+}
+
+export interface CreditBalance {
+	balance: number;
+	lifetimeUsed: number;
+	defaultBalance: number;
+	creditValueUsd: number;
+}
+
+export interface CreditTransaction {
+	id: string;
+	userId: string;
+	model: string;
+	inputTokens: number;
+	outputTokens: number;
+	creditsUsed: number;
+	conversationId?: string;
+	createdAt: number;
+}
+
+export interface CreditPricing {
+	model: string;
+	inputPerMillion: number;
+	outputPerMillion: number;
+}
+
+export interface ContextUsage {
+	usedTokens: number;
+	maxTokens: number;
+	percentUsed: number;
+}
+
+export interface StreamFinishMetadata {
+	creditsUsed?: number;
+	creditsRemaining?: number;
+	contextUsage?: ContextUsage;
 }

@@ -13,15 +13,16 @@ describe('ChatStore', () => {
 		expect(store.panelWidth).toBe(360);
 		expect(store.isStreaming).toBe(false);
 		expect(store.messages).toEqual([]);
-		expect(store.selectedModel.model).toBe('google-antigravity/gemini-3.1-flash-lite');
+		expect(store.selectedModel.model).toBe('google-antigravity/gemini-3.7-flash');
 	});
-	it('has 4 curated OMP default models', () => {
-		expect(store.availableModels.length).toBe(4);
+	it('has 3 curated OMP default models', () => {
+		expect(store.availableModels.length).toBe(3);
 		const models = store.availableModels.map((m) => m.model);
-		expect(models).toContain('google-antigravity/gemini-3.1-flash-lite');
-		expect(models).toContain('google-antigravity/gemini-3.7-flash');
-		expect(models).toContain('google-antigravity/gemini-3.8-flash');
-		expect(models).toContain('opencode-zen/muse-spark-1.3-contributor-free');
+		expect(models).toEqual([
+			'google-antigravity/gemini-3.1-flash-lite',
+			'google-antigravity/gemini-3.7-flash',
+			'google-antigravity/gemini-3.8-flash'
+		]);
 	});
 
 
@@ -61,7 +62,7 @@ describe('ChatStore', () => {
 	});
 
 	it('configures and updates thinking level', () => {
-		expect(store.thinkingLevel).toBe('low');
+		expect(store.thinkingLevel).toBe('medium');
 		store.setThinkingLevel('high');
 		expect(store.thinkingLevel).toBe('high');
 		store.setThinkingLevel('off');

@@ -49,7 +49,15 @@
 		<ChatEmptyState />
 	{:else}
 		{#each chatStore.messages as message (message.id)}
-			<ChatBubble {message} />
+			{#if message.role === 'system' && message.content.startsWith('[Conversation Summary]')}
+				<div
+					class="my-1 rounded border border-[#EAEAEA] bg-[#FAFAFA] px-3 py-2 text-center text-[11px] text-[#787774]"
+				>
+					<span>Riwayat percakapan dirangkum untuk menghemat konteks.</span>
+				</div>
+			{:else}
+				<ChatBubble {message} />
+			{/if}
 		{/each}
 		{#if chatStore.isStreaming}
 			<ChatStreamingIndicator />

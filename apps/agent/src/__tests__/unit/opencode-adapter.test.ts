@@ -70,7 +70,7 @@ describe('OpenCode Adapter', () => {
 		expect(model.provider).toContain('opencode');
 	});
 
-	it('integrates with getModel for opencode provider with safe fallback', () => {
+	it('integrates with getModel for opencode provider with safe fallback to groq', () => {
 		const mockEnv = {
 			DB: {} as unknown as D1Database,
 			CONFIG: {} as unknown as KVNamespace,
@@ -79,12 +79,13 @@ describe('OpenCode Adapter', () => {
 			GROQ_API_KEY: 'test-groq',
 			OPENCODE_API_KEY: 'public'
 		};
-		const model = getModel(mockEnv, 'opencode', 'muse-spark-1.3-contributor-free');
-		expect(model).toBeDefined();
+		// opencode provider removed from active provider union, safely throws Unknown provider
+		expect(() => getModel(mockEnv, 'opencode' as any, 'muse-spark-1.3-contributor-free')).toThrow(
+			'Unknown provider: opencode'
+		);
 	});
-
 	it('removes non-functional opencode models from AVAILABLE_MODELS', () => {
-		const opencodeModels = AVAILABLE_MODELS.filter((m) => m.provider === 'opencode');
+		const opencodeModels = AVAILABLE_MODELS.filter((m) => (m.provider as string) === 'opencode');
 		expect(opencodeModels.length).toBe(0);
 	});
 });
