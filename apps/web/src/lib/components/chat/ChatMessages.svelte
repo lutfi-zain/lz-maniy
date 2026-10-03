@@ -45,7 +45,13 @@
 	aria-label="Percakapan"
 	aria-live="polite"
 >
-	{#if !chatStore.hasMessages}
+	{#if chatStore.isLoadingHistory}
+		<div class="flex flex-1 flex-col justify-end space-y-3 p-3">
+			<div class="h-10 w-2/3 self-end rounded-lg bg-[#F0EFEC] animate-pulse"></div>
+			<div class="h-16 w-3/4 rounded-lg bg-[#F0EFEC] animate-pulse"></div>
+			<div class="h-12 w-1/2 self-end rounded-lg bg-[#F0EFEC] animate-pulse"></div>
+		</div>
+	{:else if !chatStore.hasMessages}
 		<ChatEmptyState />
 	{:else}
 		{#each chatStore.messages as message (message.id)}

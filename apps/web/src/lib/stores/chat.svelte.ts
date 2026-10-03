@@ -50,6 +50,8 @@ export class ChatStore {
 	private abortController: AbortController | null = null;
 	private readonly STORAGE_WIDTH_KEY = 'maniyy_chat_panel_width';
 
+	private hasAttemptedAutoResume = false;
+
 	constructor() {
 		if (typeof window !== 'undefined') {
 			const saved = localStorage.getItem(this.STORAGE_WIDTH_KEY);
@@ -69,6 +71,30 @@ export class ChatStore {
 		this.panelOpen = force !== undefined ? force : !this.panelOpen;
 		if (this.panelOpen) {
 			this.loadCredits();
+			this.resumeLastConversationIfFresh();
+		}
+	};
+
+	resumeLastConversationIfFresh = async () => {
+		if (this.hasAttemptedAutoResume) return;
+		this.hasAttemptedAutoResume = true;
+
+		// Only auto-resume if currently on a fresh/empty chat
+		if (this.activeConversationId || this.messages.length > 0) return;
+
+		this.isLoadingHistory = true;
+		try {
+			if (this.conversations.length === 0) {
+				await this.loadConversations();
+			}
+			if (!this.activeConversationId && this.messages.length === 0 && this.conversations.length > 0) {
+				const latest = this.conversations[0];
+				if (latest?.id) {
+					await this.loadConversation(latest.id);
+				}
+			}
+		} finally {
+			this.isLoadingHistory = false;
 		}
 	};
 
@@ -179,6 +205,7 @@ export class ChatStore {
 	newConversation = () => {
 		this.activeConversationId = null;
 		this.messages = [];
+		this.hasAttemptedAutoResume = true;
 	};
 
 	loadConversations = async () => {

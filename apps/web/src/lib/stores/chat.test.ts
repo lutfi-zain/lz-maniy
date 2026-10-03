@@ -106,4 +106,56 @@ describe('ChatStore', () => {
 		store.switchMessageVariant('asst-1', 99);
 		expect(store.messages[1].activeVariantIndex).toBe(1);
 	});
+
+	describe('resumeLastConversationIfFresh', () => {
+		it('auto-resumes most recent conversation when fresh', async () => {
+			store.conversations = [
+				{ id: 'conv-recent', title: 'Percakapan Kemarin', createdAt: 100, updatedAt: 200, messageCount: 2, model: 'google-antigravity/gemini-3.7-flash', provider: 'omp' },
+				{ id: 'conv-older', title: 'Percakapan Lama', createdAt: 50, updatedAt: 60, messageCount: 4, model: 'google-antigravity/gemini-3.7-flash', provider: 'omp' }
+			];
+
+			let loadedId: string | null = null;
+			store.loadConversation = async (id: string) => {
+				loadedId = id;
+				store.activeConversationId = id;
+				store.messages = [{ id: 'm1', conversationId: id, role: 'user', content: 'Halo', timestamp: 1 }];
+			};
+
+			await store.resumeLastConversationIfFresh();
+			expect(loadedId).toBe('conv-recent');
+			expect(store.activeConversationId).toBe('conv-recent');
+		});
+
+		it('does not resume if conversation already active', async () => {
+			store.conversations = [
+				{ id: 'conv-recent', title: 'Percakapan Kemarin', createdAt: 100, updatedAt: 200, messageCount: 2, model: 'google-antigravity/gemini-3.7-flash', provider: 'omp' }
+			];
+			store.activeConversationId = 'conv-current';
+
+			let called = false;
+			store.loadConversation = async () => {
+				called = true;
+			};
+
+			await store.resumeLastConversationIfFresh();
+			expect(called).toBe(false);
+			expect(store.activeConversationId).toBe('conv-current');
+		});
+
+		it('does not resume if user explicitly started newConversation', async () => {
+			store.conversations = [
+				{ id: 'conv-recent', title: 'Percakapan Kemarin', createdAt: 100, updatedAt: 200, messageCount: 2, model: 'google-antigravity/gemini-3.7-flash', provider: 'omp' }
+			];
+			store.newConversation(); // sets hasAttemptedAutoResume = true
+
+			let called = false;
+			store.loadConversation = async () => {
+				called = true;
+			};
+
+			await store.resumeLastConversationIfFresh();
+			expect(called).toBe(false);
+			expect(store.activeConversationId).toBeNull();
+		});
+	});
 });

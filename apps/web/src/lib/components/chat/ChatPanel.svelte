@@ -15,6 +15,12 @@
 		mq.addEventListener('change', handler);
 		return () => mq.removeEventListener('change', handler);
 	});
+
+	$effect(() => {
+		if (chatStore.panelOpen) {
+			chatStore.resumeLastConversationIfFresh();
+		}
+	});
 </script>
 
 {#if chatStore.panelOpen}
