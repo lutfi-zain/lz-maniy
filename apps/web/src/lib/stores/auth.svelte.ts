@@ -43,6 +43,9 @@ export class AuthStore {
 	isExpiringSoon = $derived<boolean>(
 		Boolean(this.expiresAt && Date.now() > this.expiresAt - 60_000)
 	);
+	isExpired = $derived<boolean>(
+		Boolean(this.expiresAt && Date.now() >= this.expiresAt)
+	);
 
 	private refreshPromise: Promise<boolean> | null = null;
 
@@ -139,6 +142,18 @@ export class AuthStore {
 				console.error('Failed to update user profile in localStorage:', err);
 			}
 		}
+	}
+
+	/**
+	 * Returns a guaranteed valid access token, auto-refreshing if expired or expiring soon.
+	 */
+	async getValidToken(baseUrl = DEFAULT_API_URL): Promise<string | null> {
+		if (!this.accessToken) return null;
+		if ((this.isExpired || this.isExpiringSoon) && this.refreshToken) {
+			const refreshed = await this.refreshSession(baseUrl);
+			if (!refreshed) return null;
+		}
+		return this.accessToken;
 	}
 
 	/**

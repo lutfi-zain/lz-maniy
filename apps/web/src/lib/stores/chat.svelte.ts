@@ -1,6 +1,6 @@
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
-import { PUBLIC_AGENT_URL } from '$env/static/public';
+import { PUBLIC_AGENT_URL, PUBLIC_API_URL } from '$env/static/public';
 import {
 	DEFAULT_MODELS,
 	type AssistantVariant,
@@ -75,9 +75,7 @@ export class ChatStore {
 	loadCredits = async () => {
 		if (!authStore.accessToken) return;
 		try {
-			const res = await fetch(`${PUBLIC_AGENT_URL}/api/credits`, {
-				headers: { Authorization: `Bearer ${authStore.accessToken}` }
-			});
+			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/credits`);
 			if (res.ok) {
 				const data = (await res.json()) as CreditBalance;
 				this.creditsRemaining = data.balance;
@@ -85,6 +83,23 @@ export class ChatStore {
 		} catch {
 			/* ignore */
 		}
+	};
+
+	private authFetch = async (url: string, init: RequestInit = {}): Promise<Response> => {
+		const validToken = await authStore.getValidToken(PUBLIC_API_URL);
+		const headers = new Headers(init.headers || {});
+		if (validToken) {
+			headers.set('Authorization', `Bearer ${validToken}`);
+		}
+		let res = await fetch(url, { ...init, headers });
+		if (res.status === 401 && authStore.refreshToken) {
+			const refreshed = await authStore.refreshSession(PUBLIC_API_URL);
+			if (refreshed && authStore.accessToken) {
+				headers.set('Authorization', `Bearer ${authStore.accessToken}`);
+				res = await fetch(url, { ...init, headers });
+			}
+		}
+		return res;
 	};
 
 	setPanelWidth = (widthPx: number) => {
@@ -169,9 +184,7 @@ export class ChatStore {
 	loadConversations = async () => {
 		if (!authStore.accessToken) return;
 		try {
-			const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations`, {
-				headers: { Authorization: `Bearer ${authStore.accessToken}` }
-			});
+			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations`);
 			if (res.ok) this.conversations = await res.json();
 		} catch {
 			/* ignore */
@@ -182,9 +195,7 @@ export class ChatStore {
 		if (!authStore.accessToken) return;
 		this.isLoadingHistory = true;
 		try {
-			const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/${id}`, {
-				headers: { Authorization: `Bearer ${authStore.accessToken}` }
-			});
+			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations/${id}`);
 			if (res.ok) {
 				const data = (await res.json()) as { messages: ChatMessage[] };
 				this.messages = data.messages;
@@ -197,9 +208,8 @@ export class ChatStore {
 
 	deleteConversation = async (id: string) => {
 		if (!authStore.accessToken) return;
-		await fetch(`${PUBLIC_AGENT_URL}/api/conversations/${id}`, {
-			method: 'DELETE',
-			headers: { Authorization: `Bearer ${authStore.accessToken}` }
+		await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations/${id}`, {
+			method: 'DELETE'
 		});
 		this.conversations = this.conversations.filter((c) => c.id !== id);
 		if (this.activeConversationId === id) this.newConversation();
@@ -207,10 +217,9 @@ export class ChatStore {
 
 	exportConversations = async (ids?: string[]) => {
 		if (!authStore.accessToken) return;
-		const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/export`, {
+		const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations/export`, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${authStore.accessToken}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(ids ? { conversationIds: ids } : {})
@@ -229,10 +238,9 @@ export class ChatStore {
 		if (!authStore.accessToken) return { imported: 0, skipped: 0 };
 		const text = await file.text();
 		const data = JSON.parse(text);
-		const res = await fetch(`${PUBLIC_AGENT_URL}/api/conversations/import`, {
+		const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations/import`, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${authStore.accessToken}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(data)
@@ -414,11 +422,12 @@ export class ChatStore {
 				thinkingLevel: this.thinkingLevel,
 				image
 			};
+			const token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${authStore.accessToken}`
+					Authorization: `Bearer ${token}`
 				},
 				body: JSON.stringify(body),
 				signal: this.abortController.signal

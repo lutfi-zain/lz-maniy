@@ -1,4 +1,6 @@
 import type { UserSettings } from '@maniyy/shared';
+import { authStore } from './auth.svelte.js';
+import { PUBLIC_API_URL } from '$env/static/public';
 
 const STORAGE_KEY = 'maniyy_user_settings';
 
@@ -60,23 +62,36 @@ export class SettingsStore {
 		if (agentBaseUrl) this.agentBaseUrl = agentBaseUrl;
 		if (token) this.token = token;
 
-		if (this.agentBaseUrl && this.token) {
-			try {
-				const res = await fetch(`${this.agentBaseUrl}/api/settings`, {
-					headers: {
-						Authorization: `Bearer ${this.token}`
+		if (this.agentBaseUrl) {
+			const validToken = (await authStore.getValidToken(PUBLIC_API_URL)) || this.token;
+			if (validToken) {
+				try {
+					let res = await fetch(`${this.agentBaseUrl}/api/settings`, {
+						headers: {
+							Authorization: `Bearer ${validToken}`
+						}
+					});
+					if (res.status === 401 && authStore.refreshToken) {
+						const refreshed = await authStore.refreshSession(PUBLIC_API_URL);
+						if (refreshed && authStore.accessToken) {
+							res = await fetch(`${this.agentBaseUrl}/api/settings`, {
+								headers: {
+									Authorization: `Bearer ${authStore.accessToken}`
+								}
+							});
+						}
 					}
-				});
-				if (res.ok) {
-					const data = (await res.json()) as Partial<UserSettings>;
-					this.settings = {
-						...this.settings,
-						...data
-					};
-					this.persistToStorage();
+					if (res.ok) {
+						const data = (await res.json()) as Partial<UserSettings>;
+						this.settings = {
+							...this.settings,
+							...data
+						};
+						this.persistToStorage();
+					}
+				} catch (err) {
+					console.warn('Failed to load user settings from agent:', err);
 				}
-			} catch (err) {
-				console.warn('Failed to load user settings from agent:', err);
 			}
 		}
 
