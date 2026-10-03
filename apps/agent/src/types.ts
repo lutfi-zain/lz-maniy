@@ -8,6 +8,8 @@ export interface Env {
 	GEMINI_API_KEY: string;
 	GROQ_API_KEY: string;
 	OPENCODE_API_KEY?: string;
+	OMP_GATEWAY_KEY?: string;
+	OMP_GATEWAY_URL?: string;
 }
 
 export interface AuthedUser {

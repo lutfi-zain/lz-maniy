@@ -34,9 +34,9 @@ export class ChatStore {
 	showConversationList = $state<boolean>(false);
 	thinkingLevel = $state<ThinkingLevel>('low');
 	selectedModel = $state<ModelConfig>({
-		provider: 'gemini',
-		model: 'gemini-3.1-flash-lite',
-		displayName: 'Gemini 3.1 Flash Lite (Google)',
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.1-flash-lite',
+		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true }
 	});
 

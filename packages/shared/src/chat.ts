@@ -39,7 +39,7 @@ export interface ConversationMeta {
 	messageCount?: number;
 }
 
-export type ModelProvider = 'gemini' | 'groq' | 'opencode';
+export type ModelProvider = 'gemini' | 'groq' | 'opencode' | 'omp';
 export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 
 export interface ModelConfig {
@@ -56,44 +56,31 @@ export interface ModelConfig {
 
 export const DEFAULT_MODELS: ModelConfig[] = [
 	{
-		provider: 'gemini',
-		model: 'gemini-3.1-flash-lite',
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.1-flash-lite',
 		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high']
 	},
 	{
-		provider: 'gemini',
-		model: 'gemini-3.7-flash',
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.7-flash',
 		displayName: 'Gemini 3.7 Flash',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high']
 	},
 	{
-		provider: 'gemini',
-		model: 'gemini-3.8-flash',
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.8-flash',
 		displayName: 'Gemini 3.8 Flash (High Tier)',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
+		thinkingLevels: ['off', 'low', 'medium', 'high']
 	},
 	{
-		provider: 'gemini',
-		model: 'gemini-3.1-pro-preview',
-		displayName: 'Gemini 3.1 Pro (Preview)',
-		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high']
-	},
-	{
-		provider: 'groq',
-		model: 'openai/gpt-oss-20b',
-		displayName: 'GPT-OSS 20B (Groq Fast)',
-		capabilities: { vision: false, tool_calling: true }
-	},
-	{
-		provider: 'groq',
-		model: 'openai/gpt-oss-120b',
-		displayName: 'GPT-OSS 120B (Groq Large)',
-		capabilities: { vision: false, tool_calling: true }
+		provider: 'omp',
+		model: 'opencode-zen/muse-spark-1.3-contributor-free',
+		displayName: 'OpenCode Spark 1.3 Free',
+		capabilities: { vision: true, tool_calling: true, thinking: false }
 	}
 ];
 

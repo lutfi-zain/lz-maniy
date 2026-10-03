@@ -38,8 +38,8 @@ chatRouter.post('/', async (c) => {
 	}
 
 	// Resolve model
-	const requestedProvider = body.model?.provider ?? 'gemini';
-	const requestedModel = body.model?.model ?? 'gemini-3.1-flash-lite';
+	const requestedProvider = body.model?.provider ?? 'omp';
+	const requestedModel = body.model?.model ?? 'google-antigravity/gemini-3.1-flash-lite';
 	const modelConfig = AVAILABLE_MODELS.find(
 		(m) => m.provider === requestedProvider && m.model === requestedModel
 	) ?? AVAILABLE_MODELS[0];
@@ -172,6 +172,11 @@ chatRouter.post('/', async (c) => {
 	};
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory);
+
+	const providerOptions = modelConfig.capabilities.thinking && body.thinkingLevel && body.thinkingLevel !== 'off'
+		? { openai: { reasoningEffort: body.thinkingLevel === 'minimal' ? 'low' : body.thinkingLevel } }
+		: undefined;
+
 	const result = streamText({
 		model: aiModel as unknown as LanguageModelV1,
 		system: systemPrompt,
@@ -181,6 +186,7 @@ chatRouter.post('/', async (c) => {
 		],
 		tools,
 		maxSteps: 10,
+		...(providerOptions ? { providerOptions } : {}),
 		onFinish: (ev) => {
 			c.executionCtx.waitUntil((async () => {
 				const finalContent = ev.text || '';

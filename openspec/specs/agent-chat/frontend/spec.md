@@ -57,6 +57,7 @@ The chat UI SHALL render conversation messages incrementally using shadcn-svelte
 - **WHEN** an assistant response generation fails or connection drops
 - **THEN** an inline error indicator is displayed in the bubble with a prominent `Coba Lagi` action
 - **THEN** clicking `Coba Lagi` triggers an automatic retry for that message turn
+
 ### Requirement: UI Command Interpretation and Execution
 The chat UI SHALL interpret structured `ui_command` payloads returned by agent tool executions and dispatch corresponding application actions.
 
@@ -88,6 +89,7 @@ The chat UI SHALL provide a model selector dropdown populated from the backend m
 - **WHEN** user opens the model picker dropdown in the chat interface
 - **THEN** non-functional OpenCode Zen models are not presented to prevent user-facing stream crashes
 - **THEN** active model switching cleanly selects between Google Gemini and Groq models
+
 ### Requirement: Conversation Lifecycle Management
 The chat UI SHALL support full lifecycle management for conversations including list, create, switch, auto-titling, and deletion.
 
@@ -154,6 +156,7 @@ The chat UI SHALL provide accessible input controls conforming to accessibility 
 - **WHEN** the chat panel is opened via toggle button, keyboard shortcut (`Cmd+K`/`Ctrl+K`), or navigation back from conversation history
 - **THEN** focus shifts automatically to the message textarea input element
 - **THEN** user can immediately type without manually clicking the textarea
+
 ### Requirement: Thinking Level Selection
 The chat UI SHALL provide a control to configure the model's thinking and reasoning level when supported by the active model.
 
@@ -161,3 +164,18 @@ The chat UI SHALL provide a control to configure the model's thinking and reason
 - **WHEN** active model has thinking capabilities
 - **THEN** user can choose between thinking levels (`Off`, `Low`, `Medium`, `High`) via the model picker popover or header controls
 - **THEN** the chosen thinking level is persisted in local state and transmitted in subsequent `POST /api/chat` requests
+
+### Requirement: OMP Gateway Model Picker Presentation
+
+The web client model picker component SHALL group models into "Google Antigravity" and "OpenCode Zen" categories, displaying appropriate iconography (Sparkle for Google Antigravity, Brain/Lightning for OpenCode) and showing reasoning capability badges.
+
+#### Scenario: Dropdown rendering with OMP models
+- **WHEN** user clicks the model selector dropdown in the chat header
+- **THEN** the dropdown displays Google Antigravity models under a distinct heading and OpenCode models under an OpenCode Zen heading
+- **THEN** models with `capabilities.thinking: true` display a subtle "Reasoning supported" indicator
+
+#### Scenario: Thinking Level Control Visibility
+- **WHEN** user selects a Google Antigravity Gemini model with thinking support
+- **THEN** the thinking level selector button appears alongside the model picker allowing selection between `off`, `low`, `medium`, and `high`
+- **WHEN** user selects an OpenCode model without thinking support
+- **THEN** the thinking level selector is hidden
