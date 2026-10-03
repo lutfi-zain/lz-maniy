@@ -2,6 +2,7 @@
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
 	import type { HorizonBoardDTO } from '$lib/types/account-detail';
+	import { getPeriodDateBounds } from '$lib/utils/dates.js';
 	import { getConvertedBalanceInIDR } from '$lib/utils/currency.js';
 	import HorizonPeriodColumn, { type GlobalFilters } from './HorizonPeriodColumn.svelte';
 	import AddPeriodCard from './AddPeriodCard.svelte';
@@ -16,20 +17,10 @@
 		if (!raw || raw.length === 0) {
 			return getDefaultActivePeriods();
 		}
-		return [...raw].sort();
+		return [...raw].sort((a, b) => {
+			return getPeriodDateBounds(a).startDate.localeCompare(getPeriodDateBounds(b).startDate);
+		});
 	});
-
-	// Helper to calculate start and end dates for any YYYY-MM
-	function getMonthDateBounds(yearMonth: string) {
-		const [yStr, mStr] = yearMonth.split('-');
-		const y = parseInt(yStr, 10);
-		const m = parseInt(mStr, 10);
-		const startDate = `${yearMonth}-01`;
-		// Day 0 of next month is the last day of current month
-		const lastDay = new Date(y, m, 0).getDate();
-		const endDate = `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
-		return { startDate, endDate };
-	}
 
 	let isHorizonLoading = $state<boolean>(true);
 	let horizonData = $state<HorizonBoardDTO | null>(null);
@@ -80,7 +71,7 @@
 
 		for (let i = 0; i < orderedPeriods.length; i++) {
 			const periodKey = orderedPeriods[i];
-			const { startDate, endDate } = getMonthDateBounds(periodKey);
+			const { startDate, endDate } = getPeriodDateBounds(periodKey);
 			const srvPeriod = horizonData?.periods.find((p) => p.periodKey === periodKey);
 
 			// Cashflow from server horizon projections
@@ -231,7 +222,7 @@
 	<!-- Multi-Period Wrapping Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
 		{#each orderedPeriods as periodKey, i (periodKey)}
-			{@const { startDate, endDate } = getMonthDateBounds(periodKey)}
+			{@const { startDate, endDate } = getPeriodDateBounds(periodKey)}
 			<HorizonPeriodColumn
 				{periodKey}
 				{startDate}

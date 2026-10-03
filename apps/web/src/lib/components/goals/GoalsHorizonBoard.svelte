@@ -5,7 +5,7 @@
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import { fmtIDR, getConvertedBalanceInIDR } from '$lib/utils/currency';
-	import { mLabel } from '$lib/utils/dates';
+	import { mLabel, getPeriodDateBounds } from '$lib/utils/dates';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import CornersOut from 'phosphor-svelte/lib/CornersOut';
 	import Trash from 'phosphor-svelte/lib/Trash';
@@ -19,18 +19,10 @@
 		if (!raw || raw.length === 0) {
 			return getDefaultActivePeriods();
 		}
-		return [...raw].sort();
+		return [...raw].sort((a, b) => {
+			return getPeriodDateBounds(a).startDate.localeCompare(getPeriodDateBounds(b).startDate);
+		});
 	});
-
-	function getMonthDateBounds(yearMonth: string) {
-		const [yStr, mStr] = yearMonth.split('-');
-		const y = parseInt(yStr, 10);
-		const m = parseInt(mStr, 10);
-		const startDate = `${yearMonth}-01`;
-		const lastDay = new Date(y, m, 0).getDate();
-		const endDate = `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
-		return { startDate, endDate };
-	}
 
 	let isHorizonLoading = $state<boolean>(true);
 	let horizonData = $state<HorizonBoardDTO | null>(null);
@@ -79,7 +71,7 @@
 		const achievedGoalSet = new SvelteSet<string>();
 
 		return orderedPeriods.map((periodKey) => {
-			const { startDate, endDate } = getMonthDateBounds(periodKey);
+			const { startDate, endDate } = getPeriodDateBounds(periodKey);
 			const srvPeriod = horizonData?.periods.find((p) => p.periodKey === periodKey);
 
 			// Build point-in-time balances map

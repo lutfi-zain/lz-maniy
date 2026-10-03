@@ -37,6 +37,7 @@ import type {
 	HorizonBoardDTO
 } from '$lib/types/account-detail';
 import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
+import { getPeriodDateBounds } from '$lib/utils/dates';
 
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
@@ -338,7 +339,16 @@ export class ReedrichStore {
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			const queryParts: string[] = ['baseCurrency=IDR'];
 			if (periods && periods.length > 0) {
-				queryParts.push(`periods=${encodeURIComponent(periods.join(','))}`);
+				const hasCustomIntervals = periods.some((p) => p.includes('_'));
+				if (hasCustomIntervals) {
+					const intervals = periods.map((p) => {
+						const { startDate, endDate } = getPeriodDateBounds(p);
+						return [startDate, endDate];
+					});
+					queryParts.push(`periods=${encodeURIComponent(JSON.stringify(intervals))}`);
+				} else {
+					queryParts.push(`periods=${encodeURIComponent(periods.join(','))}`);
+				}
 			}
 			if (months !== undefined) {
 				queryParts.push(`months=${months}`);

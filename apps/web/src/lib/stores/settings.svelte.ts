@@ -1,4 +1,5 @@
 import type { UserSettings } from '@maniyy/shared';
+import { getPeriodDateBounds } from '$lib/utils/dates';
 import { authStore } from './auth.svelte.js';
 import { PUBLIC_API_URL } from '$env/static/public';
 
@@ -139,7 +140,9 @@ export class SettingsStore {
 
 	addPeriod(period: string) {
 		if (!this.settings.activePeriods.includes(period)) {
-			const updated = [...this.settings.activePeriods, period].sort();
+			const updated = [...this.settings.activePeriods, period].sort((a, b) => {
+				return getPeriodDateBounds(a).startDate.localeCompare(getPeriodDateBounds(b).startDate);
+			});
 			this.save({ activePeriods: updated });
 		}
 	}

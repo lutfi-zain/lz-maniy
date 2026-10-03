@@ -537,5 +537,39 @@ describe('ReedrichStore', () => {
 			expect(store.snapshot?.budgets.length).toBe(0);
 			expect(store.activeBudgets.length).toBe(0);
 		});
+
+		it('fetchHorizonProjections queries legacy comma-separated for standard YYYY-MM periods', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('periods=2026-10%2C2026-11');
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						baseCurrency: 'IDR',
+						periods: []
+					})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			await store.fetchHorizonProjections(['2026-10', '2026-11']);
+			expect(fetchMock).toHaveBeenCalled();
+		});
+
+		it('fetchHorizonProjections serializes 2D JSON array when interval periods are present', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain(encodeURIComponent(JSON.stringify([['2026-09-25', '2026-10-24']])));
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						baseCurrency: 'IDR',
+						periods: []
+					})
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			await store.fetchHorizonProjections(['2026-09-25_2026-10-24']);
+			expect(fetchMock).toHaveBeenCalled();
+		});
 	});
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLocalISO, hasNonMidnightTime, extractTimeHHmm } from './dates';
+import { buildLocalISO, hasNonMidnightTime, extractTimeHHmm, getPeriodDateBounds, formatPeriodTitle } from './dates';
 
 describe('buildLocalISO', () => {
 	it('assembles date + time with seconds :00 and a zone offset', () => {
@@ -59,5 +59,45 @@ describe('same-day ordering via full ISO strings', () => {
 			'2026-09-30T14:30:00+07:00',
 			'2026-09-30T23:59:00+07:00'
 		]);
+	});
+});
+
+describe('getPeriodDateBounds', () => {
+	it('parses canonical YYYY-MM into correct month start and last day', () => {
+		expect(getPeriodDateBounds('2026-10')).toEqual({
+			startDate: '2026-10-01',
+			endDate: '2026-10-31'
+		});
+		expect(getPeriodDateBounds('2026-02')).toEqual({
+			startDate: '2026-02-01',
+			endDate: '2026-02-28'
+		});
+	});
+
+	it('parses custom date intervals YYYY-MM-DD_YYYY-MM-DD verbatim', () => {
+		expect(getPeriodDateBounds('2026-09-25_2026-10-24')).toEqual({
+			startDate: '2026-09-25',
+			endDate: '2026-10-24'
+		});
+	});
+
+	it('handles empty input gracefully', () => {
+		expect(getPeriodDateBounds('')).toEqual({
+			startDate: '',
+			endDate: ''
+		});
+	});
+});
+
+describe('formatPeriodTitle', () => {
+	it('formats whole month keys in localized format', () => {
+		expect(formatPeriodTitle('2026-10', 'id')).toContain('Oktober 2026');
+		expect(formatPeriodTitle('2026-10', 'en')).toContain('October 2026');
+	});
+
+	it('formats custom interval keys into a date range', () => {
+		const idTitle = formatPeriodTitle('2026-09-25_2026-10-24', 'id');
+		expect(idTitle).toContain('25 Sep 2026');
+		expect(idTitle).toContain('24 Okt 2026');
 	});
 });

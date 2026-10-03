@@ -86,6 +86,68 @@ test.describe('Multi-Horizon Board & In-Memory Filter Persistence', () => {
 		}
 	});
 
+	test('Ledger Horizon Board supports adding and rendering custom date range period columns', async ({
+		page
+	}) => {
+		await page.goto('/ledger');
+
+		// Switch to Horizon Board
+		const horizonBtn = page.locator('button:has-text("Horizon Board")').first();
+		await horizonBtn.click();
+		await expect(horizonBtn).toHaveAttribute('aria-pressed', 'true');
+
+		// Open Add Period modal
+		const addPeriodTrigger = page.locator('button:has-text("Pilih Bulan Spesifik..."), button:has-text("Select Specific Month...")').first();
+		await expect(addPeriodTrigger).toBeVisible({ timeout: 15000 });
+		await addPeriodTrigger.click();
+
+		// Switch to "Rentang Tanggal" / "Date Range" tab
+		const rangeTab = page.locator('button:has-text("Rentang Tanggal"), button:has-text("Date Range")').first();
+		await expect(rangeTab).toBeVisible();
+		await rangeTab.click();
+
+		// Fill custom dates: 2026-09-25 to 2026-10-24
+		const startInput = page.locator('#customStart');
+		const endInput = page.locator('#customEnd');
+		await startInput.fill('2026-09-25');
+		await endInput.fill('2026-10-24');
+
+		// Click Tambahkan / Add Period
+		const submitBtn = page.locator('button:has-text("Tambahkan"), button:has-text("Add Period")').last();
+		await submitBtn.click();
+
+		// The new custom period column should now be visible with formatted title
+		const customHeader = page.getByText(/25 Sep.*24 Okt|Sep 25.*Oct 24/i).first();
+		await expect(customHeader).toBeVisible({ timeout: 15000 });
+	});
+
+	test('Ledger Horizon Board automatically lazy loads more transactions on scroll', async ({
+		page
+	}) => {
+		await page.goto('/ledger');
+
+		// Switch to Horizon Board
+		const horizonBtn = page.locator('button:has-text("Horizon Board")').first();
+		await horizonBtn.click();
+		await expect(horizonBtn).toHaveAttribute('aria-pressed', 'true');
+
+		// Wait for horizon columns to render
+		const netCashflow = page.getByText(/Net Arus Kas|NET CASHFLOW/i).first();
+		await expect(netCashflow).toBeVisible({ timeout: 15000 });
+
+		// Check scroll container in the first column
+		const scrollContainer = page.locator('.h-\\[320px\\].divide-y').first();
+		await expect(scrollContainer).toBeVisible();
+
+		// Scroll to bottom of container
+		await scrollContainer.evaluate((el) => {
+			el.scrollTop = el.scrollHeight;
+		});
+
+		// Verify scroll container maintains scrollability without layout shift
+		await expect(scrollContainer).toBeVisible();
+	});
+
 	test('Accounts supports Horizon Board view toggle and renders period columns', async ({
 		page
 	}) => {

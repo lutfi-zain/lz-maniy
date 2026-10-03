@@ -4,7 +4,7 @@
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 	import { fmtIDR, getConvertedBalanceInIDR } from '$lib/utils/currency';
-	import { dFmt, mLabel } from '$lib/utils/dates';
+	import { dFmt, formatPeriodTitle, getPeriodDateBounds } from '$lib/utils/dates';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import CornersOut from 'phosphor-svelte/lib/CornersOut';
@@ -38,10 +38,8 @@
 		canRemove?: boolean;
 	} = $props();
 
-	// Format title: "YYYY-MM" -> "Oktober 2026"
-	// Format title: "YYYY-MM" -> "October 2026" / "Oktober 2026"
 	const periodTitle = $derived.by(() => {
-		return mLabel(periodKey, i18nStore.locale);
+		return formatPeriodTitle(periodKey, i18nStore.locale);
 	});
 
 	const allWallets = $derived(reedrichStore.allWallets);
@@ -72,6 +70,33 @@
 	let periodTransactions = $state<TransactionRecord[]>([]);
 	let hasNext = $state<boolean>(false);
 	let totalCount = $state<number>(0);
+	let scrollContainerEl = $state<HTMLDivElement | null>(null);
+	let sentinelEl = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!scrollContainerEl || !sentinelEl) return;
+		if (!hasNext) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const first = entries[0];
+				if (first?.isIntersecting && hasNext && !isLoadingMore && !isColumnLoading) {
+					loadMore();
+				}
+			},
+			{
+				root: scrollContainerEl,
+				rootMargin: '120px',
+				threshold: 0.1
+			}
+		);
+
+		observer.observe(sentinelEl);
+
+		return () => {
+			observer.disconnect();
+		};
+	});
 	$effect(() => {
 		const start = startDate;
 		const end = endDate;
@@ -151,25 +176,6 @@
 		}
 	}
 
-	// Local cashflow calculation from card's own data
-	const localCashflow = $derived.by(() => {
-		let inSum = 0;
-		let outSum = 0;
-		for (const t of periodTransactions) {
-			const curr = getWalletCurrency(t.transactionWalletId);
-			const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr);
-			if (t.transactionType === 'income') {
-				inSum += amtIDR;
-			} else if (t.transactionType === 'expense') {
-				outSum += amtIDR;
-			}
-		}
-		return {
-			income: inSum,
-			expense: outSum,
-			net: inSum - outSum
-		};
-	});
 
 	function handleQuickAdd() {
 		// Use today if inside this period, else 1st day of period
@@ -179,7 +185,8 @@
 		transactionFormStore.date = initialDate;
 	}
 	function handleMaximize() {
-		dateFilterStore.setFilter('custom', startDate, endDate);
+		const bounds = getPeriodDateBounds(periodKey);
+		dateFilterStore.setFilter('custom', bounds.startDate, bounds.endDate);
 		settingsStore.setViewMode('single');
 	}
 
@@ -196,8 +203,14 @@
 		<div>
 			<h2 class="text-xs font-semibold text-[#111111]">{periodTitle}</h2>
 			<span class="font-mono text-[10px] text-[#787774]">
-				{periodTransactions.length}
-				{i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}
+				{#if totalCount > periodTransactions.length}
+					{i18nStore.locale === 'id'
+						? `${periodTransactions.length} dari ${totalCount} transaksi`
+						: `${periodTransactions.length} of ${totalCount} transactions`}
+				{:else}
+					{totalCount}
+					{i18nStore.locale === 'id' ? 'transaksi' : 'transactions'}
+				{/if}
 			</span>
 		</div>
 
@@ -245,7 +258,7 @@
 	</div>
 
 	<!-- Dense Ledger Table -->
-	<div class="h-[320px] divide-y divide-[#EAEAEA] overflow-y-auto text-xs">
+	<div bind:this={scrollContainerEl} class="h-[320px] divide-y divide-[#EAEAEA] overflow-y-auto text-xs">
 		{#if isColumnLoading && periodTransactions.length === 0}
 			<div class="space-y-3 p-3.5">
 				{#each [0, 1, 2, 3, 4] as i (i)}
@@ -337,27 +350,15 @@
 			{/each}
 
 			{#if hasNext}
-				<div class="p-2 text-center">
-					<button
-						type="button"
-						disabled={isLoadingMore}
-						onclick={loadMore}
-						class="w-full cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] py-1.5 font-mono text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111] hover:bg-white disabled:opacity-50"
-					>
-						{isLoadingMore ? 'Memuat...' : `Muat Lebih Banyak (${periodTransactions.length} dari ${totalCount})`}
-					</button>
+				<div bind:this={sentinelEl} class="p-2.5 text-center font-mono text-[10px] text-[#787774]">
+					{isLoadingMore
+						? (i18nStore.locale === 'id' ? 'Memuat transaksi...' : 'Loading more...')
+						: ''}
 				</div>
 			{/if}
 		{/if}
 	</div>
 
 	<!-- Period Summary Card -->
-	<PeriodSummaryCard
-		summary={{
-			...periodSummary,
-			income: localCashflow.income,
-			expense: localCashflow.expense,
-			net: localCashflow.net
-		}}
-	/>
+	<PeriodSummaryCard summary={periodSummary} />
 </div>

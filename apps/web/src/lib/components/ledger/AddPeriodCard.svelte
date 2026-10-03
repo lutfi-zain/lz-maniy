@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
+	import { getPeriodDateBounds } from '$lib/utils/dates.js';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import CalendarPlus from 'phosphor-svelte/lib/CalendarPlus';
 	import X from 'phosphor-svelte/lib/X';
 
 	let isOpen = $state(false);
+	let mode = $state<'month' | 'custom'>('month');
+	let customStartDate = $state('');
+	let customEndDate = $state('');
+	let customError = $state<string | null>(null);
 
 	const monthNames = $derived.by(() => {
 		return Array.from({ length: 12 }, (_, i) => {
@@ -29,10 +34,13 @@
 			return;
 		}
 
-		// Find latest period
-		const sorted = [...existing].sort();
+		// Sort periods chronologically by their start date
+		const sorted = [...existing].sort((a, b) => {
+			return getPeriodDateBounds(a).startDate.localeCompare(getPeriodDateBounds(b).startDate);
+		});
 		const latest = sorted[sorted.length - 1];
-		const [latestYearStr, latestMonthStr] = latest.split('-');
+		const latestEnd = getPeriodDateBounds(latest).endDate;
+		const [latestYearStr, latestMonthStr] = latestEnd.split('-');
 		const latestYear = parseInt(latestYearStr, 10);
 		const latestMonth = parseInt(latestMonthStr, 10);
 
@@ -48,9 +56,33 @@
 	}
 
 	function handleAddCustom() {
-		const periodStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-		settingsStore.addPeriod(periodStr);
+		customError = null;
+		if (mode === 'month') {
+			const periodStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+			settingsStore.addPeriod(periodStr);
+			isOpen = false;
+			return;
+		}
+
+		if (!customStartDate || !customEndDate) {
+			customError =
+				i18nStore.locale === 'id'
+					? 'Silakan isi tanggal mulai dan akhir'
+					: 'Please enter start and end dates';
+			return;
+		}
+		if (customStartDate > customEndDate) {
+			customError =
+				i18nStore.locale === 'id'
+					? 'Tanggal mulai tidak boleh melebihi tanggal akhir'
+					: 'Start date cannot be after end date';
+			return;
+		}
+
+		settingsStore.addPeriod(`${customStartDate}_${customEndDate}`);
 		isOpen = false;
+		customStartDate = '';
+		customEndDate = '';
 	}
 </script>
 
@@ -96,7 +128,7 @@
 	{:else}
 		<!-- Custom Month/Year Selector Form -->
 		<div
-			class="w-full max-w-[260px] space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-left shadow-xs"
+			class="w-full max-w-[280px] space-y-3 rounded-lg border border-[#EAEAEA] bg-white p-4 text-left shadow-xs"
 		>
 			<div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
 				<span class="text-xs font-semibold text-[#111111]"
@@ -104,7 +136,10 @@
 				>
 				<button
 					type="button"
-					onclick={() => (isOpen = false)}
+					onclick={() => {
+						isOpen = false;
+						customError = null;
+					}}
 					class="cursor-pointer text-[#787774] hover:text-[#111111]"
 					aria-label="Tutup"
 				>
@@ -112,42 +147,105 @@
 				</button>
 			</div>
 
-			<div class="space-y-2 text-xs">
-				<div>
-					<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase"
-						>{i18nStore.locale === 'id' ? 'Tahun' : 'Year'}</label
-					>
-					<select
-						id="selectYear"
-						bind:value={selectedYear}
-						class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-					>
-						{#each [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1, now.getFullYear() + 2] as yr}
-							<option value={yr}>{yr}</option>
-						{/each}
-					</select>
-				</div>
-
-				<div>
-					<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase"
-						>{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}</label
-					>
-					<select
-						id="selectMonth"
-						bind:value={selectedMonth}
-						class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
-					>
-						{#each monthNames as name, idx}
-							<option value={idx + 1}>{name}</option>
-						{/each}
-					</select>
-				</div>
+			<!-- Mode tabs -->
+			<div class="flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 text-xs">
+				<button
+					type="button"
+					onclick={() => {
+						mode = 'month';
+						customError = null;
+					}}
+					class="flex-1 cursor-pointer rounded py-1 text-center font-medium transition-colors {mode ===
+					'month'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774] hover:text-[#111111]'}"
+				>
+					{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}
+				</button>
+				<button
+					type="button"
+					onclick={() => {
+						mode = 'custom';
+						customError = null;
+					}}
+					class="flex-1 cursor-pointer rounded py-1 text-center font-medium transition-colors {mode ===
+					'custom'
+						? 'bg-white text-[#111111] shadow-2xs'
+						: 'text-[#787774] hover:text-[#111111]'}"
+				>
+					{i18nStore.locale === 'id' ? 'Rentang Tanggal' : 'Date Range'}
+				</button>
 			</div>
+
+			{#if mode === 'month'}
+				<div class="space-y-2 text-xs">
+					<div>
+						<label for="selectYear" class="block text-[10px] font-medium text-[#787774] uppercase"
+							>{i18nStore.locale === 'id' ? 'Tahun' : 'Year'}</label
+						>
+						<select
+							id="selectYear"
+							bind:value={selectedYear}
+							class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
+						>
+							{#each [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1, now.getFullYear() + 2] as yr}
+								<option value={yr}>{yr}</option>
+							{/each}
+						</select>
+					</div>
+
+					<div>
+						<label for="selectMonth" class="block text-[10px] font-medium text-[#787774] uppercase"
+							>{i18nStore.locale === 'id' ? 'Bulan' : 'Month'}</label
+						>
+						<select
+							id="selectMonth"
+							bind:value={selectedMonth}
+							class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111]"
+						>
+							{#each monthNames as name, idx}
+								<option value={idx + 1}>{name}</option>
+							{/each}
+						</select>
+					</div>
+				</div>
+			{:else}
+				<div class="space-y-2 text-xs">
+					<div>
+						<label for="customStart" class="block text-[10px] font-medium text-[#787774] uppercase"
+							>{i18nStore.locale === 'id' ? 'Tanggal Mulai' : 'Start Date'}</label
+						>
+						<input
+							id="customStart"
+							type="date"
+							bind:value={customStartDate}
+							class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 font-mono text-xs text-[#111111]"
+						/>
+					</div>
+					<div>
+						<label for="customEnd" class="block text-[10px] font-medium text-[#787774] uppercase"
+							>{i18nStore.locale === 'id' ? 'Tanggal Akhir' : 'End Date'}</label
+						>
+						<input
+							id="customEnd"
+							type="date"
+							bind:value={customEndDate}
+							class="mt-1 w-full rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 font-mono text-xs text-[#111111]"
+						/>
+					</div>
+					{#if customError}
+						<p class="text-[10px] font-medium text-[#9F2F2D]">{customError}</p>
+					{/if}
+				</div>
+			{/if}
 
 			<div class="flex items-center justify-end gap-2 border-t border-[#EAEAEA] pt-2">
 				<button
 					type="button"
-					onclick={() => (isOpen = false)}
+					onclick={() => {
+						isOpen = false;
+						customError = null;
+					}}
 					class="cursor-pointer rounded px-2.5 py-1 text-xs text-[#787774] hover:text-[#111111]"
 				>
 					{t('common.cancel')}

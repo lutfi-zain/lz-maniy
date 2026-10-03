@@ -60,6 +60,41 @@ export function mLabel(monthKey: string | null | undefined, locale?: Locale): st
 }
 
 /**
+ * Calculates start and end dates (YYYY-MM-DD) for either a canonical month key ("YYYY-MM")
+ * or a custom date interval key ("YYYY-MM-DD_YYYY-MM-DD").
+ */
+export function getPeriodDateBounds(periodKey: string): { startDate: string; endDate: string } {
+	if (!periodKey) {
+		return { startDate: '', endDate: '' };
+	}
+	if (periodKey.includes('_')) {
+		const [startDate, endDate] = periodKey.split('_');
+		return { startDate, endDate };
+	}
+	const [yStr, mStr] = periodKey.split('-');
+	const y = parseInt(yStr, 10);
+	const m = parseInt(mStr, 10);
+	const startDate = `${periodKey}-01`;
+	const lastDay = new Date(y, m, 0).getDate();
+	const endDate = `${periodKey}-${String(lastDay).padStart(2, '0')}`;
+	return { startDate, endDate };
+}
+
+/**
+ * Formats a period key into localized title:
+ * - "2026-10" -> "Oktober 2026" / "October 2026"
+ * - "2026-09-25_2026-10-24" -> "25 Sep – 24 Okt 2026" / "Sep 25 – Oct 24, 2026"
+ */
+export function formatPeriodTitle(periodKey: string | null | undefined, locale?: Locale): string {
+	if (!periodKey) return '—';
+	if (periodKey.includes('_')) {
+		const [start, end] = periodKey.split('_');
+		return `${dFmt(start, locale)} – ${dFmt(end, locale)}`;
+	}
+	return mLabel(periodKey, locale);
+}
+
+/**
  * Builds a full local-offset ISO datetime from a calendar date and wall-clock time.
  * Example: ("2026-09-30", "14:30") -> "2026-09-30T14:30:00+07:00" (offset varies by browser zone).
  * Seconds are always `:00`. Pure string assembly except for the zone offset lookup.
