@@ -19,12 +19,15 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, ne
 		// Always use global fetch if REEDRICH service binding is not locally connected
 		let res: Response;
 		try {
-			res = await fetch(url, { headers });
+			if (c.env.REEDRICH) {
+				res = await c.env.REEDRICH.fetch(new Request(url, { headers }));
+			} else {
+				res = await fetch(url, { headers });
+			}
 		} catch (fetchErr: unknown) {
 			console.error('authMiddleware fetch error:', fetchErr);
 			return c.json({ error: 'unauthorized', message: 'Failed to connect to authentication provider' }, 401);
 		}
-
 		if (!res.ok) {
 			return c.json(
 				{ error: 'unauthorized', message: 'Invalid or expired Reedrich session' },
@@ -36,7 +39,6 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, ne
 		console.error('authMiddleware generic error:', err);
 		return c.json({ error: 'unauthorized', message: 'Auth validation failed' }, 401);
 	}
-
 	c.set('user', {
 		userId: profile.userId,
 		email: profile.email,
