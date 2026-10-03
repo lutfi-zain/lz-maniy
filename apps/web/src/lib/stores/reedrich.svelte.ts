@@ -76,9 +76,6 @@ export class ReedrichStore {
 	// Recurring templates dataset
 	recurringTemplates = $state<RecurringTemplate[]>([]);
 	isRecurringLoading = $state<boolean>(false);
-	// Ledger full dataset
-	allTransactions = $state<TransactionRecord[]>([]);
-	isLedgerLoading = $state<boolean>(false);
 	// Cache to avoid refetching identical entity queries
 	private transactionCache = new SvelteMap<string, TransactionRecord[]>();
 
@@ -837,7 +834,6 @@ export class ReedrichStore {
 
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
-		this.allTransactions = [];
 		await Promise.all([this.fetchSnapshot(), this.fetchWallets(), this.fetchRecurringTemplates()]);
 	}
 
@@ -1278,7 +1274,6 @@ export class ReedrichStore {
 	reset() {
 		this.snapshot = null;
 		this.categories = [];
-		this.allTransactions = [];
 		this.allBudgets = [];
 		this.activeWallets = [];
 		this.recurringTemplates = [];

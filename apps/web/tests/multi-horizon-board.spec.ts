@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_TOKEN = process.env.REEDRICH_TEST_API_TOKEN || process.env.TEST_TOKEN || '';
+const TEST_TOKEN =
+	process.env.REEDRICH_TEST_API_TOKEN ||
+	process.env.TEST_TOKEN ||
+	'';
 const TEST_USER = JSON.stringify({
 	userId: process.env.REEDRICH_TEST_USER_ID || 'usr_muhwbsfe_722e117da986448e',
 	email: process.env.REEDRICH_TEST_USER_EMAIL || 'testbot@maniyy.dev',
@@ -15,9 +18,11 @@ test.describe('Multi-Horizon Board & In-Memory Filter Persistence', () => {
 				localStorage.setItem('reedrich_access_token', token);
 				localStorage.setItem('reedrich_user', user);
 				localStorage.setItem('reedrich_locale', 'id');
+				localStorage.setItem('maniyy_locale', 'id');
 			},
 			{ token: TEST_TOKEN, user: TEST_USER }
 		);
+		await page.route('**/api/settings', (route) => route.fulfill({ status: 200, json: {} }));
 	});
 
 	test('Ledger has List label, clean Horizon Board without goal pacing, and functional Maximize button', async ({
@@ -36,8 +41,8 @@ test.describe('Multi-Horizon Board & In-Memory Filter Persistence', () => {
 		await expect(horizonBtn).toHaveAttribute('aria-pressed', 'true');
 
 		// 3. Verify clean summary card without goal pacing
-		const netCashflow = page.locator('text=NET CASHFLOW').first();
-		await expect(netCashflow).toBeVisible();
+		const netCashflow = page.getByText(/Net Arus Kas|NET CASHFLOW/i).first();
+		await expect(netCashflow).toBeVisible({ timeout: 15000 });
 		const goalsPacing = page.locator('text=Goals Pacing');
 		await expect(goalsPacing).toHaveCount(0);
 		const targetProgress = page.locator('text=Progres Tabungan');
@@ -50,6 +55,35 @@ test.describe('Multi-Horizon Board & In-Memory Filter Persistence', () => {
 
 		// Should now be back in List view
 		await expect(listBtn).toHaveAttribute('aria-pressed', 'true');
+	});
+
+	test('Ledger Horizon Board displays server-projected Net Worth values with distinct period columns', async ({
+		page
+	}) => {
+		await page.goto('/ledger');
+
+		// Switch to Horizon Board
+		const horizonBtn = page.locator('button:has-text("Horizon Board")').first();
+		await horizonBtn.click();
+		await expect(horizonBtn).toHaveAttribute('aria-pressed', 'true');
+
+		// Wait for horizon columns to render
+		const netCashflow = page.getByText(/Net Arus Kas|NET CASHFLOW/i).first();
+		await expect(netCashflow).toBeVisible({ timeout: 15000 });
+
+		// Summary cards in each column must render valid currency amounts for Net Worth
+		const nwCards = page.locator('.rounded-b-lg');
+		await expect(nwCards.first()).toBeVisible();
+		const count = await nwCards.count();
+		expect(count).toBeGreaterThanOrEqual(2);
+
+		// Collect all displayed Net Worth values across columns
+		const nwValues: string[] = [];
+		for (let i = 0; i < count; i++) {
+			const val = await nwCards.nth(i).locator('.font-mono.text-xs.font-bold').last().innerText();
+			nwValues.push(val);
+			expect(val).toMatch(/^Rp\s+[\d.,]+/);
+		}
 	});
 
 	test('Accounts supports Horizon Board view toggle and renders period columns', async ({

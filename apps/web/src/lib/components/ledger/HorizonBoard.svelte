@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
-	import {
-		calculatePointInTimeNetWorth,
-		calculatePointInTimeWalletBalances
-	} from '$lib/utils/networth-timeline.js';
+	import type { HorizonBoardDTO } from '$lib/types/account-detail';
 	import { getConvertedBalanceInIDR } from '$lib/utils/currency.js';
 	import HorizonPeriodColumn, { type GlobalFilters } from './HorizonPeriodColumn.svelte';
 	import AddPeriodCard from './AddPeriodCard.svelte';
@@ -34,7 +31,34 @@
 		return { startDate, endDate };
 	}
 
-	const allTxs = $derived(reedrichStore.allTransactions);
+	let isHorizonLoading = $state<boolean>(true);
+	let horizonData = $state<HorizonBoardDTO | null>(null);
+
+	$effect(() => {
+		const periods = orderedPeriods;
+		const controller = new AbortController();
+		isHorizonLoading = true;
+
+		reedrichStore
+			.fetchHorizonProjections(periods, undefined, controller.signal)
+			.then((data) => {
+				if (controller.signal.aborted) return;
+				horizonData = data;
+			})
+			.catch((err) => {
+				if (controller.signal.aborted) return;
+				console.warn('Horizon projections API error on ledger board:', err);
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					isHorizonLoading = false;
+				}
+			});
+
+		return () => {
+			controller.abort();
+		};
+	});
 	const allWallets = $derived(reedrichStore.allWallets);
 	const activeGoals = $derived(reedrichStore.activeGoals);
 	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
@@ -57,43 +81,37 @@
 		for (let i = 0; i < orderedPeriods.length; i++) {
 			const periodKey = orderedPeriods[i];
 			const { startDate, endDate } = getMonthDateBounds(periodKey);
+			const srvPeriod = horizonData?.periods.find((p) => p.periodKey === periodKey);
 
-			// Filter transactions for this period to compute cashflow
-			let inSum = 0;
-			let outSum = 0;
+			// Cashflow from server horizon projections
+			const inSum = srvPeriod?.cashflow.income ?? 0;
+			const outSum = srvPeriod?.cashflow.expense ?? 0;
+			const net = srvPeriod?.cashflow.net ?? 0;
 
-			for (const t of allTxs) {
-				const txDate = t.transactionDate.slice(0, 10);
-				if (txDate >= startDate && txDate <= endDate) {
-					const curr = getWalletCurrency(t.transactionWalletId);
-					const amtIDR = getConvertedBalanceInIDR(t.transactionAmount, curr);
-
-					if (t.transactionType === 'income') {
-						inSum += amtIDR;
-					} else if (t.transactionType === 'expense') {
-						outSum += amtIDR;
-					}
-				}
+			// Point-in-time Net Worth breakdown from server projections
+			const currYearMonth = new Date().toISOString().slice(0, 7);
+			let label: 'PROYEKSI NET WORTH' | 'NET WORTH SAAT INI' | 'NET WORTH PENUTUPAN' = 'NET WORTH SAAT INI';
+			if (periodKey > currYearMonth) {
+				label = 'PROYEKSI NET WORTH';
+			} else if (periodKey < currYearMonth) {
+				label = 'NET WORTH PENUTUPAN';
 			}
 
-			const net = inSum - outSum;
-
-			// Deterministic portfolio Net Worth and Spendable/Locked breakdown at this period's horizon
-			const nwResult = calculatePointInTimeNetWorth({
-				currentNetWorth,
-				allTransactions: allTxs,
-				endDate,
-				wallets: allWallets,
-				currentSpendable,
-				currentLocked
-			});
+			const closingNetWorth = srvPeriod?.netWorth.total ?? currentNetWorth;
+			const spendable = srvPeriod?.netWorth.spendable ?? currentSpendable;
+			const locked = srvPeriod?.netWorth.locked ?? currentLocked;
 
 			// Deterministic point-in-time balances for every individual wallet at this period's horizon
-			const walletBalancesAtHorizon = calculatePointInTimeWalletBalances({
-				wallets: allWallets,
-				allTransactions: allTxs,
-				endDate
-			});
+			const walletBalancesAtHorizon = new Map<string, number>();
+			if (srvPeriod) {
+				for (const wb of srvPeriod.walletBalances) {
+					walletBalancesAtHorizon.set(wb.walletId, wb.balance);
+				}
+			} else {
+				for (const w of allWallets) {
+					walletBalancesAtHorizon.set(w.walletId, w.balance);
+				}
+			}
 
 			// Compute Goal Snapshots derived from linked wallet balances at this horizon
 			const goalSnapshots: GoalProjection[] = activeGoals.map((g) => {
@@ -132,11 +150,11 @@
 				income: inSum,
 				expense: outSum,
 				net,
-				closingNetWorth: nwResult.amount,
-				spendable: nwResult.spendableAmount,
-				locked: nwResult.lockedAmount,
+				closingNetWorth,
+				spendable,
+				locked,
 				goalSnapshots,
-				label: nwResult.label
+				label
 			});
 		}
 
@@ -144,7 +162,7 @@
 	});
 </script>
 
-{#if reedrichStore.isLedgerLoading && reedrichStore.allTransactions.length === 0}
+{#if isHorizonLoading && !horizonData}
 	<!-- Skeleton Loading Board -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
 		{#each [0, 1, 2] as i (i)}

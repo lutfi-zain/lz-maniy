@@ -97,7 +97,6 @@
 	const nw = $derived(reedrichStore.snapshot?.netWorth);
 	const wl = $derived(reedrichStore.snapshot?.wallets);
 	const allWallets = $derived(reedrichStore.allWallets);
-	const allTxs = $derived(reedrichStore.allTransactions);
 
 	// Wallet currency lookup map for fast O(1) resolution
 	const walletCurrencyMap = $derived.by(() => {

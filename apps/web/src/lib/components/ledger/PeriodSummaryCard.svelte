@@ -2,7 +2,6 @@
 	import { fmtIDR } from '$lib/utils/currency';
 	import { t } from '$lib/i18n/index.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
-	import { reedrichStore } from '$lib/stores/reedrich.svelte.js';
 
 	export interface GoalProjection {
 		goalId: string;
@@ -31,7 +30,7 @@
 </script>
 
 <div class="space-y-3 rounded-b-lg border-t border-[#EAEAEA] bg-[#FDFCFB] p-3 text-xs">
-	{#if reedrichStore.isLedgerLoading && (!summary || !summary.closingNetWorth)}
+	{#if !summary || summary.closingNetWorth === undefined}
 		<!-- Skeleton state for summary card -->
 		<div class="space-y-1 border-b border-[#EAEAEA] pb-2">
 			<div class="flex justify-between">

@@ -4,7 +4,6 @@
 	import { accountsFilterStore } from '$lib/stores/accounts-filter.svelte';
 	import { settingsStore, getDefaultActivePeriods } from '$lib/stores/settings.svelte.js';
 	import { dateFilterStore } from '$lib/stores/date-filter.svelte';
-	import { calculatePointInTimeWalletBalances } from '$lib/utils/networth-timeline';
 	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { mLabel } from '$lib/utils/dates';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
@@ -64,7 +63,6 @@
 		};
 	});
 
-	const allTxs = $derived(reedrichStore.allTransactions);
 	const allWallets = $derived(reedrichStore.allWallets);
 	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
 	const currentSpendable = $derived(reedrichStore.snapshot?.wallets.spendable.total ?? 0);
@@ -84,14 +82,11 @@
 					balances.set(wb.walletId, wb.balance);
 				}
 			} else {
-				// Fallback to local computation
-				const localBals = calculatePointInTimeWalletBalances({
-					wallets: allWallets,
-					allTransactions: allTxs,
-					endDate
-				});
-				for (const [k, v] of localBals.entries()) {
-					balances.set(k, v);
+				console.warn(
+					`[AccountsHorizonBoard] No server horizon data for period ${periodKey}, falling back to current wallet balances`
+				);
+				for (const w of allWallets) {
+					balances.set(w.walletId, w.balance);
 				}
 			}
 

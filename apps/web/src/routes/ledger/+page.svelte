@@ -16,7 +16,7 @@
 	import ComboboxMultiSelect, {
 		type ComboboxOption
 	} from '$lib/components/ui/ComboboxMultiSelect.svelte';
-	import { calculatePointInTimeNetWorth } from '$lib/utils/networth-timeline';
+	import type { HorizonBoardDTO } from '$lib/types/account-detail';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte.js';
@@ -138,7 +138,6 @@
 		}
 	}
 
-	const allTxs = $derived(reedrichStore.allTransactions);
 	const allWallets = $derived(reedrichStore.allWallets);
 	const categories = $derived(reedrichStore.categories);
 
@@ -284,21 +283,94 @@
 		};
 	});
 
+	// Server-driven anchor for List View right zone
+	let horizonAnchorData = $state<HorizonBoardDTO | null>(null);
+
+	$effect(() => {
+		const endDate = dateFilterStore.endDate;
+		if (!endDate) {
+			horizonAnchorData = null;
+			return;
+		}
+
+		const endClean = endDate.slice(0, 10);
+		const endYearMonth = endClean.slice(0, 7);
+		const currYearMonth = new Date().toISOString().slice(0, 7);
+
+		// Present month uses live snapshot directly
+		if (endYearMonth === currYearMonth) {
+			horizonAnchorData = null;
+			return;
+		}
+
+		const controller = new AbortController();
+		reedrichStore
+			.fetchHorizonProjections([endYearMonth], undefined, controller.signal)
+			.then((data) => {
+				if (controller.signal.aborted) return;
+				horizonAnchorData = data;
+			})
+			.catch((err) => {
+				if (controller.signal.aborted) return;
+				console.warn('Failed to fetch horizon projection for anchor:', err);
+			});
+
+		return () => {
+			controller.abort();
+		};
+	});
+
 	// Point-in-time portfolio Net Worth anchor based on T_akhir (converted to IDR)
 	const currentNetWorth = $derived(reedrichStore.snapshot?.netWorth?.consolidated?.total ?? 0);
-	const currentSpendable = $derived(reedrichStore.snapshot?.wallets.spendable.total);
-	const currentLocked = $derived(reedrichStore.snapshot?.wallets.locked.total);
-	const pointInTimeNetWorth = $derived(
-		calculatePointInTimeNetWorth({
-			currentNetWorth,
-			allTransactions: allTxs,
-			endDate: dateFilterStore.endDate,
-			wallets: allWallets,
-			walletCurrencyMap,
-			currentSpendable,
-			currentLocked
-		})
-	);
+	const currentSpendable = $derived(reedrichStore.snapshot?.wallets.spendable.total ?? 0);
+	const currentLocked = $derived(reedrichStore.snapshot?.wallets.locked.total ?? 0);
+
+	const pointInTimeNetWorth = $derived.by(() => {
+		const endDate = dateFilterStore.endDate;
+		if (!endDate) {
+			return {
+				label: 'NET WORTH SAAT INI',
+				amount: currentNetWorth,
+				spendableAmount: currentSpendable,
+				lockedAmount: currentLocked,
+				subtext: 'posisi likuiditas terkonsolidasi'
+			};
+		}
+
+		const endClean = endDate.slice(0, 10);
+		const endYearMonth = endClean.slice(0, 7);
+		const currYearMonth = new Date().toISOString().slice(0, 7);
+
+		if (endYearMonth > currYearMonth) {
+			const srvPeriod = horizonAnchorData?.periods.find((p) => p.periodKey === endYearMonth);
+			return {
+				label: 'PROYEKSI NET WORTH',
+				amount: srvPeriod?.netWorth.total ?? currentNetWorth,
+				spendableAmount: srvPeriod?.netWorth.spendable ?? currentSpendable,
+				lockedAmount: srvPeriod?.netWorth.locked ?? currentLocked,
+				subtext: `proyeksi per ${dFmt(endClean)} (pasca seluruh rencana)`
+			};
+		}
+
+		if (endYearMonth < currYearMonth) {
+			const srvPeriod = horizonAnchorData?.periods.find((p) => p.periodKey === endYearMonth);
+			return {
+				label: 'NET WORTH PENUTUPAN',
+				amount: srvPeriod?.netWorth.total ?? currentNetWorth,
+				spendableAmount: srvPeriod?.netWorth.spendable ?? currentSpendable,
+				lockedAmount: srvPeriod?.netWorth.locked ?? currentLocked,
+				subtext: `posisi saldo per ${dFmt(endClean)} (penutupan historis)`
+			};
+		}
+
+		return {
+			label: 'NET WORTH SAAT INI',
+			amount: currentNetWorth,
+			spendableAmount: currentSpendable,
+			lockedAmount: currentLocked,
+			subtext: 'posisi likuiditas terkonsolidasi'
+		};
+	});
 
 	// Pagination slice
 	const totalPages = $derived(serverTotalPages);
