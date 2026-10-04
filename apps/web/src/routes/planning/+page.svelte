@@ -414,7 +414,7 @@
 				{/if}
 
 				<div
-					class="hidden items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 lg:inline-flex"
+					class="inline-flex items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5"
 				>
 					<button
 						type="button"
@@ -450,7 +450,7 @@
 			</div>
 		</div>
 
-		{#if !isMobile && goalsViewMode === 'horizon'}
+		{#if goalsViewMode === 'horizon'}
 			<GoalsHorizonBoard />
 		{:else}
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
