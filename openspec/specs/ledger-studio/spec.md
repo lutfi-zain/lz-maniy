@@ -283,3 +283,19 @@ The Ledger Horizon Board SHALL support adding, displaying, and navigating arbitr
 - **WHEN** user clicks the Maximize button on a custom date interval column
 - **THEN** the global date filter is updated to `preset: 'custom'` with the column's exact `startDate` and `endDate`
 - **AND** the ledger transitions to List view showing that custom interval.
+
+### Requirement: View Mode Switcher
+The Ledger Studio header SHALL provide a toggle to switch between single-period list view and multi-period horizon board view.
+
+#### Scenario: Toggle to Horizon Board
+- **WHEN** user clicks the "Horizon Board" option in the view mode switcher on a desktop viewport (>= 1024px)
+- **THEN** the ledger transitions from the single-period tabular view to the multi-period grid board
+- **THEN** the selected view mode persists via `UserSettings` so it survives page refresh and device changes
+
+#### Scenario: Toggle Back to List View
+- **WHEN** user clicks the "List View" option in the view mode switcher while viewing the horizon board
+- **THEN** the ledger returns to the existing single-period tabular view with all filters preserved
+
+#### Scenario: View Switcher Hidden on Mobile
+- **WHEN** viewport width is below 1024px
+- **THEN** the view mode switcher is not rendered and the ledger always displays the single-period list view

@@ -1,9 +1,5 @@
 # Spec Delta
 
-## MODIFIED Requirements
-
-### Requirement: Full-Width Tabular Transaction Ledger
-_No changes to existing scenarios._
 
 ## ADDED Requirements
 

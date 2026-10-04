@@ -77,6 +77,7 @@ The Gemini native runner SHALL use actual token counts from the Gemini API `usag
 #### Scenario: Token Counts Accumulate Across Tool Loops
 - **WHEN** the Gemini runner executes multiple tool-call loops before producing a final text response
 - **THEN** the reported token counts reflect the cumulative usage across all loops, not just the final response
+
 ### Requirement: Multi-Step Tool Calling Agent Loop
 The agent service SHALL execute an agent loop with `maxSteps` (up to 10 steps) allowing the model to invoke multiple tools sequentially without premature termination when intermediate text or reasoning is emitted.
 
@@ -366,7 +367,6 @@ The agent service SHALL map client-requested `thinkingLevel` (`off`, `minimal`, 
 - **WHEN** client submits a request with `thinkingLevel: 'high'` for `google-antigravity/gemini-3.7-flash`
 - **THEN** the request to OMP gateway includes `reasoning_effort: 'high'`, prompting the upstream model to emit reasoning tokens before synthesis
 
-
 ### Requirement: Multimodal Image Injection
 The agent service SHALL inject client-provided image data into the model call as a content part, enabling vision-capable models to analyze attached images.
 
@@ -458,7 +458,6 @@ The agent service SHALL enforce credit balance checks and record deductions as p
 - **THEN** the service calculates actual credit cost from reported token usage, deducts from balance, and records the transaction
 - **THEN** the credit info is included in the stream finish metadata sent to the client
 
-
 ### Requirement: Full Precision Timestamp and Mutation Parameter Alignment
 The agent service SHALL support ISO-8601 date-time timestamps (with hours, minutes, seconds, and timezone) and complete mutation payloads across all transaction and transfer tools matching the Reedrich REST API.
 
@@ -508,3 +507,18 @@ The agent service SHALL expose dedicated tools for inspecting single financial e
 - **WHEN** the agent needs details for a single wallet, budget, goal, or recurring template by its identifier
 - **THEN** the agent can invoke `get_wallet`, `get_budget`, `get_goal`, or `get_recurring`
 - **THEN** the service fetches the entity via the respective `GET /api/v1/{resource}/{id}` endpoint
+
+### Requirement: User Settings REST Endpoints
+The agent backend SHALL expose authenticated endpoints for reading and writing user-level settings to D1.
+
+#### Scenario: Settings Route Registration
+- **WHEN** the Hono app initializes
+- **THEN** `GET /api/settings` and `PUT /api/settings` are registered under the settings router with `authMiddleware` applied
+
+#### Scenario: GET Returns Stored or Default Settings
+- **WHEN** authenticated client sends `GET /api/settings`
+- **THEN** the backend queries `user_settings` by `userId` and returns the stored JSON, or `{ ledgerViewMode: "single", activePeriods: [] }` if no record exists
+
+#### Scenario: PUT Upserts Settings
+- **WHEN** authenticated client sends `PUT /api/settings` with a JSON body
+- **THEN** the backend validates the payload, merges with existing settings (if any), and executes `INSERT ... ON CONFLICT(user_id) DO UPDATE` against `user_settings`

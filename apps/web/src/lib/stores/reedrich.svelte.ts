@@ -690,6 +690,16 @@ export class ReedrichStore {
 				});
 				const json: unknown = await res.json();
 				const itemsRaw = Array.isArray(json) ? json : [];
+				interface RawWalletSnapshot {
+					startDate?: string;
+					endDate?: string;
+					filter?: string;
+					initialBalance?: number;
+					totalIn?: number;
+					totalOut?: number;
+					periodDelta?: number;
+					totalBalance?: number;
+				}
 				interface RawWalletEntry {
 					walletId: string;
 					walletName: string;
@@ -704,13 +714,14 @@ export class ReedrichStore {
 					walletIsLocked?: 0 | 1;
 					isLocked?: 0 | 1;
 					lastTransaction?: WalletItem['lastTransaction'];
+					snapshot?: RawWalletSnapshot;
 				}
 				const items: WalletItem[] = (itemsRaw as RawWalletEntry[]).map((w) => ({
 					walletId: w.walletId,
 					walletName: w.walletName,
 					institution: w.walletInstitution ?? w.institution ?? 'General',
 					type: w.walletType ?? w.type ?? 'bank',
-					balance: w.walletBalance ?? w.balance ?? 0,
+					balance: w.snapshot?.totalBalance ?? w.walletBalance ?? w.balance ?? 0,
 					currency: w.walletCurrency ?? w.currency ?? 'IDR',
 					isLocked: (w.walletIsLocked ?? w.isLocked ?? 0) as 0 | 1,
 					lastTransaction: w.lastTransaction ?? null

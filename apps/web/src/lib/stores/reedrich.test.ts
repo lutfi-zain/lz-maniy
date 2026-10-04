@@ -469,6 +469,113 @@ describe('ReedrichStore', () => {
 			expect(wallets[0].walletName).toBe('BCA August');
 		});
 
+		it('fetchWallets prioritizes snapshot.totalBalance over walletBalance when snapshot is present', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('/api/v1/wallets?');
+				expect(url).toContain('startDate=2026-09-01');
+				expect(url).toContain('endDate=2026-09-30');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							walletId: 'w-pit-1',
+							walletName: 'BCA Utama',
+							walletInstitution: 'BCA',
+							walletType: 'bank',
+							walletBalance: 19300000,
+							walletCurrency: 'IDR',
+							walletIsLocked: 0,
+							snapshot: {
+								startDate: '2026-09-01T00:00:00.000Z',
+								endDate: '2026-09-30T23:59:59.999Z',
+								filter: 'all',
+								initialBalance: 0,
+								totalIn: 8000000,
+								totalOut: 1500000,
+								periodDelta: 6500000,
+								totalBalance: 6500000
+							}
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const wallets = await store.fetchWallets({
+				startDate: '2026-09-01',
+				endDate: '2026-09-30'
+			});
+			expect(wallets.length).toBe(1);
+			// Must be point-in-time totalBalance (6,500,000), NOT live walletBalance (19,300,000)
+			expect(wallets[0].balance).toBe(6500000);
+			expect(store.activeWallets[0].balance).toBe(6500000);
+			expect(store.allWallets[0].balance).toBe(6500000);
+		});
+
+		it('fetchWallets with future planned dates extracts projected snapshot.totalBalance', async () => {
+			const fetchMock = vi.fn().mockImplementation((url: string) => {
+				expect(url).toContain('startDate=2026-11-01');
+				expect(url).toContain('endDate=2026-11-30');
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							walletId: 'w-pit-future',
+							walletName: 'BCA Utama',
+							walletInstitution: 'BCA',
+							walletType: 'bank',
+							walletBalance: 19300000,
+							walletCurrency: 'IDR',
+							walletIsLocked: 0,
+							snapshot: {
+								startDate: '2026-11-01T00:00:00.000Z',
+								endDate: '2026-11-30T23:59:59.999Z',
+								filter: 'all',
+								initialBalance: 19300000,
+								totalIn: 8000000,
+								totalOut: 2000000,
+								periodDelta: 6000000,
+								totalBalance: 25300000
+							}
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const wallets = await store.fetchWallets({
+				startDate: '2026-11-01',
+				endDate: '2026-11-30'
+			});
+			expect(wallets.length).toBe(1);
+			// Must be projected totalBalance (25,300,000)
+			expect(wallets[0].balance).toBe(25300000);
+		});
+
+		it('fetchWallets falls back to walletBalance when snapshot is undefined', async () => {
+			const fetchMock = vi.fn().mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => [
+						{
+							walletId: 'w-fallback',
+							walletName: 'Cash Wallet',
+							walletInstitution: 'General',
+							walletType: 'cash',
+							walletBalance: 750000,
+							walletCurrency: 'IDR',
+							walletIsLocked: 0
+						}
+					]
+				});
+			});
+			vi.stubGlobal('fetch', fetchMock);
+
+			const wallets = await store.fetchWallets();
+			expect(wallets.length).toBe(1);
+			expect(wallets[0].balance).toBe(750000);
+		});
+
 		it('fetchDebtsLoans queries /api/v1/debts-loans and categorizes debts and loans', async () => {
 			const fetchMock = vi.fn().mockImplementation((url: string) => {
 				expect(url).toContain('/api/v1/debts-loans');
