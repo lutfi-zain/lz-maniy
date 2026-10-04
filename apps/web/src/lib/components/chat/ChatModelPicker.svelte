@@ -2,8 +2,7 @@
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import { onMount } from 'svelte';
 	import { CaretDown, Check, Sparkle, Brain } from 'phosphor-svelte';
-	import type { ThinkingLevel } from '@maniyy/shared';
-
+	import type { ThinkingLevel, ModelConfig } from '@maniyy/shared';
 	let open = $state(false);
 	let thinkingOpen = $state(false);
 
@@ -20,8 +19,20 @@
 
 	const googleModels = $derived(
 		chatStore.availableModels.filter(
-			(m) => m.model.startsWith('google-antigravity/') || m.provider === 'gemini'
+			(m: ModelConfig) => m.model.startsWith('google-antigravity/') || m.provider === 'gemini'
 		)
+	);
+
+	const liteModels = $derived(
+		googleModels.filter((m: ModelConfig) => m.model.endsWith('-lite'))
+	);
+
+	const proModels = $derived(
+		googleModels.filter((m: ModelConfig) => m.model.endsWith('-pro'))
+	);
+
+	const flashModels = $derived(
+		googleModels.filter((m: ModelConfig) => !m.model.endsWith('-lite') && !m.model.endsWith('-pro'))
 	);
 
 	const availableThinkingLevels = $derived<ThinkingLevel[]>(
@@ -50,11 +61,66 @@
 				role="menu"
 			>
 				<!-- Google Antigravity Section -->
-				{#if googleModels.length > 0}
-					<div class="px-2 py-1 text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase">
-						Google Antigravity (Gemini)
+				<!-- Lite Models -->
+				{#if liteModels.length > 0}
+					<div class="px-2 pt-1 pb-0.5 text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase">
+						Lite
 					</div>
-					{#each googleModels as model (model.model)}
+					{#each liteModels as model (model.model)}
+						<button
+							type="button"
+							onclick={() => selectModel(model)}
+							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
+								.selectedModel.model === model.model
+								? 'bg-[#EDF3EC] font-medium text-[#111111]'
+								: 'text-[#111111]'}"
+						>
+							<div class="flex flex-col">
+								<span>{model.displayName}</span>
+								{#if model.capabilities.thinking}
+									<span class="text-[10px] text-[#787774]">Reasoning supported</span>
+								{/if}
+							</div>
+							{#if chatStore.selectedModel.model === model.model}
+								<Check size={12} weight="bold" class="text-[#1F6C9F]" />
+							{/if}
+						</button>
+					{/each}
+				{/if}
+
+				<!-- Flash Models -->
+				{#if flashModels.length > 0}
+					<div class="mt-1.5 border-t border-[#EAEAEA] px-2 pt-1 pb-0.5 text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase">
+						Flash
+					</div>
+					{#each flashModels as model (model.model)}
+						<button
+							type="button"
+							onclick={() => selectModel(model)}
+							class="flex items-center justify-between rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-[#F7F6F3] {chatStore
+								.selectedModel.model === model.model
+								? 'bg-[#EDF3EC] font-medium text-[#111111]'
+								: 'text-[#111111]'}"
+						>
+							<div class="flex flex-col">
+								<span>{model.displayName}</span>
+								{#if model.capabilities.thinking}
+									<span class="text-[10px] text-[#787774]">Reasoning supported</span>
+								{/if}
+							</div>
+							{#if chatStore.selectedModel.model === model.model}
+								<Check size={12} weight="bold" class="text-[#1F6C9F]" />
+							{/if}
+						</button>
+					{/each}
+				{/if}
+
+				<!-- Pro Models -->
+				{#if proModels.length > 0}
+					<div class="mt-1.5 border-t border-[#EAEAEA] px-2 pt-1 pb-0.5 text-[10px] font-semibold tracking-wider text-[#1F6C9F] uppercase">
+						Pro
+					</div>
+					{#each proModels as model (model.model)}
 						<button
 							type="button"
 							onclick={() => selectModel(model)}

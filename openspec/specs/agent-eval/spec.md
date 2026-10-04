@@ -1,0 +1,63 @@
+# agent-eval Specification
+
+## Purpose
+
+Promptfoo-based evaluation framework that benchmarks agent system prompt quality and model reasoning across real-user financial conversation patterns, using deterministic checks and LLM-as-judge grading.
+
+## Requirements
+
+### Requirement: Promptfoo Configuration
+The evaluation framework SHALL provide a Promptfoo configuration file that enables multi-model comparison of agent behavior across a curated test dataset.
+
+#### Scenario: Promptfoo Config Structure
+- **WHEN** a developer runs `bunx promptfoo eval` from `apps/agent/eval/`
+- **THEN** the evaluation loads `promptfooconfig.yaml`, connects to the configured OMP gateway provider, and executes all test cases against each listed model
+
+#### Scenario: Multi-Model Comparison
+- **WHEN** the Promptfoo config specifies multiple Gemini models (e.g. `gemini-3.7-flash`, `gemini-3.8-flash`, `gemini-2.5-pro`)
+- **THEN** each test case runs against every model and results are displayed in a comparison matrix via `bunx promptfoo view`
+
+### Requirement: Real-User Eval Dataset
+The evaluation framework SHALL include a curated dataset of 23+ test cases extracted from actual user Telegram conversations, categorized by financial reasoning pattern.
+
+#### Scenario: Category Coverage
+- **WHEN** the eval dataset is loaded
+- **THEN** it contains test cases across at least 8 categories: `balance_query`, `transaction_record`, `planning_projection`, `budget_tracking`, `debt_management`, `complex_reasoning`, `wallet_management`, and `tone_format`
+
+#### Scenario: Balance Query Test Case
+- **WHEN** a test case with category `balance_query` runs (e.g. "Saldo bca saya berapa?")
+- **THEN** assertions verify the agent calls `get_snapshot` or `list_wallets` and the response contains a numeric balance value
+
+#### Scenario: Transaction Record Test Case
+- **WHEN** a test case with category `transaction_record` runs (e.g. "Makan waroeng steak take away 85k dari huz")
+- **THEN** assertions verify the agent calls a mutation tool (`create_transaction`) with correct amount and category inference
+
+#### Scenario: Complex Reasoning Test Case
+- **WHEN** a test case with category `complex_reasoning` runs (e.g. "kok bisa income 23jt? darimana?")
+- **THEN** assertions verify the agent calls data-retrieval tools, cross-references multiple sources, and provides a grounded explanation without hallucinating income sources
+
+### Requirement: Multi-Tier Assertion Strategy
+The evaluation framework SHALL apply both deterministic and LLM-as-judge assertions to each test case.
+
+#### Scenario: Deterministic Assertions
+- **WHEN** a test case defines `requiredTools` or `mustContain` expectations
+- **THEN** the framework checks tool-call presence and keyword occurrence as pass/fail criteria
+
+#### Scenario: LLM-as-Judge Rubric Assertions
+- **WHEN** a test case defines an `llm-rubric` assertion
+- **THEN** the framework invokes a judge model to score the response on a rubric (e.g. "Does the agent use Indonesian Rupiah formatting and avoid hallucinating data not retrieved from tools?")
+
+#### Scenario: Negative Content Assertions
+- **WHEN** a test case defines `mustNotContain` values (e.g. `['$', 'USD']` for domestic queries)
+- **THEN** the framework fails the test case if any forbidden string appears in the agent response
+
+### Requirement: Promptfoo Custom Provider
+The evaluation framework SHALL include a custom Promptfoo provider script that invokes the agent with full tool-calling capabilities, matching production behavior.
+
+#### Scenario: Provider Script Execution
+- **WHEN** Promptfoo invokes the custom provider with a test prompt
+- **THEN** the provider constructs the system prompt using `buildSystemPrompt`, instantiates the model via the OMP gateway, executes `streamText` with all financial tools enabled, collects tool calls and final text, and returns the combined output to Promptfoo
+
+#### Scenario: Tool Call Tracing in Provider Output
+- **WHEN** the agent makes tool calls during a test case
+- **THEN** the provider output includes a structured `toolCalls` array with `toolName` and `args` for each invocation, enabling tool-level assertions

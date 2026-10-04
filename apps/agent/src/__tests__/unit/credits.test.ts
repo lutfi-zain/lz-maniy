@@ -51,6 +51,19 @@ describe('Credit calculation logic', () => {
 		const credits = calculateCreditsUsed(0, 0, FALLBACK_PRICING);
 		expect(credits).toBe(0);
 	});
+	it('calculates credits accurately for Gemini 2.5 Pro tier', () => {
+		const pricing = {
+			model: 'google-antigravity/gemini-2.5-pro',
+			inputPerMillion: 1.25,
+			outputPerMillion: 5.0
+		};
+		// 1000 input, 500 output
+		// input: 1000 * 1.25 / 1M = 0.00125
+		// output: 500 * 5.00 / 1M = 0.00250
+		// total: 0.00375 / 0.0005 = 7.50 credits
+		const credits = calculateCreditsUsed(1000, 500, pricing);
+		expect(credits).toBe(7.5);
+	});
 });
 
 describe('D1 Database credit operations (mocked)', () => {
@@ -98,5 +111,20 @@ describe('D1 Database credit operations (mocked)', () => {
 		const pricing = await getCreditPricing(mockDb, 'unknown-model');
 		expect(pricing.inputPerMillion).toBe(FALLBACK_PRICING.inputPerMillion);
 		expect(pricing.outputPerMillion).toBe(FALLBACK_PRICING.outputPerMillion);
+	});
+	it('returns configured pro-tier pricing when row exists', async () => {
+		const mockFirst = vi.fn().mockResolvedValue({
+			model: 'google-antigravity/gemini-2.5-pro',
+			input_per_million: 1.25,
+			output_per_million: 5.0
+		});
+		const mockBind = vi.fn().mockReturnValue({ first: mockFirst });
+		const mockPrepare = vi.fn().mockReturnValue({ bind: mockBind });
+		const mockDb = { prepare: mockPrepare } as unknown as D1Database;
+
+		const pricing = await getCreditPricing(mockDb, 'google-antigravity/gemini-2.5-pro');
+		expect(pricing.model).toBe('google-antigravity/gemini-2.5-pro');
+		expect(pricing.inputPerMillion).toBe(1.25);
+		expect(pricing.outputPerMillion).toBe(5.0);
 	});
 });

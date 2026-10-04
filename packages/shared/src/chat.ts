@@ -60,10 +60,82 @@ export interface ModelConfig {
 export const DEFAULT_MODELS: ModelConfig[] = [
 	{
 		provider: 'omp',
+		model: 'google-antigravity/gemini-2.5-flash-lite',
+		displayName: 'Gemini 2.5 Flash Lite',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-2.5-flash',
+		displayName: 'Gemini 2.5 Flash',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-2.5-pro',
+		displayName: 'Gemini 2.5 Pro',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3-flash',
+		displayName: 'Gemini 3 Flash',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3-pro',
+		displayName: 'Gemini 3 Pro',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'low', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
 		model: 'google-antigravity/gemini-3.1-flash-lite',
 		displayName: 'Gemini 3.1 Flash Lite',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.1-pro',
+		displayName: 'Gemini 3.1 Pro',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'low', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.5-flash-lite',
+		displayName: 'Gemini 3.5 Flash Lite',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.5-flash',
+		displayName: 'Gemini 3.5 Flash',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
+		contextWindow: 1_000_000
+	},
+	{
+		provider: 'omp',
+		model: 'google-antigravity/gemini-3.6-flash',
+		displayName: 'Gemini 3.6 Flash',
+		capabilities: { vision: true, tool_calling: true, thinking: true },
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
 		contextWindow: 1_000_000
 	},
 	{
@@ -71,7 +143,7 @@ export const DEFAULT_MODELS: ModelConfig[] = [
 		model: 'google-antigravity/gemini-3.7-flash',
 		displayName: 'Gemini 3.7 Flash',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
 		contextWindow: 1_000_000
 	},
 	{
@@ -79,7 +151,7 @@ export const DEFAULT_MODELS: ModelConfig[] = [
 		model: 'google-antigravity/gemini-3.8-flash',
 		displayName: 'Gemini 3.8 Flash (High Tier)',
 		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high'],
+		thinkingLevels: ['off', 'minimal', 'low', 'medium', 'high'],
 		contextWindow: 1_000_000
 	}
 ];

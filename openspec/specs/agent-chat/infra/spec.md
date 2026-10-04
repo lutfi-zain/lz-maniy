@@ -116,10 +116,13 @@ The agent backend SHALL include a D1 migration adding tables for credit balances
 - **THEN** an index exists on `(user_id, created_at DESC)`
 
 #### Scenario: credit_pricing Table Schema
-- **WHEN** the `credit_pricing` table is created
+- **WHEN** the `credit_pricing` table is created and subsequent migrations are applied
 - **THEN** it contains columns: `model` (TEXT PRIMARY KEY), `input_per_million` (REAL NOT NULL), `output_per_million` (REAL NOT NULL), `updated_at` (INTEGER NOT NULL)
-- **THEN** the table is pre-seeded with pricing rows for each model in `AVAILABLE_MODELS`: `google-antigravity/gemini-3.1-flash-lite` (0.25, 1.50), `google-antigravity/gemini-3.7-flash` (0.75, 3.75), `google-antigravity/gemini-3.8-flash` (0.75, 3.75), and the Groq vision fallback `groq/qwen3.8-27b` (0.80, 4.00)
-
+- **THEN** the table is seeded with pricing rows for all 12 Gemini models and the Groq fallback:
+  - Lite tier (`gemini-2.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3.5-flash-lite`): `inputPerMillion = 0.25`, `outputPerMillion = 1.50`
+  - Flash tier (`gemini-2.5-flash`, `gemini-3-flash`, `gemini-3.5-flash`, `gemini-3.6-flash`, `gemini-3.7-flash`, `gemini-3.8-flash`): `inputPerMillion = 0.75`, `outputPerMillion = 3.75`
+  - Pro tier (`gemini-2.5-pro`, `gemini-3-pro`, `gemini-3.1-pro`): `inputPerMillion = 1.25`, `outputPerMillion = 5.00`
+  - Groq vision fallback `groq/qwen3.8-27b`: `inputPerMillion = 0.80`, `outputPerMillion = 4.00`
 ### Requirement: Conversation Compaction Metadata Column
 The agent backend D1 schema SHALL support tracking compaction state per conversation.
 

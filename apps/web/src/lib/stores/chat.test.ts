@@ -15,14 +15,12 @@ describe('ChatStore', () => {
 		expect(store.messages).toEqual([]);
 		expect(store.selectedModel.model).toBe('google-antigravity/gemini-3.7-flash');
 	});
-	it('has 3 curated OMP default models', () => {
-		expect(store.availableModels.length).toBe(3);
+	it('has 12 OMP Gemini models in default models', () => {
+		expect(store.availableModels.length).toBe(12);
 		const models = store.availableModels.map((m) => m.model);
-		expect(models).toEqual([
-			'google-antigravity/gemini-3.1-flash-lite',
-			'google-antigravity/gemini-3.7-flash',
-			'google-antigravity/gemini-3.8-flash'
-		]);
+		expect(models).toContain('google-antigravity/gemini-2.5-flash-lite');
+		expect(models).toContain('google-antigravity/gemini-3.7-flash');
+		expect(models).toContain('google-antigravity/gemini-2.5-pro');
 	});
 
 

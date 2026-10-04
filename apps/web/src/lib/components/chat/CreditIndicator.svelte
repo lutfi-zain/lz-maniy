@@ -11,7 +11,8 @@
 </script>
 
 <div
-	class="inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-medium transition-colors
+	class="inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-medium transition-all duration-300
+		{chatStore.lastCreditsUsed !== null ? 'ring-2 ring-[#C23934]/30 shadow-sm' : ''}
 		{isZero
 			? 'border-[#FDEBEC] bg-[#FDEBEC] text-[#C23934]'
 			: isLow

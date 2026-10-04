@@ -14,6 +14,8 @@ playwright-report/
 # Agent
 apps/agent/.dev.vars
 apps/agent/.wrangler/
+apps/agent/eval/.promptfoo/
+.promptfoo/
 # Workspace nested node_modules
 apps/*/node_modules/
 packages/*/node_modules/

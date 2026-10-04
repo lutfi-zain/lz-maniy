@@ -58,6 +58,15 @@ export class ChatStore {
 			if (saved) {
 				this.panelWidth = Math.max(280, Math.min(window.innerWidth * 0.5, Number(saved)));
 			}
+			const savedModel = localStorage.getItem('maniyy_selected_model');
+			if (savedModel) {
+				try {
+					const parsed = JSON.parse(savedModel) as ModelConfig;
+					if (parsed?.model) {
+						this.selectedModel = parsed;
+					}
+				} catch {}
+			}
 		}
 	}
 
@@ -139,6 +148,11 @@ export class ChatStore {
 
 	setModel = (model: ModelConfig) => {
 		this.selectedModel = model;
+		if (typeof window !== 'undefined') {
+			try {
+				localStorage.setItem('maniyy_selected_model', JSON.stringify(model));
+			} catch {}
+		}
 		if (model.capabilities.thinking && this.thinkingLevel === 'off') {
 			this.thinkingLevel = 'low';
 		} else if (!model.capabilities.thinking) {
@@ -440,6 +454,7 @@ export class ChatStore {
 		this.isStreaming = true;
 		this.abortController = new AbortController();
 
+		let creditsUpdatedFromStream = false;
 		try {
 			const body = {
 				message: text,
@@ -531,6 +546,7 @@ export class ChatStore {
 							};
 							if (typeof finishData.creditsRemaining === 'number') {
 								this.creditsRemaining = finishData.creditsRemaining;
+								creditsUpdatedFromStream = true;
 							}
 							if (typeof finishData.creditsUsed === 'number') {
 								this.lastCreditsUsed = finishData.creditsUsed;
@@ -670,6 +686,9 @@ export class ChatStore {
 			this.messages = this.messages.map((m) =>
 				m.id === assistantId ? this.syncActiveVariant(m) : m
 			);
+			if (!creditsUpdatedFromStream) {
+				this.loadCredits().catch(() => {});
+			}
 		}
 	};
 }

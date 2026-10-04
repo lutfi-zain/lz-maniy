@@ -82,9 +82,8 @@ The chat UI SHALL provide a model selector dropdown populated from the backend m
 
 #### Scenario: Select Model for Conversation
 - **WHEN** user opens the model selector dropdown in the chat header
-- **THEN** available active models from Gemini and Groq are displayed with their providers and capability badges
-- **THEN** selecting a model updates the active conversation configuration and persists the choice for subsequent messages
-
+- **THEN** models are grouped into Lite, Flash, and Pro tiers
+- **THEN** selecting a model updates the active conversation configuration, persists the choice to browser `localStorage`, and restores it across reloads
 #### Scenario: Display Updated OpenCode Models in Model Picker
 - **WHEN** user opens the model picker dropdown in the chat interface
 - **THEN** non-functional OpenCode Zen models are not presented to prevent user-facing stream crashes
@@ -220,9 +219,8 @@ The chat UI SHALL display the user's remaining credit balance and per-turn cost 
 
 #### Scenario: Credit Gauge in Chat Panel
 - **WHEN** the chat panel is open and the user is authenticated
-- **THEN** a compact credit indicator displays near the model picker showing remaining credits (e.g., "1,847 credits")
-- **THEN** the indicator updates after each completed message turn using the `creditsRemaining` value from stream finish metadata
-
+- **THEN** a compact credit indicator displays near the model picker showing remaining credits (e.g., "1,847 cr")
+- **THEN** the indicator updates after each completed message turn using the `creditsRemaining` value from stream finish metadata or an automatic post-stream refetch
 #### Scenario: Per-Turn Cost Feedback
 - **WHEN** a streaming response completes and stream finish metadata includes `creditsUsed`
 - **THEN** a subtle per-turn cost annotation appears briefly (e.g., "-8.3 credits") near the credit indicator before fading

@@ -115,15 +115,17 @@ The shared types package SHALL define request parameters for selecting thinking 
 - **THEN** the payload accepts an optional `thinkingLevel?: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'`
 - **THEN** the payload accepts `model?: { provider: 'gemini' | 'groq' | 'opencode'; model: string }`
 
-### Requirement: Curated Model Configuration Types
+### Requirement: Shared Model Definitions
+The shared types package SHALL define `DEFAULT_MODELS` as a list of all 12 google-antigravity Gemini models matching the backend `AVAILABLE_MODELS` list.
 
-The shared types package SHALL define `AVAILABLE_MODELS` as a curated list of exactly 6 models: `gemini-3.1-flash-lite`, `gemini-3.7-flash`, `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `groq/openai/gpt-oss-20b`, and `groq/openai/gpt-oss-120b`. The `DEFAULT_MODELS` fallback list SHALL be a subset matching the curated backend list.
+#### Scenario: DEFAULT_MODELS Completeness
+- **WHEN** consumer imports `DEFAULT_MODELS` from `@maniyy/shared`
+- **THEN** the array contains exactly 12 entries, one for each google-antigravity Gemini model: `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3-flash`, `gemini-3-pro`, `gemini-3.1-flash-lite`, `gemini-3.1-pro`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.6-flash`, `gemini-3.7-flash`, `gemini-3.8-flash`
+- **THEN** each entry has `provider: 'omp'`, a `displayName`, `capabilities`, and `thinkingLevels` consistent with the backend model configuration
 
-#### Scenario: Shared package exports curated model list
-
-- **WHEN** a consumer imports `DEFAULT_MODELS` from `@maniyy/shared`
-- **THEN** the list contains no superseded models (3.5, 3.6, flash-lite-latest) and no niche models (qwen3.8-27b)
-
+#### Scenario: ModelProvider Type
+- **WHEN** consumer imports `ModelProvider` from `@maniyy/shared`
+- **THEN** the type includes `'omp'` as a valid provider value
 ### Requirement: Extended Financial Tool Parameter and Result Types
 
 The shared types package SHALL define TypeScript types for all new tool parameters and results: `WalletCreateParams`, `WalletUpdateParams`, `BudgetParams`, `DebtLoanParams`, `DebtLoanRepayParams`, `GoalParams`, `GoalWalletLinkParams`, `RecurringTemplateParams`, `FeedbackParams`, `HorizonParams`, and their corresponding response types matching the Reedrich REST API v1.17.0 OpenAPI schema.

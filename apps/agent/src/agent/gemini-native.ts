@@ -21,7 +21,8 @@ export function createGeminiRunner(
 	fetcher?: Fetcher,
 	db?: D1Database,
 	userId?: string,
-	agentMemory?: AgentMemory
+	agentMemory?: AgentMemory,
+	onSettleCredits?: (promptTokens: number, completionTokens: number) => Promise<{ creditsUsed: number; creditsRemaining: number }>
 ) {
 	const ai = new GoogleGenAI({ apiKey });
 
@@ -92,6 +93,9 @@ export function createGeminiRunner(
 				parts: [{ text: m.content }]
 			}));
 
+		let totalPromptTokens = 0;
+		let totalCompletionTokens = 0;
+
 		const chat = ai.chats.create({
 			model: modelName,
 			history,
@@ -113,6 +117,11 @@ export function createGeminiRunner(
 		try {
 			const messageArg = messageParts as unknown as string;
 			response = await chat.sendMessage({ message: messageArg });
+		if (response && typeof response === 'object' && 'usageMetadata' in response && response.usageMetadata) {
+			const meta = response.usageMetadata as { promptTokenCount?: number; candidatesTokenCount?: number };
+			totalPromptTokens += meta.promptTokenCount ?? 0;
+			totalCompletionTokens += meta.candidatesTokenCount ?? 0;
+		}
 		} catch (err: unknown) {
 			const errMsg = (err as Error)?.message || String(err);
 			if (errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE')) {
@@ -160,6 +169,8 @@ export function createGeminiRunner(
 				throw err;
 			}
 
+			let streamPromptTokens = 0;
+			let streamCompletionTokens = 0;
 			let nextFunctionCalls: typeof response.functionCalls | undefined;
 
 			for await (const chunk of stream) {
@@ -185,6 +196,11 @@ export function createGeminiRunner(
 						}
 					}
 				}
+				if (chunk && typeof chunk === 'object' && 'usageMetadata' in chunk && chunk.usageMetadata) {
+					const meta = chunk.usageMetadata as { promptTokenCount?: number; candidatesTokenCount?: number };
+					if (meta.promptTokenCount) streamPromptTokens = meta.promptTokenCount;
+					if (meta.candidatesTokenCount) streamCompletionTokens = meta.candidatesTokenCount;
+				}
 				if (!streamedPart && chunk.text) {
 					yield `0:${JSON.stringify(chunk.text)}\n`;
 				}
@@ -193,9 +209,21 @@ export function createGeminiRunner(
 					response = chunk;
 				}
 			}
+			totalPromptTokens += streamPromptTokens;
+			totalCompletionTokens += streamCompletionTokens;
 			if (!nextFunctionCalls || nextFunctionCalls.length === 0) {
-				yield `e:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100},"isContinued":false}\n`;
-				yield `d:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100}}\n`;
+				if (totalPromptTokens === 0) totalPromptTokens = 150;
+				if (totalCompletionTokens === 0) totalCompletionTokens = 80;
+				let creditData: { creditsUsed?: number; creditsRemaining?: number } = {};
+				if (onSettleCredits) {
+					try {
+						creditData = await onSettleCredits(totalPromptTokens, totalCompletionTokens);
+					} catch (err) {
+						console.error('Failed to settle credits in Gemini stream:', err);
+					}
+				}
+				yield `e:${JSON.stringify({ finishReason: 'stop', usage: { promptTokens: totalPromptTokens, completionTokens: totalCompletionTokens }, isContinued: false })}\n`;
+				yield `d:${JSON.stringify({ finishReason: 'stop', usage: { promptTokens: totalPromptTokens, completionTokens: totalCompletionTokens }, ...creditData })}\n`;
 				return;
 			}
 		}
@@ -203,10 +231,18 @@ export function createGeminiRunner(
 		if (response.text) {
 			yield `0:${JSON.stringify(response.text)}\n`;
 		}
-
-		yield `e:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100},"isContinued":false}\n`;
-		yield `d:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":100}}\n`;
+		if (totalPromptTokens === 0) totalPromptTokens = 150;
+		if (totalCompletionTokens === 0) totalCompletionTokens = 80;
+		let creditData: { creditsUsed?: number; creditsRemaining?: number } = {};
+		if (onSettleCredits) {
+			try {
+				creditData = await onSettleCredits(totalPromptTokens, totalCompletionTokens);
+			} catch (err) {
+				console.error('Failed to settle credits in Gemini stream:', err);
+			}
+		}
+		yield `e:${JSON.stringify({ finishReason: 'stop', usage: { promptTokens: totalPromptTokens, completionTokens: totalCompletionTokens }, isContinued: false })}\n`;
+		yield `d:${JSON.stringify({ finishReason: 'stop', usage: { promptTokens: totalPromptTokens, completionTokens: totalCompletionTokens }, ...creditData })}\n`;
 	}
-
 	return { runGeminiStream, tools, toolDeclarations };
 }

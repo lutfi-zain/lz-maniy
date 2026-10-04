@@ -1,0 +1,34 @@
+# Promptfoo Evaluation Suite for Maniyy Financial Agent
+description: "Maniyy Financial Agent Reasoning Benchmark Across Gemini Models"
+
+prompts:
+  - "{{prompt}}"
+providers:
+  - id: "file://provider.ts"
+    label: "Gemini 3.7 Flash (Default)"
+    config:
+      model: "google-antigravity/gemini-3.7-flash"
+
+  - id: "file://provider.ts"
+    label: "Gemini 3.8 Flash (High Tier)"
+    config:
+      model: "google-antigravity/gemini-3.8-flash"
+
+  - id: "file://provider.ts"
+    label: "Gemini 2.5 Pro (Deep Reasoning)"
+    config:
+      model: "google-antigravity/gemini-2.5-pro"
+
+defaultTest:
+  options:
+    provider:
+      id: "openai:chat:google-antigravity/gemini-3.7-flash"
+      config:
+        apiBaseUrl: "https://ai.membran.app/v1"
+        apiKey: "${OMP_GATEWAY_KEY}"
+
+tests: "file://promptfoo-tests.yaml"
+
+evaluateOptions:
+  maxConcurrency: 2
+  showProgressBar: true

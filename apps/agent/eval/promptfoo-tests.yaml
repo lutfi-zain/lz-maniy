@@ -1,0 +1,342 @@
+# Promptfoo Evaluation Test Cases for Maniyy Agent
+# Extracted and structured from real-user financial interaction patterns
+
+- description: "[TC-01] Saldo kas siap pakai"
+  vars:
+    prompt: "Saldo kas siap pakai saya ada berapa saat ini?"
+  assert:
+    - type: contains
+      value: "kas siap pakai"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.toLowerCase().includes('kas siap pakai') && (output.includes('get_snapshot') || output.includes('financial_summary'))"
+    - type: llm-rubric
+      value: "Response must explain the spendable cash balance clearly in Indonesian Rupiah using tool data without hallucinating unverified funds."
+
+- description: "[TC-02] Planning networth projection"
+  vars:
+    prompt: "networth bulan depan berapa kalau semua planned terealisasi?"
+  assert:
+    - type: contains
+      value: "Oktober"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('5.3') || output.includes('5.303') || output.includes('5 303')"
+
+- description: "[TC-03] Multi-currency USDT balance"
+  vars:
+    prompt: "Berapa saldo aset saya yang dalam bentuk USDT atau valas asing?"
+  assert:
+    - type: contains
+      value: "USDT"
+    - type: contains
+      value: "115"
+    - type: not-contains
+      value: "Rp 115"
+
+- description: "[TC-04] Category breakdown expense"
+  vars:
+    prompt: "Pengeluaran terbesar saya bulan ini dialokasikan ke kategori apa?"
+  assert:
+    - type: contains
+      value: "kategori"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent identifies highest expense category from financial data."
+
+- description: "[TC-05] UI navigation planning"
+  vars:
+    prompt: "Tolong buka halaman planning"
+  assert:
+    - type: contains
+      value: "/planning"
+    - type: javascript
+      value: "output.includes('navigate_page')"
+
+- description: "[TC-06] Financial sanity transfer impact"
+  vars:
+    prompt: "Kalau saya transfer 5 juta dari BCA ke Jago, apakah networth saya berkurang?"
+  assert:
+    - type: contains
+      value: "tidak"
+    - type: contains
+      value: "berkurang"
+    - type: llm-rubric
+      value: "Agent correctly reasons that inter-wallet transfers do not decrease overall net worth."
+
+- description: "[TC-07] Wallet creation"
+  vars:
+    prompt: "Tolong buatkan dompet baru di Bank Jago namanya Dompet Belanja saldo awal nol"
+  assert:
+    - type: contains
+      value: "Dompet Belanja"
+    - type: javascript
+      value: "output.includes('create_wallet')"
+
+- description: "[TC-08] Debt loan query"
+  vars:
+    prompt: "Saya punya catatan hutang atau piutang apa saja saat ini?"
+  assert:
+    - type: javascript
+      value: "output.includes('list_debts_loans') || output.includes('hutang')"
+
+- description: "[TC-09] Safe to spend calculation"
+  vars:
+    prompt: "Berapa dana aman yang bisa saya belanjakan (safe to spend) saat ini?"
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent provides safe-to-spend guidance based on monthly cashflow and spendable funds."
+
+- description: "[TC-10] Real-user BCA balance query"
+  vars:
+    prompt: "Saldo bca saya berapa?"
+  assert:
+    - type: contains
+      value: "BCA"
+    - type: contains
+      value: "Rp"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('get_snapshot') || output.includes('list_wallets')"
+    - type: llm-rubric
+      value: "Agent reports BCA balance accurately from tools in Indonesian Rupiah."
+
+- description: "[TC-11] Real-user check all wallet balances"
+  vars:
+    prompt: "cek semua saldo semua dompet"
+  assert:
+    - type: contains
+      value: "saldo"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_wallets') || output.includes('get_snapshot')"
+
+- description: "[TC-12] Real-user cash wallet inquiry"
+  vars:
+    prompt: "Apakah kita punya dompet cash dan kalau punya sekarang saldonya berapa ya?"
+  assert:
+    - type: contains
+      value: "cash"
+    - type: not-contains
+      value: "$"
+
+- description: "[TC-13] Real-user spendable cash inquiry"
+  vars:
+    prompt: "Berapa total kas siap pakai saya?"
+  assert:
+    - type: contains
+      value: "Rp"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Response clearly distinguishes liquid spendable cash from locked savings."
+
+- description: "[TC-14] Real-user food transaction record"
+  vars:
+    prompt: "Makan 'waroeng steak' take away with anak istri dari huz 85k"
+  assert:
+    - type: contains
+      value: "waroeng steak"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transaction')"
+
+- description: "[TC-15] Real-user small expense record"
+  vars:
+    prompt: "2k dari huz untuk parkir"
+  assert:
+    - type: contains
+      value: "parkir"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transaction')"
+
+- description: "[TC-16] Real-user inter-wallet transfer record"
+  vars:
+    prompt: "Lalu Saya barusan transfer 14jt dari bca ke main dengan admin 2500, catat ya"
+  assert:
+    - type: contains
+      value: "transfer"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transfer') || output.includes('create_transaction')"
+
+- description: "[TC-17] Real-user household expense record"
+  vars:
+    prompt: "beli pampers saada 50k dari huz"
+  assert:
+    - type: contains
+      value: "pampers"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transaction')"
+
+- description: "[TC-18] Real-user monthly planning assessment"
+  vars:
+    prompt: "Planning bulan ini gimana finnplan kita?"
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent summarizes current month planning status and planned transactions concisely."
+
+- description: "[TC-19] Real-user planning projection setup"
+  vars:
+    prompt: "Kita bikin planning sampe januari tahun depan ya. Tagihan semuanya sama kecuali spp berubah tiap bulan."
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent handles long-term planning request professionally without dropping variable bill exceptions."
+
+- description: "[TC-20] Real-user vaccine savings comparison"
+  vars:
+    prompt: "Bulan depan itu kita harus ke dokter anak buat vaksin cacar sekitar 1.5jt. Sekarang di dompet jago dokter anak ada 1185000"
+  assert:
+    - type: contains
+      value: "dokter"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent notes the shortfall between needed 1.5jt and available 1.185jt and proposes practical allocation."
+
+- description: "[TC-21] Real-user bills breakdown"
+  vars:
+    prompt: "bulan ini untuk tagihan rinciannya berapa?"
+  assert:
+    - type: contains
+      value: "tagihan"
+    - type: contains
+      value: "Rp"
+    - type: not-contains
+      value: "$"
+
+- description: "[TC-22] Real-user all budget overview"
+  vars:
+    prompt: "cek semua budget kita, all data. ada apa aja?"
+  assert:
+    - type: contains
+      value: "budget"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_budgets') || output.includes('get_snapshot')"
+
+- description: "[TC-23] Real-user budget implication inquiry"
+  vars:
+    prompt: "ok gini deh, budget 1.5jt jenguk mertua itu hampir pasti dipakai, implikasi nya gimana untuk oktober?"
+  assert:
+    - type: contains
+      value: "oktober"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent evaluates cashflow impact on October when 1.5M budget is realized."
+
+- description: "[TC-24] Real-user house rent debt total"
+  vars:
+    prompt: "Kita punya hutang ke uang rumah berapa total?"
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_debts_loans') || output.includes('sewa rumah')"
+
+- description: "[TC-25] Real-user rent replacement calculation"
+  vars:
+    prompt: "jadi total uang sewa rumah yang harus diganti berapa? yang tabungan bulan ini berapa? total berapa?"
+  assert:
+    - type: contains
+      value: "sewa rumah"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent breaks down replaced amount vs current month savings vs grand total accurately."
+
+- description: "[TC-26] Real-user income origin verification"
+  vars:
+    prompt: "kok bisa income 23jt? darimana?"
+  assert:
+    - type: contains
+      value: "Rp"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent explains income components from transaction/snapshot data without hallucination."
+
+- description: "[TC-27] Real-user redundant planned transaction check"
+  vars:
+    prompt: "check planned kita bulan ini kok banyak banget ya? apakah redundant?"
+  assert:
+    - type: contains
+      value: "planned"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_transactions') || output.includes('list_recurring')"
+
+- description: "[TC-28] Real-user transaction anomaly audit"
+  vars:
+    prompt: "tapi ada yang janggal juga, harusnya kan ngga 51 juta karena total pemasukkan saat ini baru 21jt"
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent addresses the 51M vs 21M discrepancy objectively by checking tool data."
+
+- description: "[TC-29] Real-user fund distribution strategy"
+  vars:
+    prompt: "Oke sekarang coba pikirin saya harus transfer ke dompet sewa rumah berapa terus nanti bayar-bayar tagihan pake dompet mana"
+  assert:
+    - type: contains
+      value: "dompet"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent gives clear wallet recommendations minimizing unnecessary multi-hop transfers."
+
+- description: "[TC-30] Real-user last transaction date per wallet"
+  vars:
+    prompt: "Last transaction date of each my wallet"
+  assert:
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_wallets') || output.includes('list_transactions')"
+
+- description: "[TC-31] Real-user table format preference"
+  vars:
+    prompt: "buat dalam format tabel rincian saldo dompet saya"
+  assert:
+    - type: contains
+      value: "|"
+    - type: not-contains
+      value: "$"
+    - type: llm-rubric
+      value: "Agent formats wallet balance breakdown as a markdown table using pipes."
+
+- description: "[TC-32] Real-user anti-emoji preference"
+  vars:
+    prompt: "Coba tolong inget ini ya, kalo kamu jawab saya pake icon-icon itu saya gak suka. Better kamu bikinnya pake tabel aja jadi saya liatnya juga lebih enak"
+  assert:
+    - type: contains
+      value: "tabel"
+    - type: not-contains
+      value: "😀"
+    - type: not-contains
+      value: "🚀"
+    - type: not-contains
+      value: "🎉"
+    - type: llm-rubric
+      value: "Agent acknowledges preference for clean tabular data and absence of emojis/decorative icons."

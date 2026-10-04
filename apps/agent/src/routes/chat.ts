@@ -166,7 +166,8 @@ chatRouter.post('/', async (c) => {
 			c.env.REEDRICH,
 			c.env.DB,
 			user.userId,
-			agentMemory
+			agentMemory,
+			settleCredits
 		);
 
 		const stream = runner.runGeminiStream(
@@ -210,10 +211,7 @@ chatRouter.post('/', async (c) => {
 								});
 								await touchConversation(c.env.DB, activeConvId);
 							}
-							// Post-stream credit deduction
-							const estPrompt = estimateTokens(history);
-							const estCompletion = Math.round(fullAssistantText.split(/\s+/).length * 1.3);
-							await settleCredits(estPrompt, estCompletion);
+							// Credits are already settled inside Gemini runner before the stream finished
 						})()
 					);
 				}
@@ -302,20 +300,60 @@ chatRouter.post('/', async (c) => {
 						});
 						await touchConversation(c.env.DB, activeConvId);
 					}
-
-					// Settle credit usage from reported or estimated tokens
-					const promptTokens = ev.usage?.promptTokens ?? estimateTokens(history);
-					const completionTokens =
-						ev.usage?.completionTokens ?? Math.round(finalContent.split(/\s+/).length * 1.3);
-					await settleCredits(promptTokens, completionTokens);
 				})()
 			);
 		}
 	});
 
-	return result.toDataStreamResponse({
-		getErrorMessage: (err) => (err as Error)?.message || String(err),
-		headers: responseHeaders
+	async function* transformDataStream(sourceStream: ReadableStream<string>) {
+		const reader = sourceStream.getReader();
+		const decoder = new TextDecoder();
+		let buffer = '';
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			buffer += typeof value === 'string' ? value : decoder.decode(value, { stream: true });
+			const lines = buffer.split('\n');
+			buffer = lines.pop() ?? '';
+			for (const line of lines) {
+				if (line.startsWith('d:')) {
+					try {
+						const data = JSON.parse(line.slice(2));
+						const promptTokens = data.usage?.promptTokens ?? estimateTokens(history);
+						const completionTokens = data.usage?.completionTokens ?? 50;
+						const creds = await settleCredits(promptTokens, completionTokens);
+						yield 'd:' + JSON.stringify({ ...data, ...creds }) + '\n';
+						continue;
+					} catch (e) {
+						console.error('Failed to augment d: metadata with credits:', e);
+					}
+				}
+				yield line + '\n';
+			}
+		}
+		if (buffer) yield buffer;
+	}
+
+	const transformedReadable = new ReadableStream({
+		async start(controller) {
+			const encoder = new TextEncoder();
+			try {
+				for await (const chunk of transformDataStream(result.toDataStream())) {
+					controller.enqueue(encoder.encode(chunk));
+				}
+			} catch (err) {
+				controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error)?.message || String(err))}\n`));
+			} finally {
+				controller.close();
+			}
+		}
+	});
+
+	return new Response(transformedReadable, {
+		headers: {
+			'Content-Type': 'text/plain; charset=utf-8',
+			...responseHeaders
+		}
 	});
 });
 
