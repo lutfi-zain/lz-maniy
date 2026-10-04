@@ -42,6 +42,8 @@ rules:
     - "Sequence tasks logically: project scaffold -> design system & tokens -> state store -> core components -> drilldown drawer -> test suites -> validation"
     - "Every task must have verifiable acceptance criteria with concrete commands"
     - "Do not mark tasks done without executing checks and test suites"
+    - "Always include tests and test suites with each task"
+    - "Always verify and cleanup sensitive data before committing"
   specs:
     - "Follow Gherkin-style or requirement-scenario format"
     - "Cover edge cases (e.g. offline fallback, empty transactions, deficit safe-to-spend, currency conversions)"
