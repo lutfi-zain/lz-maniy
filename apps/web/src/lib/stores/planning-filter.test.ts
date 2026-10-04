@@ -9,6 +9,7 @@ describe('planningFilterStore in-memory persistence', () => {
 	it('initializes with default values', () => {
 		expect(planningFilterStore.activeSubTab).toBe('goals');
 		expect(planningFilterStore.goalFilter).toBe('all');
+		expect(planningFilterStore.goalSortBy).toBe('current_amount_desc');
 		expect(planningFilterStore.budgetFilter).toBe('active');
 		expect(planningFilterStore.goalsViewMode).toBe('list');
 	});
@@ -25,16 +26,21 @@ describe('planningFilterStore in-memory persistence', () => {
 
 		planningFilterStore.goalsViewMode = 'horizon';
 		expect(planningFilterStore.goalsViewMode).toBe('horizon');
+
+		planningFilterStore.goalSortBy = 'target_amount_desc';
+		expect(planningFilterStore.goalSortBy).toBe('target_amount_desc');
 	});
 
 	it('resets filters back to defaults', () => {
 		planningFilterStore.activeSubTab = 'categories';
 		planningFilterStore.goalFilter = 'completed';
+		planningFilterStore.goalSortBy = 'name';
 		planningFilterStore.goalsViewMode = 'horizon';
 
 		planningFilterStore.resetFilters();
 		expect(planningFilterStore.activeSubTab).toBe('goals');
 		expect(planningFilterStore.goalFilter).toBe('all');
+		expect(planningFilterStore.goalSortBy).toBe('current_amount_desc');
 		expect(planningFilterStore.goalsViewMode).toBe('list');
 	});
 });

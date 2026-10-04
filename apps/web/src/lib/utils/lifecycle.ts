@@ -54,13 +54,15 @@ export function computeDaysDifference(
  */
 export function resolveGoalLifecycle(
 	goal: GoalSnapshot,
-	referenceDate: Date = new Date()
+	referenceDate: Date = new Date(),
+	overrideCurrentAmount?: number
 ): GoalLifecycleResult {
 	const liveCurrent =
-		goal.linkedWalletsBreakdown && goal.linkedWalletsBreakdown.length > 0
-			? goal.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
-			: goal.currentAmount;
-
+		overrideCurrentAmount !== undefined
+			? overrideCurrentAmount
+			: goal.linkedWalletsBreakdown && goal.linkedWalletsBreakdown.length > 0
+				? goal.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
+				: goal.currentAmount;
 	const target = goal.targetAmount || 1;
 	const progressPercentage = Math.round((liveCurrent / target) * 100);
 	const remainingAmount = Math.max(0, target - liveCurrent);

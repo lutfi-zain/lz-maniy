@@ -1,6 +1,9 @@
+export type GoalSortOption = 'current_amount_desc' | 'target_amount_desc' | 'name';
+
 export interface PlanningFilters {
 	activeSubTab: 'budgets' | 'goals' | 'obligations' | 'categories';
 	goalFilter: 'all' | 'in_progress' | 'overdue' | 'completed';
+	goalSortBy: GoalSortOption;
 	budgetFilter: 'active' | 'past' | 'all';
 	goalsViewMode: 'list' | 'horizon';
 }
@@ -8,6 +11,7 @@ export interface PlanningFilters {
 const DEFAULT_FILTERS: PlanningFilters = {
 	activeSubTab: 'goals',
 	goalFilter: 'all',
+	goalSortBy: 'current_amount_desc',
 	budgetFilter: 'active',
 	goalsViewMode: 'list'
 };
@@ -33,6 +37,14 @@ class PlanningFilterStore {
 
 	set goalFilter(f: 'all' | 'in_progress' | 'overdue' | 'completed') {
 		this.#filters.goalFilter = f;
+	}
+
+	get goalSortBy(): GoalSortOption {
+		return this.#filters.goalSortBy;
+	}
+
+	set goalSortBy(s: GoalSortOption) {
+		this.#filters.goalSortBy = s;
 	}
 
 	get budgetFilter(): 'active' | 'past' | 'all' {

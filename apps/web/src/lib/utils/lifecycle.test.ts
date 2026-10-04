@@ -115,6 +115,38 @@ describe('Lifecycle Utility Tests', () => {
 			expect(res.status).toBe('completed');
 			expect(res.progressPercentage).toBe(110);
 		});
+
+		it('evaluates status relative to custom referenceDate across target deadline', () => {
+			const goal: GoalSnapshot = {
+				...baseGoal,
+				targetDate: '2026-11-01',
+				currentAmount: 5000000,
+				targetAmount: 10000000
+			};
+			const beforeDeadline = resolveGoalLifecycle(goal, new Date('2026-10-20T12:00:00Z'));
+			expect(beforeDeadline.status).toBe('in_progress');
+			expect(beforeDeadline.isOverdue).toBe(false);
+			expect(beforeDeadline.daysRemaining).toBe(12);
+
+			const afterDeadline = resolveGoalLifecycle(goal, new Date('2026-11-10T12:00:00Z'));
+			expect(afterDeadline.status).toBe('overdue');
+			expect(afterDeadline.isOverdue).toBe(true);
+			expect(afterDeadline.overdueDays).toBe(9);
+		});
+
+		it('uses overrideCurrentAmount when provided for point-in-time calculation', () => {
+			const goal: GoalSnapshot = {
+				...baseGoal,
+				currentAmount: 2000000,
+				targetAmount: 10000000,
+				targetDate: '2026-12-31'
+			};
+			const overridden = resolveGoalLifecycle(goal, fixedToday, 12000000);
+			expect(overridden.status).toBe('completed');
+			expect(overridden.progressPercentage).toBe(120);
+			expect(overridden.remainingAmount).toBe(0);
+			expect(overridden.isCompleted).toBe(true);
+		});
 	});
 
 	describe('resolveBudgetPeriod', () => {

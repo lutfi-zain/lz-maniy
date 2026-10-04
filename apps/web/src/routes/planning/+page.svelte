@@ -5,7 +5,7 @@
 	import { budgetFormStore } from '$lib/stores/budget-form.svelte';
 	import { goalFormStore } from '$lib/stores/goal-form.svelte';
 	import { recurringFormStore } from '$lib/stores/recurring-form.svelte';
-	import { fmtIDR, fmtCurrency } from '$lib/utils/currency';
+	import { fmtIDR, fmtCurrency, getConvertedBalanceInIDR } from '$lib/utils/currency';
 	import { dFmt } from '$lib/utils/dates';
 	import { t, i18nStore } from '$lib/i18n/index.svelte';
 	import Target from 'phosphor-svelte/lib/Target';
@@ -20,7 +20,7 @@
 	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import Table from 'phosphor-svelte/lib/Table';
 	import CalendarBlank from 'phosphor-svelte/lib/CalendarBlank';
-	import { planningFilterStore } from '$lib/stores/planning-filter.svelte';
+	import { planningFilterStore, type GoalSortOption } from '$lib/stores/planning-filter.svelte';
 	import GoalsHorizonBoard from '$lib/components/goals/GoalsHorizonBoard.svelte';
 	import { dateFilterStore, type DatePreset } from '$lib/stores/date-filter.svelte';
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
@@ -34,6 +34,7 @@
 	let goalFilter = $state<'all' | 'in_progress' | 'overdue' | 'completed'>(
 		planningFilterStore.goalFilter
 	);
+	let goalSortBy = $state<GoalSortOption>(planningFilterStore.goalSortBy);
 	let budgetFilter = $state<'active' | 'past' | 'all'>(planningFilterStore.budgetFilter);
 	const goalsViewMode = $derived(planningFilterStore.goalsViewMode);
 	// Mobile (<1024px) always renders List view; Horizon Board is desktop-only
@@ -56,18 +57,70 @@
 		planningFilterStore.goalFilter = goalFilter;
 	});
 	$effect(() => {
+		planningFilterStore.goalSortBy = goalSortBy;
+	});
+	$effect(() => {
 		planningFilterStore.budgetFilter = budgetFilter;
 	});
 
 	const budgets = $derived(
 		reedrichStore.allBudgets.length > 0 ? reedrichStore.allBudgets : reedrichStore.activeBudgets
 	);
+	// Server-driven point-in-time wallet balance synchronization for goals
+	$effect(() => {
+		if (activeSubTab !== 'goals') return;
+		const start = dateFilterStore.startDate;
+		const end = dateFilterStore.endDate;
+		const controller = new AbortController();
+
+		reedrichStore
+			.fetchWallets(
+				{
+					startDate: start || undefined,
+					endDate: end || undefined
+				},
+				controller.signal
+			)
+			.catch((err) => {
+				if (!controller.signal.aborted) {
+					console.warn('Failed to sync point-in-time wallets for goals:', err);
+				}
+			});
+
+		return () => {
+			controller.abort();
+		};
+	});
+
+	const walletBalanceMap = $derived.by(() => {
+		const map = new Map<string, number>();
+		for (const w of reedrichStore.allWallets) {
+			map.set(w.walletId, w.balance);
+		}
+		return map;
+	});
+
 	const goals = $derived(reedrichStore.activeGoals);
+
+	const referenceDate = $derived(
+		dateFilterStore.endDate ? new Date(dateFilterStore.endDate + 'T23:59:59') : new Date()
+	);
+
 	const goalsWithLifecycle = $derived(
-		goals.map((g) => ({
-			goal: g,
-			lifecycle: resolveGoalLifecycle(g)
-		}))
+		goals.map((g) => {
+			let liveCurrent = g.currentAmount;
+			if (g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0) {
+				liveCurrent = g.linkedWalletsBreakdown.reduce((sum, lw) => {
+					const rawBal = walletBalanceMap.get(lw.walletId) ?? lw.balance;
+					return sum + getConvertedBalanceInIDR(rawBal, lw.currency);
+				}, 0);
+			}
+			return {
+				goal: g,
+				liveCurrent,
+				lifecycle: resolveGoalLifecycle(g, referenceDate, liveCurrent)
+			};
+		})
 	);
 
 	const goalCounts = $derived({
@@ -93,6 +146,22 @@
 			return goalsWithLifecycle.filter((x) => x.lifecycle.status === 'completed');
 		}
 		return goalsWithLifecycle;
+	});
+
+	const sortedGoals = $derived.by(() => {
+		const list = [...filteredGoals];
+		if (goalSortBy === 'current_amount_desc') {
+			list.sort(
+				(a, b) => b.liveCurrent - a.liveCurrent || b.goal.targetAmount - a.goal.targetAmount
+			);
+		} else if (goalSortBy === 'target_amount_desc') {
+			list.sort(
+				(a, b) => b.goal.targetAmount - a.goal.targetAmount || b.liveCurrent - a.liveCurrent
+			);
+		} else if (goalSortBy === 'name') {
+			list.sort((a, b) => a.goal.goalName.localeCompare(b.goal.goalName));
+		}
+		return list;
 	});
 
 	const budgetsWithPeriod = $derived(
@@ -327,40 +396,57 @@
 				{/each}
 			</div>
 
-			<!-- View Mode Switcher: List vs Horizon Board -->
-			<div
-				class="hidden items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 lg:inline-flex"
-			>
-				<button
-					type="button"
-					onclick={() => (planningFilterStore.goalsViewMode = 'list')}
-					class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
-					'list'
-						? 'bg-white text-[#111111] shadow-2xs'
-						: 'text-[#787774] hover:text-[#111111]'}"
-					title="Tampilan List / Kartu"
-					aria-pressed={goalsViewMode === 'list'}
-				>
-					<Table class="size-3.5" weight={goalsViewMode === 'list' ? 'bold' : 'regular'} />
-					<span>List</span>
-				</button>
+			<!-- View Mode Switcher: List vs Horizon Board & Sort Options -->
+			<div class="flex items-center gap-2">
+				{#if goalsViewMode === 'list'}
+					<div class="flex items-center gap-1.5">
+						<span class="hidden font-mono text-[11px] text-[#787774] sm:inline">Urut:</span>
+						<select
+							bind:value={goalSortBy}
+							class="cursor-pointer rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs text-[#111111] transition-colors hover:border-[#111111]"
+							title="Urutkan Target"
+						>
+							<option value="current_amount_desc">Nominal Terkumpul Terbesar</option>
+							<option value="target_amount_desc">Target Terbesar</option>
+							<option value="name">Nama (A-Z)</option>
+						</select>
+					</div>
+				{/if}
 
-				<button
-					type="button"
-					onclick={() => (planningFilterStore.goalsViewMode = 'horizon')}
-					class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
-					'horizon'
-						? 'bg-white text-[#111111] shadow-2xs'
-						: 'text-[#787774] hover:text-[#111111]'}"
-					title="Tampilan Kalendar Multi-Periode"
-					aria-pressed={goalsViewMode === 'horizon'}
+				<div
+					class="hidden items-center rounded border border-[#EAEAEA] bg-[#F9F9F8] p-0.5 lg:inline-flex"
 				>
-					<CalendarBlank
-						class="size-3.5"
-						weight={goalsViewMode === 'horizon' ? 'bold' : 'regular'}
-					/>
-					<span>Horizon Board</span>
-				</button>
+					<button
+						type="button"
+						onclick={() => (planningFilterStore.goalsViewMode = 'list')}
+						class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
+						'list'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774] hover:text-[#111111]'}"
+						title="Tampilan List / Kartu"
+						aria-pressed={goalsViewMode === 'list'}
+					>
+						<Table class="size-3.5" weight={goalsViewMode === 'list' ? 'bold' : 'regular'} />
+						<span>List</span>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => (planningFilterStore.goalsViewMode = 'horizon')}
+						class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors {goalsViewMode ===
+						'horizon'
+							? 'bg-white text-[#111111] shadow-2xs'
+							: 'text-[#787774] hover:text-[#111111]'}"
+						title="Tampilan Kalendar Multi-Periode"
+						aria-pressed={goalsViewMode === 'horizon'}
+					>
+						<CalendarBlank
+							class="size-3.5"
+							weight={goalsViewMode === 'horizon' ? 'bold' : 'regular'}
+						/>
+						<span>Horizon Board</span>
+					</button>
+				</div>
 			</div>
 		</div>
 
@@ -368,13 +454,10 @@
 			<GoalsHorizonBoard />
 		{:else}
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-				{#each filteredGoals as item (item.goal.goalId)}
+				{#each sortedGoals as item (item.goal.goalId)}
 					{@const g = item.goal}
 					{@const lifecycle = item.lifecycle}
-					{@const liveCurrent =
-						g.linkedWalletsBreakdown && g.linkedWalletsBreakdown.length > 0
-							? g.linkedWalletsBreakdown.reduce((sum, lw) => sum + lw.convertedAmount, 0)
-							: g.currentAmount}
+					{@const liveCurrent = item.liveCurrent}
 					{@const p = Math.round((liveCurrent / g.targetAmount) * 100)}
 					{@const linked = g.linkedWalletsBreakdown ?? []}
 					{@const remainingToTarget = Math.max(0, g.targetAmount - liveCurrent)}
@@ -513,6 +596,8 @@
 
 								<div class="divide-y divide-[#EAEAEA]">
 									{#each linked as lw (lw.walletId)}
+										{@const lwBal = walletBalanceMap.get(lw.walletId) ?? lw.balance}
+										{@const lwConverted = getConvertedBalanceInIDR(lwBal, lw.currency)}
 										<a
 											href="/ledger?walletId={lw.walletId}"
 											class="flex items-center justify-between rounded px-2 py-1.5 text-[11px] no-underline transition-colors hover:bg-white hover:shadow-2xs"
@@ -529,10 +614,10 @@
 											<div class="text-right font-mono text-[#111111] tabular-nums">
 												{#if lw.currency !== 'IDR'}
 													<span class="text-[#787774]"
-														>{fmtCurrency(lw.balance, lw.currency)} ≈
+														>{fmtCurrency(lwBal, lw.currency)} ≈
 													</span>
 												{/if}
-												<strong class="font-semibold">{fmtIDR(lw.convertedAmount)}</strong>
+												<strong class="font-semibold">{fmtIDR(lwConverted)}</strong>
 											</div>
 										</a>
 									{/each}
