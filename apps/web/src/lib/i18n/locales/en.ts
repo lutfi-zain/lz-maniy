@@ -112,6 +112,8 @@ export const en = {
 			inflow: 'Inflow',
 			outflow: 'Outflow',
 			closingNetWorth: 'Closing Net Worth',
+			projectedNetWorth: 'Projected Net Worth',
+			closingMonthEndProjection: 'Month-End Projection',
 			spendable: 'Spendable',
 			locked: 'Committed',
 			goalsProgress: 'Goals Pacing',

@@ -44,8 +44,8 @@ The ledger studio SHALL render a dual-layer summary strip partitioned into a loc
 
 #### Scenario: Display Filtered Aggregate Bar
 - **WHEN** any filter (date, wallet, category, or type) is applied or adjusted
-- **THEN** a summary bar above the table displays matching transaction count, total income (`+Rp X`), total expense (`−Rp Y`), and net delta (`±Rp Z`) converted into IDR.
-
+- **THEN** a summary bar above the table displays matching transaction count, total income (`+Rp X`), total expense (`−Rp Y`), and net delta (`±Rp Z`) converted into IDR
+- **AND** when viewing an active calendar month or date window whose transactions exceed the single-page limit (50 items), the cashflow totals reflect the complete period flow without pagination truncation.
 #### Scenario: Display Future Projected Net Worth Anchor
 - **WHEN** user filters by a date range where $T_{\text{akhir}}$ exceeds the current calendar month (e.g., "Bulan Depan" or a custom future end date)
 - **THEN** the right zone displays `PROYEKSI NET WORTH` calculated as Current Net Worth plus all scheduled net income and expense across all accounts up to $T_{\text{akhir}}$ in IDR, accompanied by subtext indicating the projection date.
@@ -213,10 +213,10 @@ The Cockpit recent transaction list MUST provide direct item inspection without 
 The Ledger Horizon Board SHALL obtain per-period Net Worth, Spendable, and Committed values from the server-computed roll-forward projection endpoint (`GET /api/v1/analytics/horizon`) rather than calculating them client-side from a local transaction dataset.
 
 #### Scenario: Horizon Board Displays Server-Projected Net Worth
-- **WHEN** user switches to the Horizon Board view on `/ledger` with periods spanning future months
+- **WHEN** user switches to the Horizon Board view on `/ledger` with periods spanning future months or the current calendar month
 - **THEN** each period column's `PeriodSummaryCard` displays the server-computed `netWorth.total`, `netWorth.spendable`, and `netWorth.locked` values
+- **AND** when rendering the current calendar month, the net worth metric displays the label `PROYEKSI AKHIR BULAN` (or `Closing Month-End Projection`) to distinguish the post-planned position from today's live balance
 - **AND** consecutive future months with positive net cashflow display monotonically increasing Net Worth values.
-
 #### Scenario: Horizon Board Cashflow Uses Period Column Data
 - **WHEN** the Horizon Board renders a period column
 - **THEN** the cashflow section (Inflow, Outflow, Net) continues to derive from the column's locally-fetched period transactions

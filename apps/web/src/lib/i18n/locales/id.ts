@@ -113,9 +113,11 @@ export const id: TranslationSchema = {
 			cashflowThisMonth: 'Arus Kas Periode',
 			inflow: 'Masuk',
 			outflow: 'Keluar',
-			closingNetWorth: 'Estimasi Akhir',
+			closingNetWorth: 'Net Worth Penutupan',
+			projectedNetWorth: 'Proyeksi Net Worth',
+			closingMonthEndProjection: 'Proyeksi Akhir Bulan',
 			spendable: 'Bebas',
-			locked: 'Terkunci',
+			locked: 'Cadangan',
 			goalsProgress: 'Progres Tabungan',
 			noGoals: 'Tidak ada target tabungan aktif'
 		},

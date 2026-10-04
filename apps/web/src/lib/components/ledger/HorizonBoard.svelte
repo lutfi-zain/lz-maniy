@@ -81,13 +81,14 @@
 
 			// Point-in-time Net Worth breakdown from server projections
 			const currYearMonth = new Date().toISOString().slice(0, 7);
-			let label: 'PROYEKSI NET WORTH' | 'NET WORTH SAAT INI' | 'NET WORTH PENUTUPAN' = 'NET WORTH SAAT INI';
+			let label: 'PROYEKSI NET WORTH' | 'PROYEKSI AKHIR BULAN' | 'NET WORTH PENUTUPAN' = 'PROYEKSI AKHIR BULAN';
 			if (periodKey > currYearMonth) {
 				label = 'PROYEKSI NET WORTH';
 			} else if (periodKey < currYearMonth) {
 				label = 'NET WORTH PENUTUPAN';
+			} else {
+				label = 'PROYEKSI AKHIR BULAN';
 			}
-
 			const closingNetWorth = srvPeriod?.netWorth.total ?? currentNetWorth;
 			const spendable = srvPeriod?.netWorth.spendable ?? currentSpendable;
 			const locked = srvPeriod?.netWorth.locked ?? currentLocked;

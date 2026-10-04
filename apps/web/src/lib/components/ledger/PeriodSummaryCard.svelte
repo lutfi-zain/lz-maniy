@@ -90,7 +90,13 @@
 		<div class="space-y-1">
 			<div class="flex items-center justify-between">
 				<span class="text-[10px] font-semibold tracking-wider text-[#787774] uppercase">
-					{summary.label || 'PROYEKSI NET WORTH'}
+					{summary.label === 'PROYEKSI AKHIR BULAN'
+						? t('ledger.summary.closingMonthEndProjection')
+						: summary.label === 'NET WORTH PENUTUPAN'
+							? t('ledger.summary.closingNetWorth')
+							: summary.label === 'PROYEKSI NET WORTH'
+								? t('ledger.summary.projectedNetWorth')
+								: summary.label || t('ledger.summary.projectedNetWorth')}
 				</span>
 				<span class="font-mono text-xs font-bold text-[#111111] tabular-nums">
 					{fmtIDR(summary.closingNetWorth)}

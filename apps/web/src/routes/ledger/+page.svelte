@@ -262,8 +262,67 @@
 		return map;
 	});
 
-	// Aggregates computed from filtered transactions (converted to IDR)
+	const hasNarrowingFilters = $derived(
+		selectedWalletIds.length > 0 ||
+		selectedCategoryIds.length > 0 ||
+		selectedBudgetIds.length > 0 ||
+		selectedType !== 'all' ||
+		selectedStatus !== 'all' ||
+		Boolean(searchKeyword.trim())
+	);
+
+	// Server-driven anchor for List View right zone and full-period cashflow
+	let horizonAnchorData = $state<HorizonBoardDTO | null>(null);
+
+	$effect(() => {
+		const endDate = dateFilterStore.endDate;
+		if (!endDate) {
+			horizonAnchorData = null;
+			return;
+		}
+
+		const endClean = endDate.slice(0, 10);
+		const endYearMonth = endClean.slice(0, 7);
+
+		const controller = new AbortController();
+		reedrichStore
+			.fetchHorizonProjections([endYearMonth], undefined, controller.signal)
+			.then((data) => {
+				if (controller.signal.aborted) return;
+				horizonAnchorData = data;
+			})
+			.catch((err) => {
+				if (!controller.signal.aborted) return;
+				console.warn('Failed to fetch horizon projection for anchor:', err);
+			});
+
+		return () => {
+			controller.abort();
+		};
+	});
+
+	// Aggregates computed from filtered transactions or authoritative server horizon cashflow
 	const aggregateStats = $derived.by(() => {
+		const endClean = dateFilterStore.endDate?.slice(0, 10);
+		const endYearMonth = endClean?.slice(0, 7);
+		const srvPeriod = horizonAnchorData?.periods.find((p) => p.periodKey === endYearMonth);
+
+		// When no narrowing sub-filters are active and viewing a standard month preset, use server horizon cashflow
+		if (
+			!hasNarrowingFilters &&
+			srvPeriod &&
+			(dateFilterStore.preset === 'this_month' ||
+				dateFilterStore.preset === 'next_month' ||
+				dateFilterStore.preset === 'last_month')
+		) {
+			return {
+				count: serverTotalCount || filteredTransactions.length,
+				income: srvPeriod.cashflow.income,
+				expense: srvPeriod.cashflow.expense,
+				net: srvPeriod.cashflow.net
+			};
+		}
+
 		let inSum = 0;
 		let outSum = 0;
 		for (const t of filteredTransactions) {
@@ -276,47 +335,10 @@
 			}
 		}
 		return {
-			count: filteredTransactions.length,
+			count: serverTotalCount || filteredTransactions.length,
 			income: inSum,
 			expense: outSum,
 			net: inSum - outSum
-		};
-	});
-
-	// Server-driven anchor for List View right zone
-	let horizonAnchorData = $state<HorizonBoardDTO | null>(null);
-
-	$effect(() => {
-		const endDate = dateFilterStore.endDate;
-		if (!endDate) {
-			horizonAnchorData = null;
-			return;
-		}
-
-		const endClean = endDate.slice(0, 10);
-		const endYearMonth = endClean.slice(0, 7);
-		const currYearMonth = new Date().toISOString().slice(0, 7);
-
-		// Present month uses live snapshot directly
-		if (endYearMonth === currYearMonth) {
-			horizonAnchorData = null;
-			return;
-		}
-
-		const controller = new AbortController();
-		reedrichStore
-			.fetchHorizonProjections([endYearMonth], undefined, controller.signal)
-			.then((data) => {
-				if (controller.signal.aborted) return;
-				horizonAnchorData = data;
-			})
-			.catch((err) => {
-				if (controller.signal.aborted) return;
-				console.warn('Failed to fetch horizon projection for anchor:', err);
-			});
-
-		return () => {
-			controller.abort();
 		};
 	});
 
@@ -333,7 +355,7 @@
 				amount: currentNetWorth,
 				spendableAmount: currentSpendable,
 				lockedAmount: currentLocked,
-				subtext: 'posisi likuiditas terkonsolidasi'
+				subtext: 'posisi kas riil hari ini (live snapshot)'
 			};
 		}
 
@@ -368,7 +390,7 @@
 			amount: currentNetWorth,
 			spendableAmount: currentSpendable,
 			lockedAmount: currentLocked,
-			subtext: 'posisi likuiditas terkonsolidasi'
+			subtext: 'posisi kas riil hari ini (live snapshot)'
 		};
 	});
 

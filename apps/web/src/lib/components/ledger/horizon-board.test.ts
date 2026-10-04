@@ -275,3 +275,26 @@ describe('HorizonBoard Goal Snapshot Point-in-Time Derivation', () => {
 		expect(decGoalAmt / goal.targetAmount).toBe(1.05);
 	});
 });
+
+describe('HorizonBoard Period Label Resolution', () => {
+	function resolvePeriodLabel(periodKey: string, currYearMonth: string): string {
+		if (periodKey > currYearMonth) return 'PROYEKSI NET WORTH';
+		if (periodKey < currYearMonth) return 'NET WORTH PENUTUPAN';
+		return 'PROYEKSI AKHIR BULAN';
+	}
+
+	it('resolves current month to PROYEKSI AKHIR BULAN', () => {
+		const current = '2026-10';
+		expect(resolvePeriodLabel('2026-10', current)).toBe('PROYEKSI AKHIR BULAN');
+	});
+
+	it('resolves future month to PROYEKSI NET WORTH', () => {
+		const current = '2026-10';
+		expect(resolvePeriodLabel('2026-11', current)).toBe('PROYEKSI NET WORTH');
+	});
+
+	it('resolves past month to NET WORTH PENUTUPAN', () => {
+		const current = '2026-10';
+		expect(resolvePeriodLabel('2026-09', current)).toBe('NET WORTH PENUTUPAN');
+	});
+});
