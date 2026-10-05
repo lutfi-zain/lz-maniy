@@ -40,6 +40,14 @@ describe('ledgerFilterStore in-memory persistence', () => {
 		expect(ledgerFilterStore.searchKeyword).toBe('kopi');
 	});
 
+	it('handles search keyword and marks active filter', () => {
+		ledgerFilterStore.currentPage = 3;
+		ledgerFilterStore.searchKeyword = 'test';
+		expect(ledgerFilterStore.searchKeyword).toBe('test');
+		expect(ledgerFilterStore.currentPage).toBe(1);
+		expect(ledgerFilterStore.hasActiveFilters).toBe(true);
+	});
+
 	it('manages budget filters correctly', () => {
 		ledgerFilterStore.setBudgetFilter('b-123', 'Renovasi Rumah');
 		expect(ledgerFilterStore.budgetIds).toEqual(['b-123']);

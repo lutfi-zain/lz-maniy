@@ -116,6 +116,8 @@
 		if (qType && ['expense', 'income', 'transfer'].includes(qType)) {
 			selectedType = qType as typeof selectedType;
 		}
+		const qSearch = page.url.searchParams.get('search') || page.url.searchParams.get('q');
+		if (qSearch) searchKeyword = qSearch;
 		// Ensure snapshot (categories and wallets) is loaded
 		reedrichStore.fetchSnapshot().then(() => {
 			if (qCat) {

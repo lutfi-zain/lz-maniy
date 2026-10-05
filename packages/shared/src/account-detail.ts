@@ -420,6 +420,8 @@ export interface HorizonPeriodSummary {
 		income: number;
 		expense: number;
 		net: number;
+		netSpendable?: number;
+		netLocked?: number;
 	};
 	netWorth: {
 		total: number;

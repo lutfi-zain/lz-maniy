@@ -78,7 +78,8 @@
 			const inSum = srvPeriod?.cashflow.income ?? 0;
 			const outSum = srvPeriod?.cashflow.expense ?? 0;
 			const net = srvPeriod?.cashflow.net ?? 0;
-
+			const netSpendable = srvPeriod?.cashflow.netSpendable;
+			const netLocked = srvPeriod?.cashflow.netLocked;
 			// Point-in-time Net Worth breakdown from server projections
 			const currYearMonth = new Date().toISOString().slice(0, 7);
 			let label: 'PROYEKSI NET WORTH' | 'PROYEKSI AKHIR BULAN' | 'NET WORTH PENUTUPAN' = 'PROYEKSI AKHIR BULAN';
@@ -142,6 +143,8 @@
 				income: inSum,
 				expense: outSum,
 				net,
+				netSpendable,
+				netLocked,
 				closingNetWorth,
 				spendable,
 				locked,

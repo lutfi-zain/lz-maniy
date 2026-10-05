@@ -73,12 +73,36 @@ Each period column SHALL contain a compact transaction table supporting full CRU
 - **WHEN** a period contains no transactions (e.g. a future month with no planned entries)
 - **THEN** the column displays a minimal empty state message ("Belum ada transaksi") with a prominent add action
 
-### Requirement: Per-Period Financial Summary Card
-Each period column SHALL display a sticky summary card at its bottom showing cashflow aggregates, projected net worth, and goal snapshots for that period's closing date.
+### Requirement: Per-Period Financial Summary Card with Cashflow Liquidity Decomposition
+Each period column in the Ledger Horizon Board SHALL display a sticky summary card at its bottom showing cashflow aggregates (inflow, outflow, net cashflow) along with liquidity partition metrics (`netSpendable` and `netLocked`) when available from the server horizon projections, projected net worth with temporal status labeling, and goal snapshots for that period's closing date.
 
 #### Scenario: Cashflow Aggregates
 - **WHEN** a period column renders its summary card
 - **THEN** the card shows Masuk (total income, green), Keluar (total expense), and Net (income minus expense) in mono font, all amounts converted to IDR
+
+#### Scenario: Period summary displays cashflow liquidity decomposition when available
+- **GIVEN** a horizon period projection containing `cashflow.net: 8971700`, `cashflow.netSpendable: 1971700`, and `cashflow.netLocked: 7000000`
+- **WHEN** the period column summary card is rendered
+- **THEN** the summary card MUST display:
+  - "Net Cashflow" with value `+Rp 8.971.700`
+  - "Inflow" and "Outflow" rows
+  - A sub-breakdown row showing "Net Operasional" with green dot indicator and value `+Rp 1.971.700`
+  - A sub-breakdown row showing "Net Cadangan" with amber dot indicator and value `+Rp 7.000.000`
+
+#### Scenario: Period summary gracefully handles missing partition fields
+- **GIVEN** a horizon period projection where `cashflow.netSpendable` and `cashflow.netLocked` are undefined or null
+- **WHEN** the period column summary card is rendered
+- **THEN** the summary card MUST display Net Cashflow, Inflow, and Outflow normally
+- **THEN** the sub-breakdown rows ("Net Operasional" and "Net Cadangan") MUST NOT be rendered
+
+#### Scenario: Period summary labels Net Worth according to temporal position
+- **GIVEN** a horizon board period
+- **WHEN** the period is for a future month (`periodKey > currYearMonth`)
+- **THEN** the Net Worth label MUST be "PROYEKSI NET WORTH"
+- **WHEN** the period is for a past month (`periodKey < currYearMonth`)
+- **THEN** the Net Worth label MUST be "NET WORTH PENUTUPAN"
+- **WHEN** the period is for the current month (`periodKey === currYearMonth`)
+- **THEN** the Net Worth label MUST be "PROYEKSI AKHIR BULAN"
 
 #### Scenario: Cascading Point-in-Time Net Worth
 - **WHEN** multiple period columns are displayed (e.g. Oct, Nov, Dec)

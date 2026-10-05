@@ -118,6 +118,8 @@ export const id: TranslationSchema = {
 			closingMonthEndProjection: 'Proyeksi Akhir Bulan',
 			spendable: 'Bebas',
 			locked: 'Cadangan',
+			netSpendable: 'Net Operasional',
+			netLocked: 'Net Cadangan',
 			goalsProgress: 'Progres Tabungan',
 			noGoals: 'Tidak ada target tabungan aktif'
 		},

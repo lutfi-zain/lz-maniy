@@ -116,6 +116,8 @@ export const en = {
 			closingMonthEndProjection: 'Month-End Projection',
 			spendable: 'Spendable',
 			locked: 'Committed',
+			netSpendable: 'Net Spendable',
+			netLocked: 'Net Locked',
 			goalsProgress: 'Goals Pacing',
 			noGoals: 'No active savings goals'
 		},

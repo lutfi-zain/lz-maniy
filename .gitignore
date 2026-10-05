@@ -19,3 +19,4 @@ apps/agent/eval/.promptfoo/
 # Workspace nested node_modules
 apps/*/node_modules/
 packages/*/node_modules/
+omp-session-*.html

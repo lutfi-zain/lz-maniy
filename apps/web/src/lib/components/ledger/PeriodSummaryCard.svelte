@@ -19,6 +19,8 @@
 		income: number;
 		expense: number;
 		net: number;
+		netSpendable?: number;
+		netLocked?: number;
 		closingNetWorth: number;
 		spendable: number;
 		locked: number;
@@ -84,6 +86,37 @@
 				<span>{t('ledger.summary.outflow')}</span>
 				<span class="font-medium text-[#111111] tabular-nums">−{fmtIDR(summary.expense)}</span>
 			</div>
+
+			{#if summary.netSpendable !== undefined && summary.netLocked !== undefined}
+				<div class="mt-1 space-y-1 border-t border-[#EAEAEA] pt-1">
+					<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
+						<span class="flex items-center gap-1.5">
+							<span class="size-1.5 rounded-full bg-[#346538]"></span>
+							<span>{t('ledger.summary.netSpendable')}</span>
+						</span>
+						<span
+							class="font-medium tabular-nums {summary.netSpendable >= 0
+								? 'text-[#346538]'
+								: 'text-[#9F2F2D]'}"
+						>
+							{summary.netSpendable >= 0 ? '+' : '−'}{fmtIDR(Math.abs(summary.netSpendable))}
+						</span>
+					</div>
+					<div class="flex items-center justify-between font-mono text-[10px] text-[#787774]">
+						<span class="flex items-center gap-1.5">
+							<span class="size-1.5 rounded-full bg-[#956400]"></span>
+							<span>{t('ledger.summary.netLocked')}</span>
+						</span>
+						<span
+							class="font-medium tabular-nums {summary.netLocked >= 0
+								? 'text-[#956400]'
+								: 'text-[#9F2F2D]'}"
+						>
+							{summary.netLocked >= 0 ? '+' : '−'}{fmtIDR(Math.abs(summary.netLocked))}
+						</span>
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Layer 2: Point-in-Time Net Worth -->
