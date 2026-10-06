@@ -427,9 +427,12 @@ export class ChatStore {
 		await this.executeStream(userMsg.content, target.id);
 	};
 
-	sendMessage = async (text: string, image?: { data: string; mimeType: string }) => {
-		if (!text.trim() && !image) return;
-		if (!authStore.accessToken) throw new Error('Unauthenticated');
+	sendMessage = async (
+		text: string,
+		image?: { data: string; mimeType: string },
+		statementSessionId?: string
+	) => {
+		if (!text.trim() && !image && !statementSessionId) return;
 
 		const userMsg: ChatMessage = {
 			id: crypto.randomUUID(),
@@ -458,13 +461,14 @@ export class ChatStore {
 		};
 		this.messages = [...this.messages, assistantMsg];
 
-		await this.executeStream(text, assistantId, image);
+		await this.executeStream(text, assistantId, image, statementSessionId);
 	};
 
 	private executeStream = async (
 		text: string,
 		assistantId: string,
-		image?: { data: string; mimeType: string }
+		image?: { data: string; mimeType: string },
+		statementSessionId?: string
 	) => {
 		this.isStreaming = true;
 		this.abortController = new AbortController();
@@ -477,7 +481,8 @@ export class ChatStore {
 				pageContext: this.buildPageContext(),
 				model: { provider: this.selectedModel.provider, model: this.selectedModel.model },
 				thinkingLevel: this.thinkingLevel,
-				image
+				image,
+				statementSessionId
 			};
 			const token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {

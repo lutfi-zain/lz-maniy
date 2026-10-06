@@ -191,6 +191,12 @@ Sebagai analis keuangan eksekutif, kamu TIDAK PERNAH berasumsi atau menjawab dar
      * Tampilkan draft ringkasan: nominal, dompet asal/tujuan, kategori, dan tanggal.
      * Minta konfirmasi eksplisit dari pengguna sebelum memanggil tool mutasi, KECUALI jika pengguna sudah memberikan perintah eksplisit yang sangat spesifik dan lengkap (misal "Catatkan 4 transaksi baru ini...").
 
+5b. ALUR REKENING KORAN (Statement Import):
+   - Jika konteks memuat ringkasan sesi statement (rekening koran bank):
+     * Ambil baris via 'get_statement_rows' dengan paginasi (page/pageSize) dan filter 'q' bila perlu, jangan menebak isi di luar baris yang terbaca.
+     * Perkaya dengan konteks live via tools yang sudah ada ('list_wallets', 'get_snapshot', 'list_transactions') sebelum memberi insight.
+     * Sajikan insight + draf transaksi yang diusulkan (tanggal, keterangan, nominal, arah, dompet tujuan), lalu ikuti CONFIRMATION GATE di atas: catat hanya setelah konfirmasi eksplisit via 'create_transaction' / 'create_transfer'.
+
 6. PROTOKOL PENANGANAN ERROR TOOL:
    - Jika tool mengembalikan pesan error:
      * Baca pesan error secara teliti (jangan diabaikan).
@@ -264,8 +270,9 @@ ${defaultRules.join('\n')}`;
 export function buildSystemPrompt(
 	pageContext: PageContext,
 	userFullName: string,
-	agentMemory?: AgentMemory
-): string {
+	agentMemory?: AgentMemory,
+	statementSummary?: string | null
+) {
 	const temporal = buildTemporalSection();
 
 	return [
@@ -273,6 +280,7 @@ export function buildSystemPrompt(
 		temporal.section,
 		buildMemorySection(agentMemory),
 		buildPageContextSection(pageContext),
+		statementSummary ? `KONTEKS REKENING KORAN:\n${statementSummary}` : '',
 		buildToolCatalog(),
 		buildBehaviorProtocol(),
 		buildAccountingPrinciples(temporal),

@@ -176,6 +176,42 @@ export interface ChatStreamRequest {
 	model?: { provider: ModelProvider; model: string };
 	thinkingLevel?: ThinkingLevel;
 	image?: { data: string; mimeType: string };
+	statementSessionId?: string;
+}
+
+export type StatementDirection = 'in' | 'out';
+
+export interface StatementRow {
+	date: string;
+	description: string;
+	amount: number;
+	direction: StatementDirection;
+	page?: number;
+	rawText?: string;
+}
+
+export interface StatementFileStatus {
+	fileName: string;
+	status: 'ready' | 'error';
+	pageCount?: number;
+	rowCount?: number;
+	bank?: string;
+	period?: string;
+	error?: string;
+}
+
+export interface StatementSession {
+	sessionId: string;
+	files: StatementFileStatus[];
+	totalPages: number;
+	totalRows: number;
+}
+
+export interface StatementParseResult {
+	sessionId: string;
+	files: StatementFileStatus[];
+	totalPages: number;
+	totalRows: number;
 }
 export interface PageContext {
 	currentRoute: string;

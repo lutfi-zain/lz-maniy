@@ -14,7 +14,7 @@ import { createRecurringTools } from '../agent/tools/recurring.js';
 import { createFeedbackTools } from '../agent/tools/feedback.js';
 import { createMemoryTools } from '../agent/tools/memory.js';
 import { createUICommandTools } from '../agent/tools/ui-commands.js';
-import { createGeminiRunner } from '../agent/gemini-native.js';
+import { createStatementTools } from '../agent/tools/statements.js';
 import {
 	createConversation,
 	getConversation,
@@ -141,6 +141,28 @@ chatRouter.post('/', async (c) => {
 	// Retrieve agent memory
 	const agentMemory = await getAgentMemory(c.env.DB, user.userId);
 
+	// Resolve statement session reference (summary only, rows stay in KV)
+	let statementSummary: string | null = null;
+	if (body.statementSessionId && /^[0-9a-f-]{8,64}$/i.test(body.statementSessionId)) {
+		const manifestRaw = await c.env.CONFIG.get(
+			`stmt:${user.userId}:${body.statementSessionId}:manifest`
+		);
+		if (manifestRaw) {
+			try {
+				const manifest = JSON.parse(manifestRaw) as {
+					files: Array<{ fileName: string; rowCount?: number; bank?: string }>;
+					totalPages: number;
+					totalRows: number;
+				};
+				const fileBits = manifest.files
+					.map((f) => `${f.fileName} (${f.rowCount ?? 0} baris${f.bank ? `, ${f.bank}` : ''})`)
+					.join('; ');
+				statementSummary = `Konteks Rekening Koran: sesi ${body.statementSessionId} memuat ${manifest.totalRows} baris dari ${manifest.totalPages} halaman [${fileBits}]. Gunakan tool get_statement_rows untuk membaca baris bila perlu.`;
+			} catch {
+				statementSummary = null;
+			}
+		}
+	}
 	// Helper for credit settlement on stream completion
 	const settleCredits = async (promptTokens: number, completionTokens: number) => {
 		const pricing = await getCreditPricing(c.env.DB, modelConfig.model);
@@ -167,7 +189,8 @@ chatRouter.post('/', async (c) => {
 			c.env.DB,
 			user.userId,
 			agentMemory,
-			settleCredits
+			settleCredits,
+			c.env.CONFIG
 		);
 
 		const stream = runner.runGeminiStream(
@@ -177,7 +200,8 @@ chatRouter.post('/', async (c) => {
 			user.fullName,
 			priorMessages,
 			body.thinkingLevel,
-			body.image
+			body.image,
+			statementSummary
 		);
 		let fullAssistantText = '';
 
@@ -254,10 +278,10 @@ chatRouter.post('/', async (c) => {
 		...createRecurringTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createFeedbackTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createMemoryTools(c.env.DB, user.userId),
-		...createUICommandTools()
+		...createStatementTools(c.env.CONFIG, user.userId),
 	};
 
-	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory);
+	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory, statementSummary);
 
 	const providerOptions =
 		modelConfig.capabilities.thinking && body.thinkingLevel && body.thinkingLevel !== 'off'

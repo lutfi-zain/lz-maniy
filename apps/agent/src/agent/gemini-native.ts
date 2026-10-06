@@ -10,7 +10,7 @@ import { createGoalTools } from './tools/goal-management.js';
 import { createRecurringTools } from './tools/recurring.js';
 import { createFeedbackTools } from './tools/feedback.js';
 import { createMemoryTools } from './tools/memory.js';
-import { createUICommandTools } from './tools/ui-commands.js';
+import { createStatementTools } from './tools/statements.js';
 import { buildGeminiDeclarations, type ToolDefinitionLike } from './gemini-declarations.js';
 import { buildSystemPrompt } from './system-prompt.js';
 
@@ -22,7 +22,8 @@ export function createGeminiRunner(
 	db?: D1Database,
 	userId?: string,
 	agentMemory?: AgentMemory,
-	onSettleCredits?: (promptTokens: number, completionTokens: number) => Promise<{ creditsUsed: number; creditsRemaining: number }>
+	onSettleCredits?: (promptTokens: number, completionTokens: number) => Promise<{ creditsUsed: number; creditsRemaining: number }>,
+	kv?: KVNamespace
 ) {
 	const ai = new GoogleGenAI({ apiKey });
 
@@ -34,8 +35,8 @@ export function createGeminiRunner(
 		...createDebtLoanTools(reedrichUrl, token, fetcher),
 		...createGoalTools(reedrichUrl, token, fetcher),
 		...createRecurringTools(reedrichUrl, token, fetcher),
-		...createFeedbackTools(reedrichUrl, token, fetcher),
 		...(db && userId ? createMemoryTools(db, userId) : {}),
+		...(kv && userId ? createStatementTools(kv, userId) : {}),
 		...createUICommandTools()
 	};
 
@@ -61,11 +62,12 @@ export function createGeminiRunner(
 		userName: string,
 		priorMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [],
 		thinkingLevel?: ThinkingLevel,
-		image?: { data: string; mimeType: string }
+		image?: { data: string; mimeType: string },
+		statementSummary?: string | null
 	): AsyncGenerator<string> {
 		yield `f:{"messageId":"msg-${crypto.randomUUID()}"}\n`;
 
-		const systemInstruction = buildSystemPrompt(pageContext, userName, agentMemory);
+		const systemInstruction = buildSystemPrompt(pageContext, userName, agentMemory, statementSummary);
 
 		const thinkingConfig = (() => {
 			if (!thinkingLevel || thinkingLevel === 'off') {
