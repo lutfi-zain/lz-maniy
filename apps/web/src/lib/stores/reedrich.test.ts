@@ -679,4 +679,54 @@ describe('ReedrichStore', () => {
 			expect(fetchMock).toHaveBeenCalled();
 		});
 	});
+
+	describe('Sync & Post-Mutation Freshness', () => {
+		it('syncActivePage dispatches ledger route queries with cache clearing', async () => {
+			const fetchMock = vi.fn().mockImplementation(() =>
+				Promise.resolve({ ok: true, json: async () => ({}) })
+			);
+			vi.stubGlobal('fetch', fetchMock);
+
+			expect(store.isSyncing).toBe(false);
+			await store.syncActivePage('/ledger');
+			expect(store.isSyncing).toBe(false);
+			expect(store.lastSyncAt).not.toBeNull();
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/analytics/horizon'),
+				expect.anything()
+			);
+		});
+
+		it('syncActivePage dispatches planning route queries including budgets and goals', async () => {
+			const fetchMock = vi.fn().mockImplementation(() =>
+				Promise.resolve({ ok: true, json: async () => ({}) })
+			);
+			vi.stubGlobal('fetch', fetchMock);
+
+			await store.syncActivePage('/planning');
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/budgets'),
+				expect.anything()
+			);
+			expect(fetchMock).toHaveBeenCalledWith(
+				expect.stringContaining('/api/v1/goals'),
+				expect.anything()
+			);
+		});
+
+		it('syncActivePage guards concurrent invocations', async () => {
+			const gate = Promise.withResolvers<void>();
+			const fetchMock = vi.fn().mockImplementation(() =>
+				gate.promise.then(() => ({ ok: true, json: async () => ({}) }))
+			);
+			vi.stubGlobal('fetch', fetchMock);
+
+			const first = store.syncActivePage('/accounts');
+			const second = store.syncActivePage('/accounts');
+			gate.resolve();
+			await Promise.all([first, second]);
+			expect(store.isSyncing).toBe(false);
+			expect(store.lastSyncAt).not.toBeNull();
+		});
+	});
 });

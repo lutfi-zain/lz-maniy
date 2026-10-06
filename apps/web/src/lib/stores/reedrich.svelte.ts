@@ -38,6 +38,7 @@ import type {
 } from '$lib/types/account-detail';
 import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
 import { getPeriodDateBounds } from '$lib/utils/dates';
+import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
@@ -855,7 +856,57 @@ export class ReedrichStore {
 
 	private async invalidateAndRefresh(): Promise<void> {
 		this.transactionCache.clear();
-		await Promise.all([this.fetchSnapshot(), this.fetchWallets(), this.fetchRecurringTemplates()]);
+		await Promise.all([
+			this.fetchSnapshot(),
+			this.fetchWallets(),
+			this.fetchRecurringTemplates(),
+			this.fetchBudgets().catch(() => []),
+			this.fetchGoals().catch(() => []),
+			this.fetchDebtsLoans().catch(() => ({ activeDebts: this.activeDebts, activeLoans: this.activeLoans }))
+		]);
+	}
+
+	isSyncing = $state<boolean>(false);
+	lastSyncAt = $state<number | null>(null);
+
+	async syncActivePage(route: string): Promise<void> {
+		if (this.isSyncing) return;
+		this.isSyncing = true;
+		try {
+			this.transactionCache.clear();
+			const start = dateFilterStore.startDate || undefined;
+			const end = dateFilterStore.endDate || undefined;
+			if (route.startsWith('/ledger')) {
+				const endYearMonth = (end ?? new Date().toISOString().slice(0, 10)).slice(0, 7);
+				await Promise.all([
+					this.fetchSnapshot(),
+					this.fetchWallets({ startDate: start, endDate: end }).catch(() => []),
+					this.fetchHorizonProjections([endYearMonth]).catch(() => null)
+				]);
+			} else if (route.startsWith('/accounts')) {
+				await Promise.all([
+					this.fetchSnapshot(),
+					this.fetchWallets({ startDate: start, endDate: end }).catch(() => [])
+				]);
+			} else if (route.startsWith('/planning')) {
+				await Promise.all([
+					this.fetchSnapshot(),
+					this.fetchWallets({ startDate: start, endDate: end }).catch(() => []),
+					this.fetchBudgets().catch(() => []),
+					this.fetchGoals().catch(() => []),
+					this.fetchDebtsLoans().catch(() => ({
+						activeDebts: this.activeDebts,
+						activeLoans: this.activeLoans
+					})),
+					this.fetchRecurringTemplates().catch(() => [])
+				]);
+			} else {
+				await this.invalidateAndRefresh();
+			}
+			this.lastSyncAt = Date.now();
+		} finally {
+			this.isSyncing = false;
+		}
 	}
 
 	/**

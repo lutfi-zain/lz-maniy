@@ -32,6 +32,8 @@ export class ChatStore {
 	isStreaming = $state<boolean>(false);
 	panelOpen = $state<boolean>(false);
 	panelWidth = $state<number>(360);
+	maximized = $state<boolean>(false);
+	lastDockedWidth = $state<number>(360);
 	availableModels = $state<ModelConfig[]>([...DEFAULT_MODELS]);
 	showConversationList = $state<boolean>(false);
 	thinkingLevel = $state<ThinkingLevel>('medium');
@@ -138,11 +140,24 @@ export class ChatStore {
 	};
 
 	setPanelWidth = (widthPx: number) => {
+		if (this.maximized) return;
 		const max = typeof window !== 'undefined' ? window.innerWidth * 0.5 : 900;
 		const clamped = Math.max(280, Math.min(max, widthPx));
 		this.panelWidth = clamped;
 		if (typeof window !== 'undefined') {
 			localStorage.setItem(this.STORAGE_WIDTH_KEY, clamped.toString());
+		}
+	};
+
+	toggleMaximize = (force?: boolean) => {
+		const next = force !== undefined ? force : !this.maximized;
+		if (next === this.maximized) return;
+		if (next) {
+			this.lastDockedWidth = this.panelWidth;
+			this.maximized = true;
+		} else {
+			this.maximized = false;
+			this.setPanelWidth(this.lastDockedWidth);
 		}
 	};
 

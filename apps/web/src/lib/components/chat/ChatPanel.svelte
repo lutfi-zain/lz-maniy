@@ -8,6 +8,10 @@
 
 	let isMobile = $state(false);
 
+	const widthTier = $derived(
+		chatStore.maximized ? 'full' : chatStore.panelWidth >= 480 ? 'full' : chatStore.panelWidth >= 360 ? 'compact' : 'minimal'
+	);
+
 	$effect(() => {
 		const mq = window.matchMedia('(max-width: 1023px)');
 		isMobile = mq.matches;
@@ -37,13 +41,17 @@
 		</div>
 	{:else}
 		<!-- Desktop: right-side panel -->
-		<aside
-			class="fixed top-0 right-0 z-40 flex h-full flex-col border-l border-[#eaeaea] bg-white shadow-sm"
-			style="width: {chatStore.panelWidth}px; transition: none;"
-			aria-label="Agent Chat"
-		>
+	<aside
+		class="fixed top-0 right-0 z-40 flex h-full flex-col border-l border-[#eaeaea] bg-white shadow-sm"
+		style={chatStore.maximized
+			? 'left: 1rem; width: auto;'
+			: `width: ${chatStore.panelWidth}px; transition: none;`}
+		aria-label="Agent Chat"
+	>
+		{#if !chatStore.maximized}
 			<ChatResizeHandle />
-			<ChatPanelHeader {isMobile} />
+		{/if}
+		<ChatPanelHeader {isMobile} tier={widthTier} />
 			<div class="flex flex-1 overflow-hidden">
 				{#if chatStore.showConversationList}
 					<ConversationList />

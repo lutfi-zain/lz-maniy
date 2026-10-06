@@ -6,7 +6,7 @@ Right-side embedded chat panel UI for Maniyy V2 providing real-time streaming AI
 ## Requirements
 
 ### Requirement: Responsive Panel Layout and Docking
-The chat UI SHALL render as a docked right-side panel on desktop viewports and as a fullscreen overlay on mobile viewports, both toggleable without route navigation.
+The chat UI SHALL render as a docked right-side panel on desktop viewports and as a fullscreen overlay on mobile viewports, both toggleable without route navigation. On desktop, the panel SHALL support a maximized state that expands it to a near-fullscreen overlay and restores the previous docked width on exit.
 
 #### Scenario: Desktop Docked Layout
 - **WHEN** viewport width is $\ge$ 1024px (desktop) and chat panel is opened
@@ -28,6 +28,24 @@ The chat UI SHALL render as a docked right-side panel on desktop viewports and a
 - **WHEN** user presses `Cmd+K` (macOS) or `Ctrl+K` (Windows/Linux) from any screen
 - **THEN** the chat panel toggles visibility
 - **THEN** existing single-key shortcuts (such as `N` for new transaction) continue to function when focus is not inside the chat panel text input
+
+#### Scenario: Maximize and restore panel width
+- **GIVEN** the chat panel is open on a desktop viewport at a docked width
+- **WHEN** the user activates the maximize control
+- **THEN** the panel expands to a near-fullscreen overlay
+- **WHEN** the user activates the restore control
+- **THEN** the panel returns to its previous docked width
+
+#### Scenario: Maximized state is not persisted across sessions
+- **GIVEN** the user maximized the chat panel
+- **WHEN** the page is reloaded
+- **THEN** the panel reopens at the last docked width, not maximized
+
+#### Scenario: Header controls remain reachable at minimum width
+- **GIVEN** the chat panel is resized to its 280px minimum width
+- **WHEN** the header renders
+- **THEN** the conversation title and the close control MUST remain visible and interactive
+- **THEN** secondary controls MUST collapse into icon-only or overflow states rather than clipping the close control
 
 ### Requirement: Streamed Message Rendering and UI Primitives
 The chat UI SHALL render conversation messages incrementally using shadcn-svelte chat primitives conforming to the Maniyy V2 minimalist-ui design language, with support for assistant message retry and multi-version navigation.
@@ -57,6 +75,15 @@ The chat UI SHALL render conversation messages incrementally using shadcn-svelte
 - **WHEN** an assistant response generation fails or connection drops
 - **THEN** an inline error indicator is displayed in the bubble with a prominent `Coba Lagi` action
 - **THEN** clicking `Coba Lagi` triggers an automatic retry for that message turn
+
+### Requirement: Markdown Message Rendering
+The chat UI SHALL render assistant message markdown with tables that scroll horizontally inside the message bubble instead of overflowing it.
+
+#### Scenario: Wide agent table scrolls inside the bubble
+- **GIVEN** an assistant message contains a markdown table wider than the message bubble
+- **WHEN** the message renders
+- **THEN** the table MUST be scrollable horizontally within the bubble
+- **THEN** no table content may overflow outside the bubble bounds
 
 ### Requirement: UI Command Interpretation and Execution
 The chat UI SHALL interpret structured `ui_command` payloads returned by agent tool executions and dispatch corresponding application actions.

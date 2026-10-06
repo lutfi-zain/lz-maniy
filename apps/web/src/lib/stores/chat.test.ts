@@ -38,6 +38,23 @@ describe('ChatStore', () => {
 		expect(store.panelWidth).toBe(280);
 	});
 
+	it('toggles maximized state with docked width memory', () => {
+		expect(store.maximized).toBe(false);
+		store.setPanelWidth(420);
+		store.toggleMaximize();
+		expect(store.maximized).toBe(true);
+		expect(store.lastDockedWidth).toBe(420);
+		store.toggleMaximize();
+		expect(store.maximized).toBe(false);
+		expect(store.panelWidth).toBe(420);
+	});
+
+	it('ignores width changes while maximized', () => {
+		store.toggleMaximize(true);
+		store.setPanelWidth(500);
+		expect(store.panelWidth).toBe(360);
+	});
+
 	it('resets conversation state on newConversation', () => {
 		store.activeConversationId = 'conv-123';
 		store.messages = [

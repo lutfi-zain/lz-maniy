@@ -132,13 +132,15 @@
 			<ChatToggleButton />
 			<button
 				type="button"
-				onclick={() => reedrichStore.fetchSnapshot()}
-				disabled={reedrichStore.isLoading}
+				onclick={() => reedrichStore.syncActivePage(pathname)}
+				disabled={reedrichStore.isLoading || reedrichStore.isSyncing}
 				class="flex cursor-pointer items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-xs font-medium text-[#111111] transition-transform hover:bg-[#EFEFED] active:scale-98 disabled:opacity-50"
-				title={t('nav.syncTitle')}
+				title={reedrichStore.lastSyncAt
+					? `${t('nav.syncTitle')} · ${dFmt(new Date(reedrichStore.lastSyncAt).toISOString().slice(0, 10))}`
+					: t('nav.syncTitle')}
 			>
 				<ArrowsClockwise
-					class="size-3 {reedrichStore.isLoading ? 'animate-spin' : ''}"
+					class="size-3 {reedrichStore.isLoading || reedrichStore.isSyncing ? 'animate-spin' : ''}"
 					weight="bold"
 				/>
 				<span class="hidden sm:inline">{t('nav.sync')}</span>

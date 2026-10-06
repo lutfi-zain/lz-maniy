@@ -12,7 +12,11 @@
 	const renderedHtml = $derived.by(() => {
 		if (!content) return '';
 		try {
-			return marked.parse(content) as string;
+			const raw = marked.parse(content) as string;
+			return raw.replace(
+				/<table>([\s\S]*?)<\/table>/g,
+				'<div class="table-scroll"><table>$1</table></div>'
+			);
 		} catch {
 			return content;
 		}
@@ -70,11 +74,16 @@
 		color: #111111;
 	}
 
-	:global(.markdown-body table) {
-		width: 100%;
-		border-collapse: collapse;
+	:global(.markdown-body .table-scroll) {
+		overflow-x: auto;
 		margin-top: 0.5rem;
 		margin-bottom: 0.5rem;
+	}
+
+	:global(.markdown-body .table-scroll table) {
+		width: max-content;
+		min-width: 100%;
+		border-collapse: collapse;
 		font-size: 12px;
 	}
 

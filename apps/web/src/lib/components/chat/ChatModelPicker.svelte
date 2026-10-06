@@ -5,6 +5,7 @@
 	import type { ThinkingLevel, ModelConfig } from '@maniyy/shared';
 	let open = $state(false);
 	let thinkingOpen = $state(false);
+	let { compact = false }: { compact?: boolean } = $props();
 
 	onMount(() => chatStore.loadModels());
 
@@ -49,9 +50,11 @@
 			class="flex items-center gap-1.5 rounded border border-[#EAEAEA] bg-[#F9F9F8] px-2 py-1 text-[11px] font-medium whitespace-nowrap text-[#111111] transition-colors hover:border-[#111111]"
 			aria-label="Pilih model AI"
 		>
-			<Sparkle size={12} weight="fill" class="text-[#1F6C9F]" />
-			<span class="max-w-[120px] truncate">{chatStore.selectedModel.displayName}</span>
-			<CaretDown size={10} weight="bold" class="text-[#787774]" />
+			<Sparkle size={12} weight="fill" class="shrink-0 text-[#1F6C9F]" />
+			{#if !compact}
+				<span class="max-w-[120px] truncate">{chatStore.selectedModel.displayName}</span>
+				<CaretDown size={10} weight="bold" class="text-[#787774]" />
+			{/if}
 		</button>
 
 		{#if open}
@@ -150,7 +153,7 @@
 	</div>
 
 	<!-- Thinking Level Selector (only rendered if model has thinking capability) -->
-	{#if chatStore.selectedModel.capabilities.thinking}
+	{#if chatStore.selectedModel.capabilities.thinking && !compact}
 		<div class="relative">
 			<button
 				type="button"
