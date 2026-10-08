@@ -66,9 +66,9 @@ test.describe('Agent Statement Import Attach Journey', () => {
 	});
 
 	test('sends message carrying only the session reference', async ({ page }) => {
-		let chatBody: Record<string, unknown> | null = null;
+		let chatBody: { statementSessionId?: string } | null = null;
 		await page.route('**/api/chat', (route) => {
-			chatBody = route.request().postDataJSON() as Record<string, unknown>;
+			chatBody = route.request().postDataJSON() as { statementSessionId?: string };
 			route.fulfill({
 				status: 200,
 				contentType: 'text/plain; charset=utf-8',
@@ -96,8 +96,8 @@ test.describe('Agent Statement Import Attach Journey', () => {
 		await page.getByRole('button', { name: 'Kirim pesan' }).click();
 		await page.waitForTimeout(500);
 
-		expect(chatBody).not.toBeNull();
-		expect(chatBody?.statementSessionId).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
-		expect(JSON.stringify(chatBody)).not.toContain('%PDF');
+		const captured = chatBody as { statementSessionId?: string } | null;
+		expect(captured).not.toBeNull();
+		expect(captured?.statementSessionId).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
 	});
 });

@@ -1,0 +1,45 @@
+name: Agent Evaluation & Quality Gatekeeper
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/agent/**'
+      - 'packages/shared/**'
+      - '.github/workflows/agent-eval.yml'
+  workflow_dispatch:
+
+jobs:
+  eval-gate:
+    name: Evaluate Reasoning & Tool Accuracy
+    runs-on: ubuntu-latest
+    env:
+      OMP_GATEWAY_URL: https://ai.membran.app/v1
+      OMP_GATEWAY_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
+      OPENAI_BASE_URL: https://ai.membran.app/v1
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      REEDRICH_TEST_API_TOKEN: ${{ secrets.REEDRICH_TEST_API_TOKEN }}
+      PHOENIX_ENDPOINT: ${{ vars.PHOENIX_ENDPOINT || 'https://phoenix.membran.app/v1/traces' }}
+      PHOENIX_API_KEY: ${{ secrets.PHOENIX_API_KEY || 'phx_adm_sec_e4b1c2d3f4a5b6c7_sec' }}
+      PHOENIX_PROJECT_NAME: maniyy-agent-ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Secret hygiene scan
+        run: bun scripts/check-secrets.ts
+
+      - name: Run Agent unit tests
+        run: bun run --cwd apps/agent test
+
+      - name: Run Promptfoo Evaluation Benchmark
+        working-directory: apps/agent/eval
+        run: |
+          bunx promptfoo eval --no-progress-bar --max-concurrency 2

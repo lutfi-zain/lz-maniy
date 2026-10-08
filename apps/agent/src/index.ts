@@ -1,6 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { tracingMiddleware } from './middleware/tracing.js';
 import { modelsRouter } from './routes/models.js';
 import { conversationsRouter } from './routes/conversations.js';
 import { chatRouter } from './routes/chat.js';
@@ -40,11 +41,13 @@ app.use(
 			return null;
 		},
 		allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-		allowHeaders: ['Content-Type', 'Authorization', 'X-Api-Key'],
-		exposeHeaders: ['X-Conversation-Id', 'X-Is-New-Conversation'],
+		allowHeaders: ['Content-Type', 'Authorization', 'X-Api-Key', 'traceparent'],
+		exposeHeaders: ['X-Conversation-Id', 'X-Is-New-Conversation', 'traceparent', 'X-Trace-Id'],
 		credentials: true
 	})
 );
+
+app.use('*', tracingMiddleware);
 
 app.route('/api/models', modelsRouter);
 app.route('/api/conversations', conversationsRouter);

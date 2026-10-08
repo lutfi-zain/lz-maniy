@@ -376,5 +376,49 @@ export const EVAL_DATASET: EvalTestCase[] = [
 			mustNotContain: ['😀', '🚀', '🔥', '🎉'],
 			minSteps: 1
 		}
+	},
+	{
+		id: 'TC-33',
+		category: 'transaction_record',
+		prompt: '63k bensin motor 35k indomaret coffee point dari huz',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['bensin', 'indomaret', 'huz'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-34',
+		category: 'transaction_record',
+		prompt: 'tapi tuker dari pocket ke bca main 150k dari cash main ke cash rumah 150k',
+		expected: {
+			requiredTools: ['create_transfer'],
+			mustContain: ['150', 'transfer'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-35',
+		category: 'planning_projection',
+		prompt: 'good, atur lagi semua planned nya sampai april. cek sisa per bulan itu berapa. jangan jangan kita bisa beli laptop desember?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['laptop', 'desember'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-36',
+		category: 'complex_reasoning',
+		prompt: '150+35 =185.000 883073156 BCA/esti Jahit sama beli kopi di Mama Ayya Ini bayar pake apa ya?',
+		expected: {
+			requiredTools: ['list_transactions'],
+			mustContain: ['BCA'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
 	}
 ];

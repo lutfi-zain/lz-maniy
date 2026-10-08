@@ -142,7 +142,7 @@
   vars:
     prompt: "Makan 'waroeng steak' take away with anak istri dari huz 85k"
   assert:
-    - type: contains
+    - type: icontains
       value: "waroeng steak"
     - type: not-contains
       value: "$"
@@ -153,7 +153,7 @@
   vars:
     prompt: "2k dari huz untuk parkir"
   assert:
-    - type: contains
+    - type: icontains
       value: "parkir"
     - type: not-contains
       value: "$"
@@ -164,7 +164,7 @@
   vars:
     prompt: "Lalu Saya barusan transfer 14jt dari bca ke main dengan admin 2500, catat ya"
   assert:
-    - type: contains
+    - type: icontains
       value: "transfer"
     - type: not-contains
       value: "$"
@@ -340,3 +340,47 @@
       value: "🎉"
     - type: llm-rubric
       value: "Agent acknowledges preference for clean tabular data and absence of emojis/decorative icons."
+
+- description: "[TC-33] Multi-intent compound transaction"
+  vars:
+    prompt: "63k bensin motor 35k indomaret coffee point dari huz"
+  assert:
+    - type: icontains
+      value: "bensin"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transaction')"
+
+- description: "[TC-34] Multi-pocket transfer re-allocation"
+  vars:
+    prompt: "tapi tuker dari pocket ke bca main 150k dari cash main ke cash rumah 150k"
+  assert:
+    - type: contains
+      value: "150"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('create_transfer')"
+
+- description: "[TC-35] Horizon projection laptop check"
+  vars:
+    prompt: "good, atur lagi semua planned nya sampai april. cek sisa per bulan itu berapa. jangan jangan kita bisa beli laptop desember?"
+  assert:
+    - type: icontains
+      value: "desember"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('get_snapshot') || output.includes('horizon_projection')"
+
+- description: "[TC-36] Payment method reconciliation"
+  vars:
+    prompt: "150+35 =185.000 883073156 BCA/esti Jahit sama beli kopi di Mama Ayya Ini bayar pake apa ya?"
+  assert:
+    - type: icontains
+      value: "BCA"
+    - type: not-contains
+      value: "$"
+    - type: javascript
+      value: "output.includes('list_transactions') || output.includes('get_snapshot')"

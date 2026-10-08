@@ -23,6 +23,16 @@ function delay(ms: number): Promise<void> {
 	setTimeout(resolve, ms);
 	return promise;
 }
+export function generateTraceParent(): string {
+	const traceBytes = new Uint8Array(16);
+	const spanBytes = new Uint8Array(8);
+	crypto.getRandomValues(traceBytes);
+	crypto.getRandomValues(spanBytes);
+	const traceId = Array.from(traceBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+	const spanId = Array.from(spanBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+	return `00-${traceId}-${spanId}-01`;
+}
+
 
 export class ChatStore {
 	conversations = $state<ConversationMeta[]>([]);
@@ -178,20 +188,32 @@ export class ChatStore {
 	setThinkingLevel = (level: ThinkingLevel) => {
 		this.thinkingLevel = level;
 	};
-	buildPageContext = (): PageContext => ({
-		currentRoute: page.url.pathname,
-		activeTab: reedrichStore.activeTab,
-		selectedInstitution: reedrichStore.selectedInstitution,
-		drawerOpen: reedrichStore.activeDrawer !== null,
-		drawerType: reedrichStore.activeDrawer?.type,
-		summary: {
-			totalNetWorth: reedrichStore.snapshot?.netWorth.consolidated.total,
-			totalSpendable: reedrichStore.snapshot?.wallets.spendable.total,
-			totalLocked: reedrichStore.snapshot?.wallets.locked.total,
-			walletCount: reedrichStore.allWallets.length,
-			hasCashFlow: Boolean(reedrichStore.snapshot?.monthlyCashFlow)
+	buildPageContext = (): PageContext => {
+		try {
+			return {
+				currentRoute: page?.url?.pathname ?? '/',
+				activeTab: reedrichStore?.activeTab ?? 'all',
+				selectedInstitution: reedrichStore?.selectedInstitution ?? null,
+				drawerOpen: Boolean(reedrichStore?.activeDrawer),
+				drawerType: reedrichStore?.activeDrawer?.type,
+				summary: {
+					totalNetWorth: reedrichStore?.snapshot?.netWorth?.consolidated?.total,
+					totalSpendable: reedrichStore?.snapshot?.wallets?.spendable?.total,
+					totalLocked: reedrichStore?.snapshot?.wallets?.locked?.total,
+					walletCount: reedrichStore?.allWallets?.length ?? 0,
+					hasCashFlow: Boolean(reedrichStore?.snapshot?.monthlyCashFlow)
+				}
+			};
+		} catch {
+			return {
+				currentRoute: '/',
+				activeTab: 'all',
+				selectedInstitution: null,
+				drawerOpen: false,
+				summary: { walletCount: 0, hasCashFlow: false }
+			};
 		}
-	});
+	};
 
 	executeUICommand = (cmd: UICommand) => {
 		switch (cmd.command) {
@@ -489,7 +511,8 @@ export class ChatStore {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
+					Authorization: `Bearer ${token}`,
+					traceparent: generateTraceParent()
 				},
 				body: JSON.stringify(body),
 				signal: this.abortController.signal
@@ -689,8 +712,6 @@ export class ChatStore {
 			}
 		} catch (err) {
 			if ((err as Error)?.name === 'AbortError') {
-				// User aborted
-			} else {
 				this.messages = this.messages.map((m) =>
 					m.id === assistantId
 						? this.syncActiveVariant({

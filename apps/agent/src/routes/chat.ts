@@ -1,3 +1,4 @@
+import { wrapToolsWithTracing } from '../observability/instrument-tools.js';
 import { Hono } from 'hono';
 import { streamText, type LanguageModelV1 } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
@@ -41,6 +42,7 @@ chatRouter.use('*', authMiddleware);
 
 chatRouter.post('/', async (c) => {
 	const user = c.get('user');
+	const tracer = c.get('tracer');
 	const body = await c.req.json<ChatStreamRequest>();
 
 	if (!body.message?.trim() && !body.image) {
@@ -48,8 +50,16 @@ chatRouter.post('/', async (c) => {
 	}
 
 	// 1. Credit Pre-check
+	const creditSpan = tracer?.startSpan('creditPreCheck', {
+		attributes: {
+			'user.id': user.userId
+		}
+	});
 	const creditState = await getOrCreateUserCredits(c.env.DB, user.userId);
+	creditSpan?.setAttribute('credit.balance', creditState.balance);
 	if (creditState.balance <= 0) {
+		creditSpan?.setStatus({ code: 2, message: 'insufficient_credits' });
+		creditSpan?.end();
 		return c.json(
 			{
 				error: 'insufficient_credits',
@@ -59,6 +69,8 @@ chatRouter.post('/', async (c) => {
 			402
 		);
 	}
+	creditSpan?.setStatus({ code: 1 });
+	creditSpan?.end();
 
 	// 2. Resolve model (with legacy opencode fallback and default gemini-3.7-flash)
 	let requestedProvider = body.model?.provider ?? 'omp';
@@ -138,7 +150,14 @@ chatRouter.post('/', async (c) => {
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
-	// Retrieve agent memory
+	// Retrieve agent memory & context with tracing
+	const contextSpan = tracer?.startSpan('contextRetrieval', {
+		attributes: {
+			'conversation.id': activeConvId,
+			'user.id': user.userId,
+			'has_statement_session': !!body.statementSessionId
+		}
+	});
 	const agentMemory = await getAgentMemory(c.env.DB, user.userId);
 
 	// Resolve statement session reference (summary only, rows stay in KV)
@@ -163,8 +182,17 @@ chatRouter.post('/', async (c) => {
 			}
 		}
 	}
+	contextSpan?.end();
+
 	// Helper for credit settlement on stream completion
 	const settleCredits = async (promptTokens: number, completionTokens: number) => {
+		const settleSpan = tracer?.startSpan('creditSettlement', {
+			attributes: {
+				'model': modelConfig.model,
+				'prompt_tokens': promptTokens,
+				'completion_tokens': completionTokens
+			}
+		});
 		const pricing = await getCreditPricing(c.env.DB, modelConfig.model);
 		const creditsUsed = calculateCreditsUsed(promptTokens, completionTokens, pricing);
 		const remaining = await deductCredits(c.env.DB, user.userId, creditsUsed);
@@ -176,6 +204,10 @@ chatRouter.post('/', async (c) => {
 			creditsUsed,
 			conversationId: activeConvId
 		});
+		settleSpan?.setAttribute('credits_used', creditsUsed);
+		settleSpan?.setAttribute('credits_remaining', remaining);
+		settleSpan?.setStatus({ code: 1 });
+		settleSpan?.end();
 		return { creditsUsed, creditsRemaining: remaining };
 	};
 
@@ -268,7 +300,7 @@ chatRouter.post('/', async (c) => {
 		aiModel = getModel(c.env, modelConfig.provider, modelConfig.model) as unknown as LanguageModelV1;
 	}
 
-	const tools = {
+	const rawTools = {
 		...createFinancialTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createMutationTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
 		...createWalletTools(c.env.REEDRICH_API_URL, user.accessToken, c.env.REEDRICH),
@@ -280,6 +312,7 @@ chatRouter.post('/', async (c) => {
 		...createMemoryTools(c.env.DB, user.userId),
 		...createStatementTools(c.env.CONFIG, user.userId),
 	};
+	const tools = wrapToolsWithTracing(rawTools, tracer, { includeSubSpans: true });
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory, statementSummary);
 
@@ -301,6 +334,20 @@ chatRouter.post('/', async (c) => {
 		});
 	}
 
+	const inferenceSpan = tracer?.startSpan('ai.streamText', {
+		attributes: {
+			'openinference.span.kind': 'LLM',
+			'llm.model_name': modelConfig.model,
+			'ai.model': modelConfig.model,
+			'ai.provider': modelConfig.provider,
+			'ai.max_steps': 10,
+			'ai.thinking_level': body.thinkingLevel || 'off',
+			'input.value': body.message
+		}
+	});
+	if (inferenceSpan) {
+		tracer?.setActiveParentSpan(inferenceSpan.spanId);
+	}
 	const result = streamText({
 		model: aiModel,
 		system: systemPrompt,
@@ -312,10 +359,32 @@ chatRouter.post('/', async (c) => {
 		maxSteps: 10,
 		...(providerOptions ? { providerOptions } : {}),
 		onFinish: (ev) => {
+			if (ev.usage) {
+				const promptTok = ev.usage.promptTokens ?? 0;
+				const compTok = ev.usage.completionTokens ?? 0;
+				inferenceSpan?.setAttribute('ai.usage.prompt_tokens', promptTok);
+				inferenceSpan?.setAttribute('ai.usage.completion_tokens', compTok);
+				inferenceSpan?.setAttribute('llm.token_count.prompt', promptTok);
+				inferenceSpan?.setAttribute('llm.token_count.completion', compTok);
+				inferenceSpan?.setAttribute('llm.token_count.total', promptTok + compTok);
+			}
+			if (ev.text) {
+				inferenceSpan?.setAttribute('output.value', ev.text);
+			}
+			inferenceSpan?.setAttribute('ai.finish_reason', ev.finishReason || 'stop');
+			inferenceSpan?.setStatus({ code: 1 });
+			inferenceSpan?.end();
+
 			c.executionCtx.waitUntil(
 				(async () => {
 					const finalContent = ev.text || '';
 					if (finalContent) {
+						const msgSpan = tracer?.startSpan('db.insertMessage', {
+							attributes: {
+								'conversation.id': activeConvId,
+								'message.role': 'assistant'
+							}
+						});
 						await insertMessage(c.env.DB, {
 							id: crypto.randomUUID(),
 							conversationId: activeConvId,
@@ -323,6 +392,8 @@ chatRouter.post('/', async (c) => {
 							content: finalContent
 						});
 						await touchConversation(c.env.DB, activeConvId);
+						msgSpan?.setStatus({ code: 1 });
+						msgSpan?.end();
 					}
 				})()
 			);

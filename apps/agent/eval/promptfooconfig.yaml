@@ -1,8 +1,17 @@
 # Promptfoo Evaluation Suite for Maniyy Financial Agent
-description: "Maniyy Financial Agent Reasoning Benchmark Across Gemini Models"
+description: "Maniyy Financial Agent Multi-Prompt Matrix & Reasoning Benchmark Across Models"
 
 prompts:
-  - "{{prompt}}"
+  - id: baseline
+    label: "Prompt Baseline (Verbose)"
+    raw: "file://prompts/system-baseline.txt"
+  - id: compact
+    label: "Prompt Compact (Token-Optimized)"
+    raw: "file://prompts/system-compact.txt"
+  - id: fewshot
+    label: "Prompt Few-Shot (Telegram Golden)"
+    raw: "file://prompts/system-fewshot.txt"
+
 providers:
   - id: "file://provider.ts"
     label: "Gemini 3.7 Flash (Default)"
@@ -14,18 +23,10 @@ providers:
     config:
       model: "google-antigravity/gemini-3.8-flash"
 
-  - id: "file://provider.ts"
-    label: "Gemini 2.5 Pro (Deep Reasoning)"
-    config:
-      model: "google-antigravity/gemini-2.5-pro"
-
 defaultTest:
   options:
     provider:
-      id: "openai:chat:google-antigravity/gemini-3.7-flash"
-      config:
-        apiBaseUrl: "https://ai.membran.app/v1"
-        apiKey: "${OMP_GATEWAY_KEY}"
+      id: "file://grader.ts"
 
 tests: "file://promptfoo-tests.yaml"
 

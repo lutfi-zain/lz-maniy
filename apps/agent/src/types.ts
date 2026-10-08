@@ -1,3 +1,5 @@
+import type { WorkerTracer } from './observability/tracer.js';
+
 /// <reference types="@cloudflare/workers-types" />
 
 export interface Env {
@@ -10,6 +12,10 @@ export interface Env {
 	OPENCODE_API_KEY?: string;
 	OMP_GATEWAY_KEY?: string;
 	OMP_GATEWAY_URL?: string;
+	PHOENIX_ENDPOINT?: string;
+	PHOENIX_API_KEY?: string;
+	PHOENIX_PROJECT_NAME?: string;
+	ENVIRONMENT?: string;
 }
 
 export interface AuthedUser {
@@ -23,5 +29,6 @@ export interface AuthedUser {
 declare module 'hono' {
 	interface ContextVariableMap {
 		user: AuthedUser;
+		tracer: WorkerTracer;
 	}
 }
