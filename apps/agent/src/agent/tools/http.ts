@@ -1,4 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
+import { getActiveTraceHeaders } from '../../observability/tracer.js';
 
 export function extractErrorMessage(err: unknown, fallback: string | number): string {
 	if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
@@ -16,7 +17,11 @@ export function createApiClient(reedrichUrl: string, token: string, fetcher?: Fe
 
 	const request = async (path: string, init?: RequestInit): Promise<Response> => {
 		const url = `${reedrichUrl}${path}`;
-		const mergedHeaders = { ...headers, ...init?.headers };
+		const mergedHeaders = {
+			...headers,
+			...getActiveTraceHeaders(),
+			...init?.headers
+		};
 		if (fetcher) {
 			return fetcher.fetch(new Request(url, { ...init, headers: mergedHeaders }));
 		}

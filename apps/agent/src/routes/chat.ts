@@ -237,7 +237,8 @@ chatRouter.post('/', async (c) => {
 			user.userId,
 			agentMemory,
 			settleCredits,
-			c.env.CONFIG
+			c.env.CONFIG,
+			tracer
 		);
 
 		const stream = runner.runGeminiStream(

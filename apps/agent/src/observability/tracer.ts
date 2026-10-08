@@ -59,6 +59,35 @@ export function formatTraceParent(traceId: string, spanId: string): string {
 	return `00-${traceId}-${spanId}-01`;
 }
 
+export interface ActiveTraceContext {
+	traceId: string;
+	spanId: string;
+	projectName?: string;
+}
+
+const activeTraceContextStack: ActiveTraceContext[] = [];
+
+export function pushActiveTraceContext(ctx: ActiveTraceContext): void {
+	activeTraceContextStack.push(ctx);
+}
+
+export function popActiveTraceContext(): void {
+	activeTraceContextStack.pop();
+}
+
+export function getActiveTraceHeaders(): Record<string, string> {
+	const current = activeTraceContextStack.at(-1);
+	if (!current) return {};
+	const headers: Record<string, string> = {
+		traceparent: formatTraceParent(current.traceId, current.spanId)
+	};
+	if (current.projectName) {
+		headers['x-project-name'] = current.projectName;
+		headers['x-phoenix-project'] = current.projectName;
+	}
+	return headers;
+}
+
 function toUnixNano(ms: number): string {
 	const fullMs = Math.floor(ms);
 	const fraction = ms - fullMs;

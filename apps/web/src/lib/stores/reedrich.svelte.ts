@@ -40,6 +40,16 @@ import { globalConcurrencyPool } from '$lib/utils/concurrency-pool';
 import { getPeriodDateBounds } from '$lib/utils/dates';
 import { dateFilterStore } from '$lib/stores/date-filter.svelte';
 
+
+export function generateReedrichTraceParent(): string {
+	const traceBytes = new Uint8Array(16);
+	const spanBytes = new Uint8Array(8);
+	crypto.getRandomValues(traceBytes);
+	crypto.getRandomValues(spanBytes);
+	const traceId = Array.from(traceBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+	const spanId = Array.from(spanBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+	return `00-${traceId}-${spanId}-01`;
+}
 export class ReedrichStore {
 	snapshot = $state<AccountDetail | null>(null);
 	categories = $state<CategoryRecord[]>([]);
@@ -445,6 +455,9 @@ export class ReedrichStore {
 
 		const currentToken = (authStore.accessToken || this.apiToken).trim();
 		const headers = new Headers(init.headers || {});
+		if (!headers.has('traceparent')) {
+			headers.set('traceparent', generateReedrichTraceParent());
+		}
 		if (currentToken) {
 			headers.set('X-API-Key', currentToken);
 			headers.set('Authorization', `Bearer ${currentToken}`);

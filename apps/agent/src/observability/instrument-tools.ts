@@ -1,5 +1,7 @@
 import {
 	buildOpenInferenceToolAttributes,
+	popActiveTraceContext,
+	pushActiveTraceContext,
 	sanitizeTracePayload,
 	type WorkerTracer
 } from './tracer.js';
@@ -64,6 +66,11 @@ export function wrapToolsWithTracing<T extends Record<string, unknown>>(
 						})
 					: undefined;
 
+				pushActiveTraceContext({
+					traceId: tracer.traceId,
+					spanId: (rpcSpan ?? toolSpan).spanId,
+					projectName: tracer.projectName
+				});
 				try {
 					const result = await executeFn(args, options);
 					const durationMs = Date.now() - startTime;
@@ -85,6 +92,7 @@ export function wrapToolsWithTracing<T extends Record<string, unknown>>(
 					rpcSpan?.recordException(err);
 					throw err;
 				} finally {
+					popActiveTraceContext();
 					rpcSpan?.end();
 					toolSpan.end();
 				}

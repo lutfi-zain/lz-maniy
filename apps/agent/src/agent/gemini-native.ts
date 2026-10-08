@@ -13,6 +13,9 @@ import { createMemoryTools } from './tools/memory.js';
 import { createStatementTools } from './tools/statements.js';
 import { buildGeminiDeclarations, type ToolDefinitionLike } from './gemini-declarations.js';
 import { buildSystemPrompt } from './system-prompt.js';
+import { createUICommandTools } from './tools/ui-commands.js';
+import { wrapToolsWithTracing } from '../observability/instrument-tools.js';
+import type { WorkerTracer } from '../observability/tracer.js';
 
 export function createGeminiRunner(
 	apiKey: string,
@@ -23,11 +26,12 @@ export function createGeminiRunner(
 	userId?: string,
 	agentMemory?: AgentMemory,
 	onSettleCredits?: (promptTokens: number, completionTokens: number) => Promise<{ creditsUsed: number; creditsRemaining: number }>,
-	kv?: KVNamespace
+	kv?: KVNamespace,
+	tracer?: WorkerTracer
 ) {
 	const ai = new GoogleGenAI({ apiKey });
 
-	const tools: Record<string, ToolDefinitionLike> = {
+	const rawTools: Record<string, ToolDefinitionLike> = {
 		...createFinancialTools(reedrichUrl, token, fetcher),
 		...createMutationTools(reedrichUrl, token, fetcher),
 		...createWalletTools(reedrichUrl, token, fetcher),
@@ -35,11 +39,12 @@ export function createGeminiRunner(
 		...createDebtLoanTools(reedrichUrl, token, fetcher),
 		...createGoalTools(reedrichUrl, token, fetcher),
 		...createRecurringTools(reedrichUrl, token, fetcher),
+		...createFeedbackTools(reedrichUrl, token, fetcher),
 		...(db && userId ? createMemoryTools(db, userId) : {}),
 		...(kv && userId ? createStatementTools(kv, userId) : {}),
 		...createUICommandTools()
 	};
-
+	const tools = wrapToolsWithTracing(rawTools, tracer, { includeSubSpans: true });
 	const toolDeclarations = buildGeminiDeclarations(tools);
 
 	async function executeTool(name: string, args: Record<string, unknown>, toolCallId: string): Promise<unknown> {
