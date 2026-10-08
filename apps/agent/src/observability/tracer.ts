@@ -326,6 +326,9 @@ export class WorkerSpan {
 		if (options.attributes) {
 			this.setAttributes(options.attributes);
 		}
+		if (!this.attributes['openinference.span.kind']) {
+			this.attributes['openinference.span.kind'] = 'CHAIN';
+		}
 	}
 
 	setAttribute(key: string, value: string | number | boolean | undefined): this {
@@ -370,6 +373,9 @@ export class WorkerSpan {
 
 	end(endTimeMs?: number): this {
 		if (this.isEnded) return this;
+		if (this.status.code === 0) {
+			this.status = { code: 1 };
+		}
 		this.endTimeUnixNano = toUnixNano(endTimeMs ?? Date.now());
 		this.isEnded = true;
 		return this;
@@ -380,7 +386,8 @@ export class WorkerTracer {
 	public readonly traceId: string;
 	public readonly rootParentSpanId?: string;
 	public activeParentSpanId?: string;
-	public readonly environment: string;
+	public rootSpan?: WorkerSpan;
+	public isFlushDeferred = false;
 	public readonly serviceName: string;
 	public readonly serviceVersion: string;
 	public readonly projectName: string;
@@ -402,6 +409,10 @@ export class WorkerTracer {
 
 	setActiveParentSpan(spanId?: string): void {
 		this.activeParentSpanId = spanId;
+	}
+
+	deferFlush(): void {
+		this.isFlushDeferred = true;
 	}
 
 	startSpan(

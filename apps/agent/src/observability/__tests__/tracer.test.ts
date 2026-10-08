@@ -74,6 +74,7 @@ describe('WorkerTracer and Span Utilities', () => {
 		span.setAttribute('test.bool', true);
 
 		expect(span.attributes).toEqual({
+			'openinference.span.kind': 'CHAIN',
 			'test.str': 'value',
 			'test.num': 42,
 			'test.bool': true

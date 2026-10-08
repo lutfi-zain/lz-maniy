@@ -33,6 +33,7 @@ export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c,
 			'http.user_agent': c.req.header('user-agent') || 'unknown'
 		}
 	});
+	tracer.rootSpan = rootSpan;
 	tracer.setActiveParentSpan(rootSpan.spanId);
 	try {
 		await next();
@@ -46,9 +47,11 @@ export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c,
 		rootSpan.recordException(err);
 		throw err;
 	} finally {
-		rootSpan.end();
 		c.res.headers.set('traceparent', formatTraceParent(tracer.traceId, rootSpan.spanId));
 		c.res.headers.set('X-Trace-Id', tracer.traceId);
-		tracer.flushWithWaitUntil(c.executionCtx);
+		if (!tracer.isFlushDeferred) {
+			rootSpan.end();
+			tracer.flushWithWaitUntil(c.executionCtx);
+		}
 	}
 };

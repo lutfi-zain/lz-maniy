@@ -52,15 +52,19 @@ chatRouter.post('/', async (c) => {
 	if (!body.message?.trim() && !body.image) {
 		return c.json({ error: 'bad_request', message: 'Message is required' }, 400);
 	}
+	tracer?.rootSpan?.setAttribute('input.value', body.message);
 
 	// 1. Credit Pre-check
 	const creditSpan = tracer?.startSpan('creditPreCheck', {
 		attributes: {
-			'user.id': user.userId
+			'openinference.span.kind': 'GUARDRAIL',
+			'user.id': user.userId,
+			'input.value': `Check credit balance for ${user.userId}`
 		}
 	});
 	const creditState = await getOrCreateUserCredits(c.env.DB, user.userId);
 	creditSpan?.setAttribute('credit.balance', creditState.balance);
+	creditSpan?.setAttribute('output.value', `Balance: ${creditState.balance}`);
 	if (creditState.balance <= 0) {
 		creditSpan?.setStatus({ code: 2, message: 'insufficient_credits' });
 		creditSpan?.end();
@@ -75,7 +79,6 @@ chatRouter.post('/', async (c) => {
 	}
 	creditSpan?.setStatus({ code: 1 });
 	creditSpan?.end();
-
 	// 2. Resolve model (with legacy opencode fallback and default gemini-3.7-flash)
 	let requestedProvider = body.model?.provider ?? 'omp';
 	let requestedModel = body.model?.model ?? 'google-antigravity/gemini-3.7-flash';
@@ -197,15 +200,18 @@ chatRouter.post('/', async (c) => {
 			}
 		}
 	}
+	contextSpan?.setStatus({ code: 1 });
 	contextSpan?.end();
 
 	// Helper for credit settlement on stream completion
 	const settleCredits = async (promptTokens: number, completionTokens: number) => {
 		const settleSpan = tracer?.startSpan('creditSettlement', {
 			attributes: {
+				'openinference.span.kind': 'CHAIN',
 				'model': modelConfig.model,
 				'prompt_tokens': promptTokens,
-				'completion_tokens': completionTokens
+				'completion_tokens': completionTokens,
+				'input.value': `Settle ${promptTokens} prompt + ${completionTokens} completion tokens`
 			}
 		});
 		const pricing = await getCreditPricing(c.env.DB, modelConfig.model);
@@ -221,6 +227,7 @@ chatRouter.post('/', async (c) => {
 		});
 		settleSpan?.setAttribute('credits_used', creditsUsed);
 		settleSpan?.setAttribute('credits_remaining', remaining);
+		settleSpan?.setAttribute('output.value', `Used ${creditsUsed} credits, remaining ${remaining}`);
 		settleSpan?.setStatus({ code: 1 });
 		settleSpan?.end();
 		return { creditsUsed, creditsRemaining: remaining };
@@ -252,6 +259,21 @@ chatRouter.post('/', async (c) => {
 			statementSummary
 		);
 		let fullAssistantText = '';
+		const geminiSpan = tracer?.startSpan('ai.geminiStream', {
+			attributes: {
+				...buildOpenInferenceLlmAttributes({
+					modelName: modelConfig.model,
+					provider: 'google',
+					invocationParameters: { thinking_level: body.thinkingLevel || 'off' },
+					inputMessages: [{ role: 'user', content: body.message }]
+				}),
+				'input.value': body.message
+			}
+		});
+		if (geminiSpan) {
+			tracer?.setActiveParentSpan(geminiSpan.spanId);
+		}
+		tracer?.deferFlush();
 
 		const readable = new ReadableStream({
 			async start(controller) {
@@ -269,12 +291,24 @@ chatRouter.post('/', async (c) => {
 						controller.enqueue(encoder.encode(chunk));
 					}
 				} catch (err) {
+					geminiSpan?.recordException(err);
 					controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error).message)}\n`));
 				} finally {
 					controller.close();
 					c.executionCtx.waitUntil(
 						(async () => {
 							if (fullAssistantText) {
+								geminiSpan?.setAttribute('output.value', fullAssistantText);
+								geminiSpan?.setAttribute('llm.output_messages.0.message.content', fullAssistantText);
+								tracer?.rootSpan?.setAttribute('output.value', fullAssistantText);
+								const msgSpan = tracer?.startSpan('db.insertMessage', {
+									attributes: {
+										'openinference.span.kind': 'CHAIN',
+										'conversation.id': activeConvId,
+										'message.role': 'assistant',
+										'output.value': fullAssistantText.slice(0, 500)
+									}
+								});
 								await insertMessage(c.env.DB, {
 									id: crypto.randomUUID(),
 									conversationId: activeConvId,
@@ -282,8 +316,11 @@ chatRouter.post('/', async (c) => {
 									content: fullAssistantText
 								});
 								await touchConversation(c.env.DB, activeConvId);
+								msgSpan?.setStatus({ code: 1 }).end();
 							}
-							// Credits are already settled inside Gemini runner before the stream finished
+							geminiSpan?.setStatus({ code: 1 }).end();
+							tracer?.rootSpan?.end();
+							await tracer?.flush();
 						})()
 					);
 				}
@@ -379,6 +416,7 @@ chatRouter.post('/', async (c) => {
 	if (inferenceSpan) {
 		tracer?.setActiveParentSpan(inferenceSpan.spanId);
 	}
+	let streamedText = '';
 	const result = streamText({
 		model: aiModel,
 		system: systemPrompt,
@@ -390,45 +428,22 @@ chatRouter.post('/', async (c) => {
 		maxSteps: 10,
 		...(providerOptions ? { providerOptions } : {}),
 		onFinish: (ev) => {
-			if (ev.usage) {
-				const promptTok = ev.usage.promptTokens ?? 0;
-				const compTok = ev.usage.completionTokens ?? 0;
-				inferenceSpan?.setAttribute('ai.usage.prompt_tokens', promptTok);
-				inferenceSpan?.setAttribute('ai.usage.completion_tokens', compTok);
-				inferenceSpan?.setAttribute('llm.token_count.prompt', promptTok);
-				inferenceSpan?.setAttribute('llm.token_count.completion', compTok);
-				inferenceSpan?.setAttribute('llm.token_count.total', promptTok + compTok);
-			}
-			if (ev.text) {
-				inferenceSpan?.setAttribute('output.value', ev.text);
-				inferenceSpan?.setAttribute('llm.output_messages.0.message.content', ev.text);
+			const promptTok = ev.usage?.promptTokens || estimateTokens(history);
+			const compTok = ev.usage?.completionTokens || Math.max(25, Math.ceil((ev.text || streamedText).length / 4));
+			inferenceSpan?.setAttribute('ai.usage.prompt_tokens', promptTok);
+			inferenceSpan?.setAttribute('ai.usage.completion_tokens', compTok);
+			inferenceSpan?.setAttribute('llm.token_count.prompt', promptTok);
+			inferenceSpan?.setAttribute('llm.token_count.completion', compTok);
+			inferenceSpan?.setAttribute('llm.token_count.total', promptTok + compTok);
+			const outText = ev.text || streamedText;
+			if (outText) {
+				inferenceSpan?.setAttribute('output.value', outText);
+				inferenceSpan?.setAttribute('llm.output_messages.0.message.content', outText);
+				tracer?.rootSpan?.setAttribute('output.value', outText);
 			}
 			inferenceSpan?.setAttribute('ai.finish_reason', ev.finishReason || 'stop');
 			inferenceSpan?.setStatus({ code: 1 });
 			inferenceSpan?.end();
-
-			c.executionCtx.waitUntil(
-				(async () => {
-					const finalContent = ev.text || '';
-					if (finalContent) {
-						const msgSpan = tracer?.startSpan('db.insertMessage', {
-							attributes: {
-								'conversation.id': activeConvId,
-								'message.role': 'assistant'
-							}
-						});
-						await insertMessage(c.env.DB, {
-							id: crypto.randomUUID(),
-							conversationId: activeConvId,
-							role: 'assistant',
-							content: finalContent
-						});
-						await touchConversation(c.env.DB, activeConvId);
-						msgSpan?.setStatus({ code: 1 });
-						msgSpan?.end();
-					}
-				})()
-			);
 		}
 	});
 
@@ -443,11 +458,22 @@ chatRouter.post('/', async (c) => {
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
 			for (const line of lines) {
+				if (line.startsWith('0:')) {
+					try {
+						const textDelta = JSON.parse(line.slice(2).trim());
+						if (typeof textDelta === 'string') {
+							streamedText += textDelta;
+						}
+					} catch {
+						/* ignore */
+					}
+				}
 				if (line.startsWith('d:')) {
 					try {
 						const data = JSON.parse(line.slice(2));
-						const promptTokens = data.usage?.promptTokens ?? estimateTokens(history);
-						const completionTokens = data.usage?.completionTokens ?? 50;
+						const promptTokens = data.usage?.promptTokens || estimateTokens(history);
+						const completionTokens =
+							data.usage?.completionTokens || Math.max(25, Math.ceil(streamedText.length / 4));
 						const creds = await settleCredits(promptTokens, completionTokens);
 						yield 'd:' + JSON.stringify({ ...data, ...creds }) + '\n';
 						continue;
@@ -461,6 +487,7 @@ chatRouter.post('/', async (c) => {
 		if (buffer) yield buffer;
 	}
 
+	tracer?.deferFlush();
 	const transformedReadable = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
@@ -469,9 +496,43 @@ chatRouter.post('/', async (c) => {
 					controller.enqueue(encoder.encode(chunk));
 				}
 			} catch (err) {
+				inferenceSpan?.recordException(err);
 				controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error)?.message || String(err))}\n`));
 			} finally {
 				controller.close();
+				c.executionCtx.waitUntil(
+					(async () => {
+						try {
+							if (streamedText) {
+								inferenceSpan?.setAttribute('output.value', streamedText);
+								inferenceSpan?.setAttribute('llm.output_messages.0.message.content', streamedText);
+								tracer?.rootSpan?.setAttribute('output.value', streamedText);
+								const msgSpan = tracer?.startSpan('db.insertMessage', {
+									parentSpanId: tracer?.rootSpan?.spanId,
+									attributes: {
+										'openinference.span.kind': 'CHAIN',
+										'conversation.id': activeConvId,
+										'message.role': 'assistant',
+										'input.value': `Insert assistant message into conversation ${activeConvId}`,
+										'output.value': streamedText.slice(0, 500)
+									}
+								});
+								await insertMessage(c.env.DB, {
+									id: crypto.randomUUID(),
+									conversationId: activeConvId,
+									role: 'assistant',
+									content: streamedText
+								});
+								await touchConversation(c.env.DB, activeConvId);
+								msgSpan?.setStatus({ code: 1 }).end();
+							}
+						} finally {
+							inferenceSpan?.setStatus({ code: 1 }).end();
+							tracer?.rootSpan?.end();
+							await tracer?.flush();
+						}
+					})()
+				);
 			}
 		}
 	});

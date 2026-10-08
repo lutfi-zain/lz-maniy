@@ -61,4 +61,28 @@ describe('Tool Tracing Instrumentation & Error Handling', () => {
 		expect(span.events).toHaveLength(1);
 		expect(span.events[0].name).toBe('exception');
 	});
+
+	it('defaults openinference.span.kind to CHAIN and status.code to OK (1) on end() to prevent UNKNOWN/UNSET spans', () => {
+		const tracer = new WorkerTracer({
+			serviceName: 'maniyy-agent',
+			environment: 'test'
+		});
+
+		const span = tracer.startSpan('customInternalStep');
+		span.end();
+
+		expect(span.attributes['openinference.span.kind']).toBe('CHAIN');
+		expect(span.status.code).toBe(1);
+	});
+
+	it('supports deferFlush() for streaming responses', () => {
+		const tracer = new WorkerTracer({
+			serviceName: 'maniyy-agent',
+			environment: 'test'
+		});
+
+		expect(tracer.isFlushDeferred).toBe(false);
+		tracer.deferFlush();
+		expect(tracer.isFlushDeferred).toBe(true);
+	});
 });
