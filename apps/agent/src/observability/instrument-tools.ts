@@ -1,4 +1,8 @@
-import type { WorkerTracer } from './tracer.js';
+import {
+	buildOpenInferenceToolAttributes,
+	sanitizeTracePayload,
+	type WorkerTracer
+} from './tracer.js';
 
 export interface ToolDefinition<TArgs = unknown, TResult = unknown> {
 	description?: string;
@@ -30,22 +34,21 @@ export function wrapToolsWithTracing<T extends Record<string, unknown>>(
 		wrapped[toolName] = {
 			...toolDef,
 			execute: async (args: unknown, options?: unknown) => {
-				let sanitizedArgs = '';
-				try {
-					sanitizedArgs = typeof args === 'object' && args !== null ? JSON.stringify(args) : String(args);
-				} catch {
-					sanitizedArgs = '[unserializable]';
-				}
+				const toolObj = toolDef as ToolDefinition;
+				const toolAttrs = buildOpenInferenceToolAttributes({
+					name: toolName,
+					description: toolObj.description,
+					parametersSchema:
+						typeof toolObj.parameters === 'object' && toolObj.parameters !== null
+							? (toolObj.parameters as Record<string, unknown>)
+							: undefined,
+					args
+				});
+				const sanitizedArgs = String(toolAttrs['input.value'] ?? '{}');
 
 				const toolSpan = tracer.startSpan(`tool:${toolName}`, {
 					kind: 1, // INTERNAL
-					attributes: {
-						'openinference.span.kind': 'TOOL',
-						'tool.name': toolName,
-						'tool.args': sanitizedArgs,
-						'tool.parameters': sanitizedArgs,
-						'input.value': sanitizedArgs
-					}
+					attributes: toolAttrs
 				});
 
 				const startTime = Date.now();
@@ -65,7 +68,7 @@ export function wrapToolsWithTracing<T extends Record<string, unknown>>(
 					const result = await executeFn(args, options);
 					const durationMs = Date.now() - startTime;
 					try {
-						const serialized = JSON.stringify(result).slice(0, 2000);
+						const serialized = sanitizeTracePayload(result, { isOutput: true }).slice(0, 2000);
 						toolSpan.setAttribute('output.value', serialized);
 						rpcSpan?.setAttribute('output.value', serialized);
 					} catch {}

@@ -7,6 +7,36 @@
       "skillPath": "skills/use-ai-sdk/SKILL.md",
       "computedHash": "aee5bf7ecb066b54eae76799610fa8a9be9ff1ca9a000ea92d17c14ec862938b"
     },
+    "phoenix-cli": {
+      "source": "arize-ai/phoenix",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/phoenix-cli/SKILL.md",
+      "computedHash": "0102f006ad7d6904806c08b9cc8c1471548a417c304a807f10fc0bae9b95f88b"
+    },
+    "phoenix-error-analysis": {
+      "source": "arize-ai/phoenix",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/phoenix-error-analysis/SKILL.md",
+      "computedHash": "eb294a409aac026c11477e0690bc36566c00040b31588432db6bd32b9cef8224"
+    },
+    "phoenix-evals": {
+      "source": "arize-ai/phoenix",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/phoenix-evals/SKILL.md",
+      "computedHash": "f80036d8aa604960ecd9ba90466de4917af37a2f095a8947abc604b7783f7e9b"
+    },
+    "phoenix-harbor": {
+      "source": "arize-ai/phoenix",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/phoenix-harbor/SKILL.md",
+      "computedHash": "51e57201af8872b1dff4171ba4f26dfa343f45c062583b2939eb377a7f9c1cf0"
+    },
+    "phoenix-tracing": {
+      "source": "arize-ai/phoenix",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/phoenix-tracing/SKILL.md",
+      "computedHash": "693852bc7c4b7674365bfa461228f3252d1a654c3ee1aa78283b2cd718cb87e0"
+    },
     "shadcn": {
       "source": "shadcn-ui/ui",
       "sourceType": "github",

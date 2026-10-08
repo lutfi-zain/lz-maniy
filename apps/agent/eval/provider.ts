@@ -10,7 +10,11 @@ import { createFeedbackTools } from '../src/agent/tools/feedback.js';
 import { createUICommandTools } from '../src/agent/tools/ui-commands.js';
 import { buildSystemPrompt } from '../src/agent/system-prompt.js';
 import { getModel } from '../src/agent/models.js';
-import { WorkerTracer } from '../src/observability/tracer.js';
+import {
+	buildOpenInferenceLlmAttributes,
+	buildOpenInferenceRetrieverAttributes,
+	WorkerTracer
+} from '../src/observability/tracer.js';
 import { wrapToolsWithTracing } from '../src/observability/instrument-tools.js';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -221,10 +225,25 @@ export default class ManiyyAgentProvider {
 			parentSpanId: contextPoolSpan.spanId,
 			startTimeMs: reqStart + 12,
 			attributes: {
-				'openinference.span.kind': 'RETRIEVER',
+				...buildOpenInferenceRetrieverAttributes({
+					query: userPrompt,
+					documents: [
+						{
+							id: 'mem-wallet-aliases-v1',
+							content: 'Wallet aliases: BCA Main (00883073156), Jago HUZ (Spendable), Cash Rumah, Sewa Rumah (Locked).',
+							score: 0.96,
+							metadata: { source: 'cloudflare-d1:agent_memory', category: 'wallet_aliases' }
+						},
+						{
+							id: 'mem-idr-rules-v1',
+							content: 'Mandatory currency format: Rupiah (Rp X.XXX.XXX), never output foreign $ or USD symbol for domestic IDR wallets.',
+							score: 0.94,
+							metadata: { source: 'cloudflare-d1:agent_memory', category: 'currency_governance' }
+						}
+					]
+				}),
 				'db.system': 'cloudflare-d1',
-				'memory.wallet_aliases': 16,
-				'output.value': 'Loaded wallet aliases (BCA Main, Jago HUZ, Sewa Rumah) & IDR formatting rules'
+				'memory.wallet_aliases': 16
 			}
 		});
 		memorySpan.setStatus({ code: 1 }).end(reqStart + 18);
@@ -233,6 +252,17 @@ export default class ManiyyAgentProvider {
 			parentSpanId: contextPoolSpan.spanId,
 			startTimeMs: reqStart + 19,
 			attributes: {
+				...buildOpenInferenceRetrieverAttributes({
+					query: `route:${pageContext.currentRoute}`,
+					documents: [
+						{
+							id: `ctx-${pageContext.currentRoute.replace(/\W+/g, '_') || 'root'}`,
+							content: `Net Worth: Rp ${(pageContext.summary.totalNetWorth ?? 0).toLocaleString('id-ID')} | Spendable: Rp ${(pageContext.summary.totalSpendable ?? 0).toLocaleString('id-ID')} | Wallets: ${pageContext.summary.walletCount}`,
+							score: 0.92,
+							metadata: { route: pageContext.currentRoute, activeTab: pageContext.activeTab }
+						}
+					]
+				}),
 				'page.route': pageContext.currentRoute,
 				'page.net_worth': pageContext.summary.totalNetWorth ?? 0,
 				'page.spendable': pageContext.summary.totalSpendable ?? 0,
@@ -331,14 +361,32 @@ export default class ManiyyAgentProvider {
 						? `llm.step_${idx + 1}: Tool Dispatch (${stepTools.join(', ')})`
 						: `llm.step_${idx + 1}: Response Synthesis`;
 
+				const stepToolCalls = (step.toolCalls || []).map((tc) => ({
+					name: tc.toolName,
+					arguments: (tc as { args?: Record<string, unknown> }).args ?? {}
+				}));
 				const stepSpan = tracer.startSpan(stepTitle, {
 					parentSpanId: orchestratorSpan.spanId,
 					attributes: {
-						'openinference.span.kind': 'LLM',
-						'llm.model_name': cleanModelName,
-						'llm.token_count.prompt': stepP,
-						'llm.token_count.completion': stepC,
-						'llm.token_count.total': stepP + stepC,
+						...buildOpenInferenceLlmAttributes({
+							modelName: cleanModelName,
+							provider: 'google',
+							invocationParameters: { temperature: 0.2, max_steps: 10, prompt_variant: promptLabel },
+							inputMessages: [
+								{ role: 'system', content: systemPrompt.slice(0, 1200) },
+								{ role: 'user', content: userPrompt }
+							],
+							outputContent:
+								step.text ||
+								(stepTools.length > 0 ? `Dispatched tools: ${stepTools.join(', ')}` : ''),
+							toolCalls: stepToolCalls,
+							tools: Object.keys(rawTools).slice(0, 8).map((tName) => ({
+								name: tName,
+								description: `ReedRich financial tool ${tName}`
+							})),
+							promptTokens: stepP,
+							completionTokens: stepC
+						}),
 						'llm.tools_called': stepTools.join(', ') || 'none',
 						'input.value': userPrompt,
 						'output.value':

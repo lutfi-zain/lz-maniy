@@ -1,4 +1,8 @@
 import { wrapToolsWithTracing } from '../observability/instrument-tools.js';
+import {
+	buildOpenInferenceLlmAttributes,
+	buildOpenInferenceRetrieverAttributes
+} from '../observability/tracer.js';
 import { Hono } from 'hono';
 import { streamText, type LanguageModelV1 } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
@@ -153,6 +157,17 @@ chatRouter.post('/', async (c) => {
 	// Retrieve agent memory & context with tracing
 	const contextSpan = tracer?.startSpan('contextRetrieval', {
 		attributes: {
+			...buildOpenInferenceRetrieverAttributes({
+				query: body.message,
+				documents: [
+					{
+						id: `conv-${activeConvId}`,
+						content: `Conversation history (${priorMessages.length} prior turns) for user ${user.userId}`,
+						score: 0.95,
+						metadata: { conversationId: activeConvId, priorTurns: priorMessages.length }
+					}
+				]
+			}),
 			'conversation.id': activeConvId,
 			'user.id': user.userId,
 			'has_statement_session': !!body.statementSessionId
@@ -336,8 +351,23 @@ chatRouter.post('/', async (c) => {
 
 	const inferenceSpan = tracer?.startSpan('ai.streamText', {
 		attributes: {
-			'openinference.span.kind': 'LLM',
-			'llm.model_name': modelConfig.model,
+			...buildOpenInferenceLlmAttributes({
+				modelName: modelConfig.model,
+				provider: modelConfig.provider,
+				invocationParameters: {
+					max_steps: 10,
+					thinking_level: body.thinkingLevel || 'off'
+				},
+				inputMessages: [
+					{ role: 'system', content: systemPrompt.slice(0, 1200) },
+					...priorMessages.slice(-4).map((m) => ({ role: m.role, content: m.content })),
+					{ role: 'user', content: body.message }
+				],
+				tools: Object.keys(rawTools).slice(0, 8).map((tName) => ({
+					name: tName,
+					description: `ReedRich financial tool ${tName}`
+				}))
+			}),
 			'ai.model': modelConfig.model,
 			'ai.provider': modelConfig.provider,
 			'ai.max_steps': 10,
@@ -370,6 +400,7 @@ chatRouter.post('/', async (c) => {
 			}
 			if (ev.text) {
 				inferenceSpan?.setAttribute('output.value', ev.text);
+				inferenceSpan?.setAttribute('llm.output_messages.0.message.content', ev.text);
 			}
 			inferenceSpan?.setAttribute('ai.finish_reason', ev.finishReason || 'stop');
 			inferenceSpan?.setStatus({ code: 1 });

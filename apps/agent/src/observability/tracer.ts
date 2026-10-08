@@ -66,6 +66,205 @@ function toUnixNano(ms: number): string {
 	return `${BigInt(fullMs) * 1_000_000n + BigInt(nanoPart)}`;
 }
 
+export interface SanitizeTraceOptions {
+	isOutput?: boolean;
+	hideInputs?: boolean;
+	hideOutputs?: boolean;
+}
+
+/**
+ * Redacts sensitive credentials, tokens, NIK, and bank card/account numbers from trace payloads.
+ * Also honors OPENINFERENCE_HIDE_INPUTS / OPENINFERENCE_HIDE_OUTPUTS environment variables.
+ */
+export function sanitizeTracePayload(value: unknown, options: SanitizeTraceOptions = {}): string {
+	const envObj = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+	const hideInputs = options.hideInputs ?? envObj.OPENINFERENCE_HIDE_INPUTS === 'true';
+	const hideOutputs = options.hideOutputs ?? envObj.OPENINFERENCE_HIDE_OUTPUTS === 'true';
+
+	if (!options.isOutput && hideInputs) {
+		return '[REDACTED]';
+	}
+	if (options.isOutput && hideOutputs) {
+		return '[REDACTED]';
+	}
+
+	let raw: string;
+	if (typeof value === 'string') {
+		raw = value;
+	} else {
+		try {
+			raw = JSON.stringify(value ?? '');
+		} catch {
+			raw = '[unserializable]';
+		}
+	}
+
+	return raw
+		.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED_TOKEN]')
+		.replace(/\b(?:rd_live_|fp_live_|gsk_|AIza|phx_adm_sec_)[A-Za-z0-9_-]+/g, '[REDACTED_API_KEY]')
+		.replace(/\b\d{16}\b/g, '[REDACTED_NIK]')
+		.replace(/\b(?:\d[ -]*?){13,15}\d\b/g, '[REDACTED_ACCOUNT]');
+}
+
+export interface OpenInferenceMessageInput {
+	role: 'system' | 'user' | 'assistant' | 'tool';
+	content: string;
+}
+
+export interface OpenInferenceToolCallInput {
+	name: string;
+	arguments: string | Record<string, unknown>;
+}
+
+export interface OpenInferenceToolSchemaInput {
+	name: string;
+	description?: string;
+	parameters?: Record<string, unknown>;
+}
+
+export function buildOpenInferenceLlmAttributes(params: {
+	modelName: string;
+	provider?: string;
+	invocationParameters?: Record<string, unknown>;
+	inputMessages?: OpenInferenceMessageInput[];
+	outputContent?: string;
+	toolCalls?: OpenInferenceToolCallInput[];
+	tools?: OpenInferenceToolSchemaInput[];
+	promptTokens?: number;
+	completionTokens?: number;
+	hideInputs?: boolean;
+	hideOutputs?: boolean;
+}): SpanAttributes {
+	const cleanModelName = params.modelName.replace(/^[^/]+\//, '');
+	const promptTokens = params.promptTokens ?? 0;
+	const completionTokens = params.completionTokens ?? 0;
+	const attrs: SpanAttributes = {
+		'openinference.span.kind': 'LLM',
+		'llm.model_name': cleanModelName,
+		'llm.provider': params.provider || 'google',
+		'llm.invocation_parameters': JSON.stringify(
+			params.invocationParameters || { temperature: 0.2, max_steps: 10 }
+		),
+		'llm.token_count.prompt': promptTokens,
+		'llm.token_count.completion': completionTokens,
+		'llm.token_count.total': promptTokens + completionTokens
+	};
+
+	if (params.inputMessages) {
+		params.inputMessages.forEach((msg, idx) => {
+			attrs[`llm.input_messages.${idx}.message.role`] = msg.role;
+			attrs[`llm.input_messages.${idx}.message.content`] = sanitizeTracePayload(msg.content, {
+				isOutput: false,
+				hideInputs: params.hideInputs
+			});
+		});
+	}
+
+	attrs['llm.output_messages.0.message.role'] = 'assistant';
+	if (params.outputContent !== undefined) {
+		attrs['llm.output_messages.0.message.content'] = sanitizeTracePayload(params.outputContent, {
+			isOutput: true,
+			hideOutputs: params.hideOutputs
+		});
+	}
+
+	if (params.toolCalls && params.toolCalls.length > 0) {
+		params.toolCalls.forEach((tc, idx) => {
+			const serializedArgs =
+				typeof tc.arguments === 'string' ? tc.arguments : JSON.stringify(tc.arguments ?? {});
+			attrs[`llm.output_messages.0.message.tool_calls.${idx}.tool_call.function.name`] = tc.name;
+			attrs[`llm.output_messages.0.message.tool_calls.${idx}.tool_call.function.arguments`] =
+				sanitizeTracePayload(serializedArgs, { isOutput: true, hideOutputs: params.hideOutputs });
+		});
+	}
+
+	if (params.tools && params.tools.length > 0) {
+		params.tools.forEach((tool, idx) => {
+			attrs[`llm.tools.${idx}.tool.json_schema`] = JSON.stringify({
+				type: 'function',
+				function: {
+					name: tool.name,
+					description: tool.description || `Financial tool ${tool.name}`,
+					parameters: tool.parameters || { type: 'object', properties: {} }
+				}
+			});
+		});
+	}
+
+	return attrs;
+}
+
+export interface OpenInferenceDocumentInput {
+	id: string;
+	content: string;
+	score: number;
+	metadata?: Record<string, unknown>;
+}
+
+export function buildOpenInferenceRetrieverAttributes(params: {
+	query: string;
+	documents: OpenInferenceDocumentInput[];
+	hideInputs?: boolean;
+	hideOutputs?: boolean;
+}): SpanAttributes {
+	const attrs: SpanAttributes = {
+		'openinference.span.kind': 'RETRIEVER',
+		'input.value': sanitizeTracePayload(params.query, {
+			isOutput: false,
+			hideInputs: params.hideInputs
+		}),
+		'output.value': sanitizeTracePayload(
+			params.documents.map((d) => `[${d.id}] ${d.content}`).join('\n'),
+			{ isOutput: true, hideOutputs: params.hideOutputs }
+		)
+	};
+
+	params.documents.forEach((doc, idx) => {
+		attrs[`retrieval.documents.${idx}.document.id`] = doc.id;
+		attrs[`retrieval.documents.${idx}.document.content`] = sanitizeTracePayload(doc.content, {
+			isOutput: true,
+			hideOutputs: params.hideOutputs
+		});
+		attrs[`retrieval.documents.${idx}.document.score`] = doc.score;
+		attrs[`retrieval.documents.${idx}.document.metadata`] = JSON.stringify(doc.metadata ?? {});
+	});
+
+	return attrs;
+}
+
+export function buildOpenInferenceToolAttributes(params: {
+	name: string;
+	description?: string;
+	parametersSchema?: Record<string, unknown> | string;
+	args?: unknown;
+	hideInputs?: boolean;
+}): SpanAttributes {
+	const sanitizedArgs = sanitizeTracePayload(params.args ?? {}, {
+		isOutput: false,
+		hideInputs: params.hideInputs
+	});
+	const schemaStr =
+		typeof params.parametersSchema === 'string'
+			? params.parametersSchema
+			: JSON.stringify(
+					params.parametersSchema || {
+						type: 'object',
+						description: `Parameters for ${params.name}`
+					}
+				);
+
+	return {
+		'openinference.span.kind': 'TOOL',
+		'tool.name': params.name,
+		'tool.description': params.description || `Executes ReedRich financial operation ${params.name}`,
+		'tool.parameters': schemaStr,
+		'tool.args': sanitizedArgs,
+		'input.value': sanitizedArgs,
+		'input.mime_type': 'application/json',
+		'output.mime_type': 'application/json'
+	};
+}
+
 export class WorkerSpan {
 	public readonly traceId: string;
 	public readonly spanId: string;

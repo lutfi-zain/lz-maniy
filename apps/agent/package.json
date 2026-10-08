@@ -8,7 +8,8 @@
 		"build": "wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"phoenix:sync": "bun run eval/phoenix-suite.ts"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^1.2.22",
