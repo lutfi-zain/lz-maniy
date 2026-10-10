@@ -7,22 +7,27 @@
 	--color-bg: #0a0d12;
 	--color-card: #121721;
 	--color-card-hover: #161c29;
+	--color-card-subtle: #0e131d;
 	--color-border: #1e2638;
 	--color-border-hover: #334155;
 	--color-fg: #f8fafc;
 	--color-muted: #94a3b8;
 	--color-subtle: #475569;
 	--color-accent: #10b981;
+	--color-accent-quant: #38bdf8;
 }
 
 :root {
 	--bg: #0a0d12;
 	--card: #121721;
+	--card-subtle: #0e131d;
 	--border: #1e2638;
 	--border-hover: #334155;
 	--fg: #f8fafc;
 	--muted: #94a3b8;
+	--subtle: #475569;
 	--accent: #10b981;
+	--accent-quant: #38bdf8;
 }
 
 html,
@@ -33,6 +38,27 @@ body {
 	line-height: 1.6;
 	overflow-x: hidden;
 	min-height: 100vh;
+}
+
+/* Typography & Display Utilities */
+.tracking-tightest {
+	letter-spacing: -0.04em;
+}
+
+.tracking-display {
+	letter-spacing: -0.03em;
+}
+
+.glass-surface {
+	background: rgba(18, 23, 33, 0.75);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+/* Focus outline utility for WCAG AA compliance */
+:focus-visible {
+	outline: 2px solid #10b981;
+	outline-offset: 2px;
 }
 
 /* Staggered Entrance Keyframes */

@@ -2,7 +2,7 @@
 	<div class="max-w-[1120px] mx-auto px-4 sm:px-6">
 		<div class="flex items-center justify-between mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-[#1E2638]">
 			<span class="font-mono text-xs text-[#94A3B8] tracking-widest uppercase">
-				[02] Atelier & Leadership
+				[04] Atelier & Leadership
 			</span>
 			<span class="font-mono text-xs text-[#475569]">
 				Founder Dossier

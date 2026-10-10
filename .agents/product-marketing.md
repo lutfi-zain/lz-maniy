@@ -1,6 +1,6 @@
 # Product Marketing Context
 
-**Document version:** v2
+**Document version:** v3
 **Last updated:** 2026-10-10
 
 ## Product Overview
@@ -9,10 +9,11 @@
 **Product category:** Account Intelligence, Executive Financial Cockpit, Personal Financial Management (PFM).
 **Product type:** Web SaaS / Edge Application (Svelte 5 + Cloudflare Workers + D1/Postgres).
 **Ecosystem architecture:**
-- **Studio Entity:** Membran (`https://membran.app`) — Independent Software Atelier & Applied AI Lab.
-- **Flagship Application:** Maniy (`https://maniy.membran.app`) — Live Production v2.
-- **Observability Suite:** Arize Phoenix (`https://phoenix.membran.app`) — Open OTLP Distributed Tracing.
-**Business model:** Freemium dengan langganan Pro untuk multi-wallet tanpa batas, parsing mutasi rekening koran PDF, dan kuota reasoning AI berpresisi tinggi.
+- **Studio Entity:** Membran (`https://membran.app`) : Independent Software Atelier & Applied AI Lab.
+- **Flagship Application 1 (Personal Finance):** Maniy (`https://maniy.membran.app`) : Live Production v2 Executive Cockpit & AI Financial Reasoning Agent.
+- **Flagship Application 2 (Quantitative Research):** Quant Membran (`https://quant.membran.app`) : Unified Quantitative & Statistical Bitcoin Trading Platform (10 Statistical Families, Macro Cycle Valuation, LTTD, MTTD v2, Ichimoku Denoised).
+- **Observability Suite:** Arize Phoenix (`https://phoenix.membran.app`) : Open OTLP Distributed Tracing.
+**Business model:** Freemium dengan langganan Pro untuk multi-wallet tanpa batas, parsing mutasi rekening koran PDF, kuota reasoning AI berpresisi tinggi, serta akses analytics suite kuantitatif.
 
 ## Target Audience
 **Target users:** Solopreneur, tech worker, builder, dan kepala keluarga mandiri yang mengelola multi-rekening (bank, e-wallet, crypto/valas) dan membutuhkan kepastian apakah uang kas mereka cukup untuk komitmen masa depan.
@@ -29,7 +30,7 @@
 |---------|-------------|-----------|------------------|
 | **The Pragmatic Builder (Utama)** | Nol gesekan pencatatan, kalkulasi kas bebas riil, integritas data tanpa salah hitung. | Waktu terbatas; aplikasi bank terpisah-pisah; spreadsheet manual merepotkan di ponsel dan mudah rusak rumusnya. | Cukup lempar chat singkat ke Eve; saldo, pagu anggaran, dan buku kas terbarui secara atomik. |
 | **The Household CFO** | Kepastian komitmen masa depan (sewa rumah, SPP, dana darurat) dan kesehatan cashflow. | Rasa cemas melihat saldo rekening tampak banyak padahal ada tagihan besar menanti 2 minggu lagi. | Horizon Board dan indikator Safe-to-Spend Runway yang transparan hingga level hari. |
-| **The Startup Evaluator (Anthropic / Accelerator)** | Legitimasi organisasi, integritas matematika AI, arsitektur teknis nyata. | Skeptis terhadap proyek anonim atau AI wrapper dangkal tanpa bukti rekayasa mendalam. | Founder Dossier terverifikasi (Lutfi Zain), sistem observabilitas live di `phoenix.membran.app`, dan prinsip zero-hallucination. |
+| **The Startup Evaluator (Anthropic / Claude for Startups)** | Legitimasi organisasi, integritas matematika AI, arsitektur teknis nyata lintas produk. | Skeptis terhadap proyek anonim atau AI wrapper dangkal tanpa bukti rekayasa mendalam. | Portofolio nyata studio Membran: Maniy (akuntansi deterministik zero-hallucination) dan Quant Membran (10 statistical families, Bayesian Optuna tuning, 85.7% win rate, 68.96 PF), didukung Founder Dossier Lutfi Zain dan observabilitas terbuka. |
 
 ## Problems & Pain Points
 **Core problem:** Ilusi nominal saldo perbankan. Orang merasa punya banyak uang karena melihat saldo m-banking hari ini, padahal belum memperhitungkan tagihan berulang dan alokasi cadangan beberapa minggu ke depan.
@@ -50,6 +51,7 @@
 - Partisi Finansial Keras: Pemisahan tegas Spendable (Kas Siap Pakai) vs Locked (Cadangan Terkunci). Transfer antar kantong tidak merusak Net Worth.
 - Horizon Board & Temporal Projection: Papan kalender roll-forward yang memetakan saldo masa depan berdasarkan planned transactions dan recurring template.
 - Studio Craft & Radical Editorial Aesthetic: Dibangun oleh Membran Studio dengan standar visual Awwwards, bebas AI-slop, dan performa edge sub-100ms.
+- Dual-Flagship Production Rigor: Membran membuktikan kapabilitas rekayasa pada dua ranah ekstrem: personal finance (Maniy) dengan zero-hallucination accounting dan quantitative trading (Quant Membran di `quant.membran.app`) dengan konsensus statistik 10 keluarga, Bayesian Optuna optimization, dan Gaussian HMM regime switching.
 - Full Distributed Observability: Setiap panggilan tool dan latensi penalaran dipantau terbuka di Arize Phoenix.
 
 ## Objections & Anti-Personas
@@ -86,20 +88,23 @@
 - Teruji pada 690+ pemanggilan tool riil dan ratusan mutasi multi-item tanpa diskrepansi database.
 - Latensi kueri snapshot instan (< 100ms) di edge Cloudflare Pages dan Workers.
 - 11 specialized agent tools terintegrasi penuh untuk mutasi, anggaran, rekening koran, dan kontrol antarmuka.
-- CI/CD terotomasi penuh via GitHub Actions ke domain produksi `membran.app` dan `maniy.membran.app`.
-**Value themes:**
+- CI/CD terotomasi penuh via GitHub Actions ke domain produksi `membran.app`, `maniy.membran.app`, dan `quant.membran.app`.
+- 10 Statistical Families dan 4 deep-dive studios di `quant.membran.app` (Valuation, LTTD, MTTD v2, Ichimoku) dengan konsensus multi-layer dan circuit breaker otomatis.
+- Backtest terverifikasi LTTD v3.3: 85.7% win rate, 68.96 Profit Factor, 14 clean macro trades di seluruh siklus Bitcoin.
 | Theme | Proof |
 |-------|-------|
 | Kecepatan Input | Parsing multi-transaksi dalam satu pesan teks tunggal. |
 | Proteksi Komitmen | Partisi isolasi saldo Spendable vs Locked secara deterministik. |
 | Audit Dokumen Bank | Ekstraksi mutasi rekening koran PDF langsung ke dalam draft pencatatan. |
 | Transparansi Sistem | Open distributed tracing live di `https://phoenix.membran.app`. |
+| Riset Kuantitatif Institusional | Sistem konsensus multi-layer (Gaussian HMM, Shannon Entropy, Kaufman ER) di `quant.membran.app`. |
 
 ## Goals
-**Business goal:** Menjadikan Membran studio software independen bereputasi tinggi dengan Maniy sebagai standar acuan personal finance cockpit bertenaga AI reasoning, serta mengamankan slot resmi di program Claude for Startups ($1.000 API credits + 1 tahun Team Plan).
-**Conversion action:** Kunjungan ke `membran.app`, pendaftaran akun Maniy, dan pencatatan transaksi pertama via Eve.
+**Business goal:** Menjadikan Membran studio software independen bereputasi tinggi dengan Maniy dan Quant Membran sebagai bukti portofolio rekayasa tingkat tinggi, serta mengamankan slot resmi di program Claude for Startups ($1.000 API credits + 1 tahun Team Plan).
+**Conversion action:** Kunjungan ke `membran.app`, eksplorasi cockpit di `maniy.membran.app` dan `quant.membran.app`, pendaftaran akun, dan review dossier oleh evaluator Anthropic.
 
 ## Changelog
 *Newest first. One line per revision: what changed and why.*
-- v2 (2026-10-10) — Repositioned under Membran studio (membran.app); integrated verified founder dossier (Lutfi Zain), live telemetry infrastructure (phoenix.membran.app), and complete rebrand from Maniyy to Maniy.
-- v1 (2026-10-10) — Initial context: integrasi mendalam dari use case riil 45 hari Eve (pencatatan multi-item, pemisahan spendable vs locked, proyeksi runway situasional, mitigasi ilusi nominal) untuk positioning produk dan aplikasi Claude for Startups.
+- v3 (2026-10-10) : Ditambahkan quant.membran.app (Bitcoin Quantitative Intelligence Platform) dari basis quant.maftia.tech ke dalam portofolio karya Membran Studio dan positioning Claude for Startups.
+- v2 (2026-10-10) : Repositioned under Membran studio (membran.app); integrated verified founder dossier (Lutfi Zain), live telemetry infrastructure (phoenix.membran.app), and complete rebrand from Maniyy to Maniy.
+- v1 (2026-10-10) : Initial context: integrasi mendalam dari use case riil 45 hari Eve (pencatatan multi-item, pemisahan spendable vs locked, proyeksi runway situasional, mitigasi ilusi nominal) untuk positioning produk dan aplikasi Claude for Startups.
