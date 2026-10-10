@@ -283,7 +283,7 @@ export class ChatStore {
 					conversationId: 'conv_demo_welcome',
 					role: 'assistant',
 					content:
-						'Halo! Saya Eve, analis keuangan eksekutifmu di Maniy. Saat ini kamu berada di **Demo Sandbox**.\n\nBerdasarkan data portofoliomu:\n- **Kas Siap Pakai (Spendable)**: Rp 8.450.000\n- **Cadangan Terkunci (Locked)**: Rp 32.500.000\n- **Net Worth Total**: Rp 40.950.000\n\nKamu bisa mencoba mencatat transaksi, memeriksa anggaran, atau membuka kalender Horizon!',
+						'Halo! Saya Eve, analis keuangan eksekutifmu di Maniy. Saat ini kamu berada di **Demo Sandbox**.\n\nBerdasarkan data portofoliomu:\n- **Kas Siap Pakai (Spendable)**: Rp 12.350.000\n- **Cadangan Terkunci (Locked)**: Rp 33.500.000\n- **Net Worth Total**: Rp 45.850.000\n\nKamu bisa mencoba mencatat transaksi, memeriksa anggaran, atau membuka kalender Horizon!',
 					timestamp: Date.now()
 				}
 			];
@@ -541,10 +541,10 @@ export class ChatStore {
 				if (lower.includes('saldo') || lower.includes('uang') || lower.includes('kas')) {
 					simReply =
 						'Berdasarkan snapshot kas terpadu terkini:\n\n' +
-						'- **Kas Siap Pakai (Spendable)**: Rp 8.450.000\n' +
-						'- **Cadangan Terkunci (Locked)**: Rp 32.500.000\n' +
-						'- **Total Net Worth**: Rp 40.950.000\n\n' +
-						'Saldo aman belanjamu hari ini adalah **Rp 8.450.000**. Seluruh dana komitmen sewa dan tabungan tetap aman terproteksi di kantong terkunci.';
+						'- **Kas Siap Pakai (Spendable)**: Rp 12.350.000\n' +
+						'- **Cadangan Terkunci (Locked)**: Rp 33.500.000\n' +
+						'- **Total Net Worth**: Rp 45.850.000\n\n' +
+						'Saldo aman belanjamu hari ini adalah **Rp 12.350.000**. Seluruh dana komitmen sewa dan tabungan tetap aman terproteksi di kantong terkunci.';
 				} else if (
 					lower.includes('bensin') ||
 					lower.includes('kopi') ||
@@ -554,8 +554,7 @@ export class ChatStore {
 					simReply =
 						'Saya telah memproses pencatatan transaksi demo secara atomik:\n\n' +
 						'| Tanggal | Deskripsi | Kategori | Dompet | Jumlah |\n' +
-						'| :--- | :--- | :--- | :--- | :--- |\n' +
-						`| Hari ini | ${text} | Operasional | HUZ (Bank Jago) | Tercatat |\n\n` +
+						`| Hari ini | ${text} | Software & Operasional | Bank Jago Daily Cash | Tercatat |\n\n` +
 						'Saldo dompet dan runway harianmu telah disinkronkan ke buku kas.';
 				} else {
 					simReply =

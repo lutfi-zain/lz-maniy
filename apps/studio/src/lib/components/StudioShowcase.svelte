@@ -55,7 +55,7 @@
 							Spendable Runway
 						</div>
 						<div class="font-mono text-xl sm:text-2xl font-bold text-[#10B981] mb-1">
-							Rp 8.450.000
+							Rp 12.350.000
 						</div>
 						<div class="text-xs text-[#475569]">
 							Daily safe-to-spend cash
@@ -67,7 +67,7 @@
 							Locked Reserves
 						</div>
 						<div class="font-mono text-xl sm:text-2xl font-bold text-[#38BDF8] mb-1">
-							Rp 32.500.000
+							Rp 33.500.000
 						</div>
 						<div class="text-xs text-[#475569]">
 							Protected commitments & goals
@@ -79,7 +79,7 @@
 							Consolidated Net Worth
 						</div>
 						<div class="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-1">
-							Rp 40.950.000
+							Rp 45.850.000
 						</div>
 						<div class="text-xs text-[#475569]">
 							Single source of truth

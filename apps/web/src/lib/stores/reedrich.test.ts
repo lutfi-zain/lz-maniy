@@ -12,22 +12,22 @@ describe('ReedrichStore', () => {
 	it('initializes with mock data correctly', () => {
 		expect(store.snapshot).not.toBeNull();
 		expect(store.isLive).toBe(false);
-		expect(store.spendableWallets.length).toBe(11);
-		expect(store.lockedWallets.length).toBe(6);
-		expect(store.allWallets.length).toBe(17);
+		expect(store.spendableWallets.length).toBe(3);
+		expect(store.lockedWallets.length).toBe(3);
+		expect(store.allWallets.length).toBe(6);
 	});
 
 	it('filters wallets by tab', () => {
 		store.setTab('spendable');
-		expect(store.filteredWallets.length).toBe(11);
+		expect(store.filteredWallets.length).toBe(3);
 		expect(store.filteredWallets.every((w) => w.isLocked === 0)).toBe(true);
 
 		store.setTab('locked');
-		expect(store.filteredWallets.length).toBe(6);
+		expect(store.filteredWallets.length).toBe(3);
 		expect(store.filteredWallets.every((w) => w.isLocked === 1)).toBe(true);
 
 		store.setTab('all');
-		expect(store.filteredWallets.length).toBe(17);
+		expect(store.filteredWallets.length).toBe(6);
 	});
 
 	it('filters wallets by institution toggle', () => {
@@ -39,17 +39,17 @@ describe('ReedrichStore', () => {
 		// Clicking again toggles off
 		store.filterByInstitution('BCA');
 		expect(store.selectedInstitution).toBeNull();
-		expect(store.filteredWallets.length).toBe(17);
+		expect(store.filteredWallets.length).toBe(6);
 	});
 
 	it('computes bank subtotals accurately', () => {
 		const bcaWallets = store.allWallets.filter((w) => w.institution === 'BCA');
 		expect(bcaWallets.length).toBe(2);
 		const bcaTotal = bcaWallets.reduce((acc, w) => acc + w.balance, 0);
-		expect(bcaTotal).toBeCloseTo(8975931.69, 1);
+		expect(bcaTotal).toBeCloseTo(24250000, 1);
 
 		const jagoWallets = store.allWallets.filter((w) => w.institution === 'Bank Jago');
-		expect(jagoWallets.length).toBe(11);
+		expect(jagoWallets.length).toBe(2);
 	});
 
 	it('manages drawer open and close transitions', () => {

@@ -157,7 +157,7 @@
 							Spendable Runway
 						</div>
 						<div class="font-mono text-lg font-bold text-[#346538]">
-							Rp 8.450.000
+							Rp 12.350.000
 						</div>
 						<div class="text-[10px] text-[#787774] mt-0.5">
 							Aman dibelanjakan hari ini
@@ -169,7 +169,7 @@
 							Locked Reserves
 						</div>
 						<div class="font-mono text-lg font-bold text-[#1F6C9F]">
-							Rp 32.500.000
+							Rp 33.500.000
 						</div>
 						<div class="text-[10px] text-[#787774] mt-0.5">
 							Cadangan sewa & tabungan
@@ -181,7 +181,7 @@
 							Net Worth
 						</div>
 						<div class="font-mono text-lg font-bold text-[#111111]">
-							Rp 40.950.000
+							Rp 45.850.000
 						</div>
 						<div class="text-[10px] text-[#787774] mt-0.5">
 							Total likuiditas tersinkron
