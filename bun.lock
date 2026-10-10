@@ -34,6 +34,28 @@
         "wrangler": "^4.0.0",
       },
     },
+    "apps/studio": {
+      "name": "@maniyy/studio",
+      "version": "0.0.1",
+      "dependencies": {
+        "@fontsource-variable/geist": "^5.3.0",
+        "@fontsource/jetbrains-mono": "^5.2.5",
+        "clsx": "^2.1.1",
+        "tailwind-merge": "^3.7.0",
+      },
+      "devDependencies": {
+        "@sveltejs/adapter-static": "^3.0.10",
+        "@sveltejs/kit": "^2.63.0",
+        "@sveltejs/vite-plugin-svelte": "^7.1.2",
+        "@tailwindcss/vite": "^4.3.0",
+        "@types/node": "^24",
+        "svelte": "^5.56.1",
+        "svelte-check": "^4.6.0",
+        "tailwindcss": "^4.3.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.0.16",
+      },
+    },
     "apps/web": {
       "name": "@maniy/web",
       "version": "0.0.1",
@@ -411,6 +433,8 @@
 
     "@fontsource-variable/geist": ["@fontsource-variable/geist@5.3.0", "", {}, "sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA=="],
 
+    "@fontsource/jetbrains-mono": ["@fontsource/jetbrains-mono@5.3.0", "", {}, "sha512-fqDfB5I9f1p1TV486aUgB9t8zP84P0O1FtQR5Ol9vjwPy+S+EIGlVYm1cvj2W5shcZMTg2nZFdVMoH5wFu8a1A=="],
+
     "@google/genai": ["@google/genai@2.27.0", "", { "dependencies": { "google-auth-library": "^10.3.0", "p-retry": "^4.6.2", "protobufjs": "^7.5.4", "ws": "^8.18.0" }, "peerDependencies": { "@modelcontextprotocol/sdk": "^1.25.2" }, "optionalPeers": ["@modelcontextprotocol/sdk"] }, "sha512-W6F9Y9d4h7cVQNa85IPCOVVP9PiUzve/ZQPBvQnBmnBJcLvxstEw+R2X/RyCH0SOe0HVDQzeKDpDUf6ZRtbmdQ=="],
 
     "@googleapis/sheets": ["@googleapis/sheets@14.0.0", "", { "dependencies": { "googleapis-common": "^8.0.0" } }, "sha512-fANEl4RQohsPYUWhcLSYyUyE8A8bRfvw/bp8h0t8VDQqTgdQ3itZBkty4nddtdqCAvNDpA+KM66OejVKDd6aFg=="],
@@ -584,6 +608,8 @@
     "@maniy/shared": ["@maniy/shared@workspace:packages/shared"],
 
     "@maniy/web": ["@maniy/web@workspace:apps/web"],
+
+    "@maniyy/studio": ["@maniyy/studio@workspace:apps/studio"],
 
     "@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.32.0", "", { "dependencies": { "@hono/node-server": "^1.19.9 || ^2.0.5", "ajv": "^8.17.1", "ajv-formats": "^3.0.1", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "eventsource-parser": "^3.0.0", "express": "^5.2.1", "express-rate-limit": "^8.2.1", "hono": "^4.11.4", "jose": "^6.1.3", "json-schema-typed": "^8.0.2", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.25 || ^4.0", "zod-to-json-schema": "^3.25.1" }, "peerDependencies": { "@cfworker/json-schema": "^4.1.1" }, "optionalPeers": ["@cfworker/json-schema"] }, "sha512-8BviX/hK4Gd2eL1KdTwm0gfl4d3wdoErW0Jd00h6nomUAtk6IJk5vwQJc6kfWtJTzN5OEV/lgIiJKI8fiDGAlA=="],
 

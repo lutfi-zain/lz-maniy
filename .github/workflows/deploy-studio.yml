@@ -1,0 +1,32 @@
+name: Deploy Studio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/studio/**'
+      - '.github/workflows/deploy-studio.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build studio
+        run: bun run --cwd apps/studio build
+
+      - name: Deploy to Cloudflare Pages
+        run: bunx wrangler pages deploy build --project-name=membran-app --branch=main
+        working-directory: apps/studio
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
