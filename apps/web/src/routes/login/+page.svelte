@@ -34,7 +34,7 @@
 
 			const authUrl = buildGoogleAuthorizeUrl({
 				baseUrl: DEFAULT_API_URL,
-				clientId: 'maniyy-web',
+				clientId: 'maniy-web',
 				redirectUri,
 				challenge,
 				state,
@@ -78,7 +78,7 @@
 </script>
 
 <svelte:head>
-	<title>Masuk · Maniyy Workspace</title>
+	<title>Masuk · Maniy Workspace</title>
 </svelte:head>
 
 <div
@@ -94,7 +94,7 @@
 				<LockKey class="size-5 text-[#111111]" weight="bold" />
 			</div>
 			<h1 class="font-serif text-2xl font-semibold tracking-tight text-[#111111]">
-				Maniyy Workspace
+				Maniy Workspace
 			</h1>
 			<p class="mt-1.5 text-xs leading-relaxed text-[#787774]">
 				Perencanaan keuangan, neraca saldo multi-rekening, dan analitik arus kas terintegrasi
@@ -195,6 +195,6 @@
 
 	<!-- Footer Metadata -->
 	<footer class="mt-6 text-center font-mono text-[10px] text-[#787774]">
-		Maniyy Cockpit · Reedrich Edge Intelligence · End-to-End Encrypted
+		Maniy Cockpit · Reedrich Edge Intelligence · End-to-End Encrypted
 	</footer>
 </div>

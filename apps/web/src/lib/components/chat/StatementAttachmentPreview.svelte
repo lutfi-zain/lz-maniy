@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { X, FileText, CircleNotch, CheckCircle, WarningCircle } from 'phosphor-svelte';
-	import type { StatementFileStatus } from '@maniyy/shared';
+	import type { StatementFileStatus } from '@maniy/shared';
 
 	let {
 		files,

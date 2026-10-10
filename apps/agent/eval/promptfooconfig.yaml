@@ -1,5 +1,5 @@
-# Promptfoo Evaluation Suite for Maniyy Financial Agent
-description: "Maniyy Financial Agent Multi-Prompt Matrix & Reasoning Benchmark Across Models"
+# Promptfoo Evaluation Suite for Maniy Financial Agent
+description: "Maniy Financial Agent Multi-Prompt Matrix & Reasoning Benchmark Across Models"
 
 prompts:
   - id: baseline

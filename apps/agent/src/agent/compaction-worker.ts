@@ -1,5 +1,5 @@
 import type { Env } from '../types.js';
-import type { ChatMessage } from '@maniyy/shared';
+import type { ChatMessage } from '@maniy/shared';
 import { generateText, type LanguageModelV1 } from 'ai';
 import { getModel } from './models.js';
 import { setConversationCompaction } from '../db/queries.js';

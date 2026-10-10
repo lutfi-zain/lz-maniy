@@ -57,7 +57,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					grant_type: 'authorization_code',
-					client_id: 'maniyy-web',
+					client_id: 'maniy-web',
 					code,
 					redirect_uri: redirectUri,
 					code_verifier: codeVerifier
@@ -94,7 +94,7 @@
 </script>
 
 <svelte:head>
-	<title>Menyelesaikan Autentikasi · Maniyy</title>
+	<title>Menyelesaikan Autentikasi · Maniy</title>
 </svelte:head>
 
 <div class="flex min-h-screen w-full items-center justify-center bg-[#F7F6F3] p-4 text-[#111111]">

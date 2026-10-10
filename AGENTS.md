@@ -1,6 +1,6 @@
 # AGENTS.md
 
-**Repository:** `lz-maniyy-v2`  
+**Repository:** `lz-maniy`
 **Domain:** Personal Financial Planning & Account Intelligence Dashboard (Executive Cockpit, Ledger Studio, Planning Studio, and AI Financial Agent)
 
 This file is the authoritative guide for AI coding agents working in this repository. It defines the layered architecture, code style rules, testing requirements, ubiquitous language, and hard security constraints that every change must satisfy.

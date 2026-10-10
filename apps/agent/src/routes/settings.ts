@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth.js';
 import { getUserSettings, upsertUserSettings } from '../db/queries.js';
 import type { Env } from '../types.js';
-import type { UserSettings } from '@maniyy/shared';
+import type { UserSettings } from '@maniy/shared';
 
 export const settingsRouter = new Hono<{ Bindings: Env }>();
 

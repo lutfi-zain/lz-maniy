@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { tool } from 'ai';
 import { z } from 'zod';
-import type { StatementRow } from '@maniyy/shared';
+import type { StatementRow } from '@maniy/shared';
 import { readStatementManifest, readStatementShard } from '../statements.js';
 
 const DEFAULT_PAGE_SIZE = 25;

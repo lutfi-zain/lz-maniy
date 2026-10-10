@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { GoogleGenAI, ThinkingLevel as GeminiThinkingLevel } from '@google/genai';
-import type { PageContext, ThinkingLevel, AgentMemory } from '@maniyy/shared';
+import type { PageContext, ThinkingLevel, AgentMemory } from '@maniy/shared';
 import { createFinancialTools } from './tools/financial.js';
 import { createMutationTools } from './tools/mutations.js';
 import { createWalletTools } from './tools/wallet-management.js';

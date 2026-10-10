@@ -107,10 +107,10 @@ describe('Phoenix LLMOps Suite & OpenInference Enhancements', () => {
 	});
 
 	describe('3. Prompts Hub, Evaluators, Datasets, and Experiments Builders', () => {
-		it('builds 4 Prompt Repositories with 3 sequential versions on maniyy-agent-system', () => {
+		it('builds 4 Prompt Repositories with 3 sequential versions on maniy-agent-system', () => {
 			const repos = buildPromptRepositories();
 			expect(repos).toHaveLength(4);
-			const mainRepo = repos.find((r) => r.name === 'maniyy-agent-system');
+			const mainRepo = repos.find((r) => r.name === 'maniy-agent-system');
 			expect(mainRepo).toBeDefined();
 			expect(mainRepo?.versions).toHaveLength(3);
 			expect(mainRepo?.versions.map((v) => v.versionTag)).toEqual([

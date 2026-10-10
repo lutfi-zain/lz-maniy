@@ -266,22 +266,22 @@ function readPromptText(fileName: string, fallback: string): string {
 export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 	const baselineText = readPromptText(
 		'system-baseline.txt',
-		'Anda adalah Maniyy Financial Intelligence Agent (Baseline Verbose). Gunakan format Rupiah (Rp) dan panggil tool finansial sebelum menjawab.'
+		'Anda adalah Maniy Financial Intelligence Agent (Baseline Verbose). Gunakan format Rupiah (Rp) dan panggil tool finansial sebelum menjawab.'
 	);
 	const compactText = readPromptText(
 		'system-compact.txt',
-		'Maniyy Agent (Compact Token-Optimized). Wajib panggil tool ReedRich, gunakan format Rp X.XXX.XXX, dilarang simbol $.'
+		'Maniy Agent (Compact Token-Optimized). Wajib panggil tool ReedRich, gunakan format Rp X.XXX.XXX, dilarang simbol $.'
 	);
 	const fewshotText = readPromptText(
 		'system-fewshot.txt',
-		'Maniyy Agent (Few-Shot Telegram Golden). Eksekusi multi-intent dengan list_wallets + get_categories + create_transaction, format Rp X.XXX.XXX.'
+		'Maniy Agent (Few-Shot Telegram Golden). Eksekusi multi-intent dengan list_wallets + get_categories + create_transaction, format Rp X.XXX.XXX.'
 	);
 
 	return [
 		{
-			name: 'maniyy-agent-system',
+			name: 'maniy-agent-system',
 			description:
-				'Primary system prompt repository for the Maniyy v2 Financial Intelligence Agent across Baseline (v1), Compact Token-Optimized (v2), and Few-Shot Golden (v3) iterations.',
+				'Primary system prompt repository for the Maniy v2 Financial Intelligence Agent across Baseline (v1), Compact Token-Optimized (v2), and Few-Shot Golden (v3) iterations.',
 			labels: ['production-ready', 'financial-governance', 'token-optimized'],
 			metadata: {
 				domain: 'personal-financial-planning',
@@ -402,7 +402,7 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 			]
 		},
 		{
-			name: 'maniyy-judge-financial-grounding',
+			name: 'maniy-judge-financial-grounding',
 			description:
 				'LLM-as-a-Judge classification prompt verifying zero hallucinated balances, strict grounding in ReedRich tool outputs, andSpendable vs Locked wallet separation.',
 			labels: ['llm-judge', 'financial-governance'],
@@ -423,7 +423,7 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 								content: [
 									{
 										type: 'text',
-										text: 'You are an expert Financial Audit Judge for Maniyy v2. Evaluate whether the assistant response is 100% grounded in the executed ReedRich tool outputs without inventing wallet balances, categories, or transaction IDs.'
+										text: 'You are an expert Financial Audit Judge for Maniy v2. Evaluate whether the assistant response is 100% grounded in the executed ReedRich tool outputs without inventing wallet balances, categories, or transaction IDs.'
 									}
 								]
 							},
@@ -447,7 +447,7 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 			]
 		},
 		{
-			name: 'maniyy-judge-advisory-quality',
+			name: 'maniy-judge-advisory-quality',
 			description:
 				'LLM-as-a-Judge rubric prompt scoring Indonesian financial advisory clarity, actionable next steps, and safe-to-spend runway accuracy.',
 			labels: ['llm-judge', 'production-ready'],
@@ -492,7 +492,7 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 			]
 		},
 		{
-			name: 'maniyy-conversation-compactor',
+			name: 'maniy-conversation-compactor',
 			description:
 				'Context window compaction prompt that distills long multi-turn financial conversations into structured memory snapshots while preserving exact IDR figures and wallet IDs.',
 			labels: ['token-optimized', 'production-ready'],
@@ -544,7 +544,7 @@ export function buildEvaluatorRegistry(): {
 			description:
 				'LLM-as-a-Judge verifying that all balances, budgets, and transactions cited by the agent are grounded in ReedRich tool outputs with zero fabrication.',
 			kind: 'LLM',
-			promptName: 'maniyy-judge-financial-grounding',
+			promptName: 'maniy-judge-financial-grounding',
 			promptVersionTag: 'production',
 			outputConfigs: [
 				{
@@ -573,7 +573,7 @@ export function buildEvaluatorRegistry(): {
 			description:
 				'LLM-as-a-Judge evaluating Indonesian financial advisory quality, Spendable vs Locked distinction, and actionable clarity.',
 			kind: 'LLM',
-			promptName: 'maniyy-judge-advisory-quality',
+			promptName: 'maniy-judge-advisory-quality',
 			promptVersionTag: 'production',
 			outputConfigs: [
 				{
@@ -603,7 +603,7 @@ export function buildEvaluatorRegistry(): {
 			description:
 				'LLM-as-a-Judge verifying that compound Telegram prompts (e.g. "63k bensin motor 35k indomaret") execute every requested sub-transaction without dropping items.',
 			kind: 'LLM',
-			promptName: 'maniyy-judge-financial-grounding',
+			promptName: 'maniy-judge-financial-grounding',
 			promptVersionTag: 'production',
 			outputConfigs: [
 				{
@@ -1190,7 +1190,7 @@ export function buildExperimentSpecs(): PhoenixExperimentSpec[] {
 				'Baseline Verbose System Prompt (v1) evaluated on Gemini 3.7 Flash across all 27 Golden Financial Scenarios.',
 			promptVariant: 'baseline',
 			modelName: 'gemini-3.7-flash',
-			projectName: 'maniyy-agent-evals',
+			projectName: 'maniy-agent-evals',
 			repetitions: 1,
 			metadata: {
 				promptVersion: 'v1',
@@ -1206,7 +1206,7 @@ export function buildExperimentSpecs(): PhoenixExperimentSpec[] {
 				'Compact Token-Optimized System Prompt (v2, -44% prompt tokens) evaluated on Gemini 3.7 Flash.',
 			promptVariant: 'compact',
 			modelName: 'gemini-3.7-flash',
-			projectName: 'maniyy-agent-evals',
+			projectName: 'maniy-agent-evals',
 			repetitions: 1,
 			metadata: {
 				promptVersion: 'v2',
@@ -1222,7 +1222,7 @@ export function buildExperimentSpecs(): PhoenixExperimentSpec[] {
 				'Few-Shot Telegram Golden System Prompt (v3) evaluated on Gemini 3.7 Flash (100% tool accuracy).',
 			promptVariant: 'fewshot',
 			modelName: 'gemini-3.7-flash',
-			projectName: 'maniyy-agent-evals',
+			projectName: 'maniy-agent-evals',
 			repetitions: 1,
 			metadata: {
 				promptVersion: 'v3',
@@ -1238,7 +1238,7 @@ export function buildExperimentSpecs(): PhoenixExperimentSpec[] {
 				'Compact Token-Optimized System Prompt (v2) evaluated on high-tier Gemini 3.8 Flash.',
 			promptVariant: 'compact',
 			modelName: 'gemini-3.8-flash',
-			projectName: 'maniyy-agent-evals',
+			projectName: 'maniy-agent-evals',
 			repetitions: 1,
 			metadata: {
 				promptVersion: 'v2',
@@ -1254,7 +1254,7 @@ export function buildExperimentSpecs(): PhoenixExperimentSpec[] {
 				'Production Candidate: Few-Shot Telegram Golden System Prompt (v3) evaluated on Gemini 3.8 Flash (100% Invariant & Signal Pass Rate).',
 			promptVariant: 'fewshot',
 			modelName: 'gemini-3.8-flash',
-			projectName: 'maniyy-agent-evals',
+			projectName: 'maniy-agent-evals',
 			repetitions: 1,
 			metadata: {
 				promptVersion: 'v3',
@@ -1496,7 +1496,7 @@ VALUES (1, ${sqlLiteral(sp.name)}, ${sqlLiteral(sp.description)}, ${sqlLiteral(s
 	statements.push(`
 INSERT INTO datasets (name, description, metadata, user_id)
 VALUES (
-  'maniyy-financial-golden-dataset',
+  'maniy-financial-golden-dataset',
   'Curated 27-scenario Golden Financial Evaluation Dataset extracted from real user Telegram & Web conversations (covering Balance Queries, Atomic Mutations, Multi-Intent Transactions, Horizon Projections, and Strict IDR Governance).',
   ${sqlLiteral({
 		domain: 'personal-financial-planning',
@@ -1509,11 +1509,11 @@ VALUES (
 
 INSERT INTO dataset_versions (dataset_id, description, metadata, user_id)
 SELECT id, 'v1.0: Initial 23 Real-User Telegram Financial Scenarios', '{"version": "1.0", "caseCount": 23}'::jsonb, 1
-FROM datasets WHERE name = 'maniyy-financial-golden-dataset';
+FROM datasets WHERE name = 'maniy-financial-golden-dataset';
 
 INSERT INTO dataset_versions (dataset_id, description, metadata, user_id)
 SELECT id, 'v2.0: Expanded 27 Scenarios (+Multi-Intent Compound Mutations & Payment Reconciliation)', '{"version": "2.0", "caseCount": 27}'::jsonb, 1
-FROM datasets WHERE name = 'maniyy-financial-golden-dataset';
+FROM datasets WHERE name = 'maniy-financial-golden-dataset';
 `);
 
 	for (let idx = 0; idx < EVAL_DATASET.length; idx++) {
@@ -1541,7 +1541,7 @@ FROM datasets WHERE name = 'maniyy-financial-golden-dataset';
 
 		statements.push(`
 WITH ds AS (
-  SELECT id FROM datasets WHERE name = 'maniyy-financial-golden-dataset'
+  SELECT id FROM datasets WHERE name = 'maniy-financial-golden-dataset'
 ),
 latest_ver AS (
   SELECT dv.id FROM dataset_versions dv JOIN ds ON dv.dataset_id = ds.id ORDER BY dv.id DESC LIMIT 1
@@ -1551,7 +1551,7 @@ linked_span AS (
   FROM spans s
   JOIN traces t ON s.trace_rowid = t.id
   JOIN projects p ON t.project_rowid = p.id
-  WHERE p.name = 'maniyy-agent-evals' AND s.parent_id IS NULL
+  WHERE p.name = 'maniy-agent-evals' AND s.parent_id IS NULL
   ORDER BY s.id ASC
   OFFSET ${idx % 18} LIMIT 1
 ),
@@ -1581,7 +1581,7 @@ SELECT sp.id, ex.id
 FROM dataset_splits sp, dataset_examples ex
 JOIN datasets d ON ex.dataset_id = d.id
 WHERE sp.name = ${sqlLiteral(splitName)}
-  AND d.name = 'maniyy-financial-golden-dataset'
+  AND d.name = 'maniy-financial-golden-dataset'
   AND ex.external_id = ${sqlLiteral(tc.id)}
 ON CONFLICT DO NOTHING;
 `);
@@ -1604,9 +1604,9 @@ SELECT
   1,
   p.id
 FROM datasets d, evaluators e, projects p
-WHERE d.name = 'maniyy-financial-golden-dataset'
+WHERE d.name = 'maniy-financial-golden-dataset'
   AND e.name = ${sqlLiteral(ev.name)}
-  AND p.name = 'maniyy-agent-evals';
+  AND p.name = 'maniy-agent-evals';
 `);
 	}
 
@@ -1615,7 +1615,7 @@ WHERE d.name = 'maniyy-financial-golden-dataset'
 		const exp = experiments[expIdx];
 		statements.push(`
 WITH ds AS (
-  SELECT id FROM datasets WHERE name = 'maniyy-financial-golden-dataset'
+  SELECT id FROM datasets WHERE name = 'maniy-financial-golden-dataset'
 ),
 latest_ver AS (
   SELECT dv.id FROM dataset_versions dv JOIN ds ON dv.dataset_id = ds.id ORDER BY dv.id DESC LIMIT 1
@@ -1643,7 +1643,7 @@ FROM ins_exp
 CROSS JOIN dataset_example_revisions der
 JOIN dataset_examples de ON der.dataset_example_id = de.id
 JOIN datasets d ON de.dataset_id = d.id
-WHERE d.name = 'maniyy-financial-golden-dataset';
+WHERE d.name = 'maniy-financial-golden-dataset';
 `);
 
 
@@ -1698,13 +1698,13 @@ target_ex AS (
   SELECT ex.id
   FROM dataset_examples ex
   JOIN datasets d ON ex.dataset_id = d.id
-  WHERE d.name = 'maniyy-financial-golden-dataset' AND ex.external_id = ${sqlLiteral(tc.id)}
+  WHERE d.name = 'maniy-financial-golden-dataset' AND ex.external_id = ${sqlLiteral(tc.id)}
 ),
 linked_trace AS (
   SELECT t.trace_id
   FROM traces t
   JOIN projects p ON t.project_rowid = p.id
-  WHERE p.name = 'maniyy-agent-evals'
+  WHERE p.name = 'maniy-agent-evals'
   ORDER BY t.id ASC
   OFFSET ${(expIdx * 3 + idx) % 18} LIMIT 1
 ),
@@ -1760,7 +1760,7 @@ CROSS JOIN (
 	statements.push(`
 INSERT INTO datasets (name, description, metadata, user_id)
 VALUES (
-  'maniyy-judge-calibration-benchmark',
+  'maniy-judge-calibration-benchmark',
   'Meta-Evaluation Dataset (20 balanced pass/fail financial responses labeled by human expert) validating LLM-as-a-Judge TPR, TNR, and Cohen''s Kappa.',
   ${sqlLiteral({
 		purpose: 'judge-calibration',
@@ -1779,13 +1779,13 @@ SELECT
   'v1.0: Balanced 50/50 Human Ground-Truth Judge Calibration Set (TPR=0.90, TNR=0.90, Kappa=0.80)',
   ${sqlLiteral(calibrationMetrics)}::jsonb,
   1
-FROM datasets WHERE name = 'maniyy-judge-calibration-benchmark';
+FROM datasets WHERE name = 'maniy-judge-calibration-benchmark';
 `);
 
 	for (const cal of calibrationCases) {
 		statements.push(`
 WITH ds AS (
-  SELECT id FROM datasets WHERE name = 'maniyy-judge-calibration-benchmark'
+  SELECT id FROM datasets WHERE name = 'maniy-judge-calibration-benchmark'
 ),
 ver AS (
   SELECT dv.id FROM dataset_versions dv JOIN ds ON dv.dataset_id = ds.id LIMIT 1
@@ -1810,7 +1810,7 @@ FROM ins_ex, ver;
 
 	statements.push(`
 WITH ds AS (
-  SELECT id FROM datasets WHERE name = 'maniyy-judge-calibration-benchmark'
+  SELECT id FROM datasets WHERE name = 'maniy-judge-calibration-benchmark'
 ),
 ver AS (
   SELECT dv.id FROM dataset_versions dv JOIN ds ON dv.dataset_id = ds.id LIMIT 1
@@ -1826,7 +1826,7 @@ ins_exp AS (
     'Meta-Evaluation Experiment validating financial_grounding_judge against Human Labels (TPR=90%, TNR=90%, Cohen''s Kappa=0.80).',
     1,
     ${sqlLiteral(calibrationMetrics)}::jsonb,
-    'maniyy-agent-evals',
+    'maniy-agent-evals',
     1,
     FALSE
   FROM ds, ver
@@ -1838,7 +1838,7 @@ FROM ins_exp
 CROSS JOIN dataset_example_revisions der
 JOIN dataset_examples de ON der.dataset_example_id = de.id
 JOIN datasets d ON de.dataset_id = d.id
-WHERE d.name = 'maniyy-judge-calibration-benchmark';
+WHERE d.name = 'maniy-judge-calibration-benchmark';
 `);
 
 	for (let i = 0; i < calibrationCases.length; i++) {
@@ -1850,7 +1850,7 @@ WITH target_exp AS (
 ),
 target_ex AS (
   SELECT ex.id FROM dataset_examples ex JOIN datasets d ON ex.dataset_id = d.id
-  WHERE d.name = 'maniyy-judge-calibration-benchmark' AND ex.external_id = ${sqlLiteral(cal.id)}
+  WHERE d.name = 'maniy-judge-calibration-benchmark' AND ex.external_id = ${sqlLiteral(cal.id)}
 ),
 ins_run AS (
   INSERT INTO experiment_runs (
@@ -1913,7 +1913,7 @@ SET attributes = jsonb_set(
   ),
   '{llm,input_messages}',
   jsonb_build_array(
-    jsonb_build_object('message', jsonb_build_object('role', 'system', 'content', 'Maniyy v2 Financial Intelligence Agent — Strict IDR (Rp) & ReedRich Tool Governance.')),
+    jsonb_build_object('message', jsonb_build_object('role', 'system', 'content', 'Maniy v2 Financial Intelligence Agent — Strict IDR (Rp) & ReedRich Tool Governance.')),
     jsonb_build_object('message', jsonb_build_object('role', 'user', 'content', COALESCE(attributes->'input'->>'value', 'Cek saldo dan mutasi keuangan saya')))
   ),
   true

@@ -1,9 +1,11 @@
-import type { UserSettings } from '@maniyy/shared';
+import type { UserSettings } from '@maniy/shared';
 import { getPeriodDateBounds } from '$lib/utils/dates';
 import { authStore } from './auth.svelte.js';
 import { PUBLIC_API_URL } from '$env/static/public';
+import { getStoredValue, setStoredValue } from '$lib/utils/storage';
 
-const STORAGE_KEY = 'maniyy_user_settings';
+const MODERN_STORAGE_KEY = 'maniy_user_settings';
+const LEGACY_STORAGE_KEY = 'maniyy_user_settings';
 
 export function getDefaultActivePeriods(referenceDate = new Date()): string[] {
 	const periods: string[] = [];
@@ -35,28 +37,17 @@ export class SettingsStore {
 	}
 
 	private hydrateFromStorage() {
-		if (typeof localStorage === 'undefined') return;
-		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
-			if (raw) {
-				const parsed = JSON.parse(raw) as Partial<UserSettings>;
-				this.settings = {
-					...this.settings,
-					...parsed
-				};
-			}
-		} catch {
-			// Ignore parse error
+		const parsed = getStoredValue<Partial<UserSettings> | null>(MODERN_STORAGE_KEY, LEGACY_STORAGE_KEY, null);
+		if (parsed) {
+			this.settings = {
+				...this.settings,
+				...parsed
+			};
 		}
 	}
 
 	private persistToStorage() {
-		if (typeof localStorage === 'undefined') return;
-		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
-		} catch {
-			// Ignore storage error
-		}
+		setStoredValue(MODERN_STORAGE_KEY, this.settings);
 	}
 
 	async load(agentBaseUrl?: string, token?: string): Promise<void> {

@@ -30,9 +30,13 @@ app.use(
 			if (
 				origin === 'http://localhost:5173' ||
 				origin === 'http://localhost:4173' ||
-				origin === 'https://maniyy2.pages.dev' ||
+				origin === 'https://maniy.membran.app' ||
 				origin === 'https://maniyy.membran.app' ||
+				origin === 'https://maniyy2.pages.dev' ||
 				origin.endsWith('.maniyy2.pages.dev') ||
+				origin.endsWith('.pages.dev') ||
+				origin === 'https://maniy.lutfidmz.workers.dev' ||
+				origin === 'https://maniy-agent.lutfidmz.workers.dev' ||
 				origin === 'https://maniyy.lutfidmz.workers.dev' ||
 				origin === 'https://maniyy-agent.lutfidmz.workers.dev'
 			) {

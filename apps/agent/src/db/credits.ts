@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import type { CreditBalance, CreditTransaction, CreditPricing } from '@maniyy/shared';
+import type { CreditBalance, CreditTransaction, CreditPricing } from '@maniy/shared';
 
 export const DEFAULT_CREDIT_BALANCE = 2000;
 export const CREDIT_VALUE_USD = 0.0005; // 1 credit = $0.0005 ($1 = 2000 credits)

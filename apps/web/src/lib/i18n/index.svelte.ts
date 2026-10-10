@@ -4,7 +4,10 @@ import type { Locale, NestedKeyOf, TranslationParams } from './types';
 
 export type TranslationKey = NestedKeyOf<TranslationSchema>;
 
-const STORAGE_KEY = 'maniyy_locale';
+import { getStoredValue, setStoredValue } from '$lib/utils/storage';
+
+const MODERN_STORAGE_KEY = 'maniy_locale';
+const LEGACY_STORAGE_KEY = 'maniyy_locale';
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
 	const parts = path.split('.');
@@ -34,23 +37,15 @@ export class I18nStore {
 	}
 
 	init() {
-		if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-			const saved = localStorage.getItem(STORAGE_KEY);
-			if (saved === 'en' || saved === 'id') {
-				this.locale = saved;
-			}
+		const saved = getStoredValue<string | null>(MODERN_STORAGE_KEY, LEGACY_STORAGE_KEY, null);
+		if (saved === 'en' || saved === 'id') {
+			this.locale = saved;
 		}
 	}
 
 	setLocale(newLocale: Locale) {
 		this.locale = newLocale;
-		if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-			try {
-				localStorage.setItem(STORAGE_KEY, newLocale);
-			} catch (e) {
-				console.warn('Failed to persist locale to localStorage', e);
-			}
-		}
+		setStoredValue(MODERN_STORAGE_KEY, newLocale);
 	}
 
 	toggleLocale() {

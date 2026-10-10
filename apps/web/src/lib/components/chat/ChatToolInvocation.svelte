@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CaretDown, CaretRight, Wrench, CheckCircle } from 'phosphor-svelte';
-	import type { ToolInvocationItem } from '@maniyy/shared';
+	import type { ToolInvocationItem } from '@maniy/shared';
 
 	let { invocation }: { invocation: ToolInvocationItem } = $props();
 	let open = $state(false);

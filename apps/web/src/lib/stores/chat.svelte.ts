@@ -11,12 +11,14 @@ import {
 	type ThinkingLevel,
 	type UICommand,
 	type ContextUsage,
-	type CreditBalance
-} from '@maniyy/shared';
+	type CreditBalance,
+	type DrawerType
+} from '@maniy/shared';
 import { authStore } from './auth.svelte.js';
 import { reedrichStore } from './reedrich.svelte.js';
 import { transactionFormStore } from './transaction-form.svelte.js';
 import { dateFilterStore } from './date-filter.svelte.js';
+import { getStoredValue, setStoredValue } from '$lib/utils/storage';
 
 function delay(ms: number): Promise<void> {
 	const { promise, resolve } = Promise.withResolvers<void>();
@@ -60,24 +62,22 @@ export class ChatStore {
 	});
 
 	private abortController: AbortController | null = null;
-	private readonly STORAGE_WIDTH_KEY = 'maniyy_chat_panel_width';
+	private readonly STORAGE_WIDTH_KEY = 'maniy_chat_panel_width';
+	private readonly LEGACY_STORAGE_WIDTH_KEY = 'maniyy_chat_panel_width';
+	private readonly STORAGE_MODEL_KEY = 'maniy_selected_model';
+	private readonly LEGACY_STORAGE_MODEL_KEY = 'maniyy_selected_model';
 
 	private hasAttemptedAutoResume = false;
 
 	constructor() {
 		if (typeof window !== 'undefined') {
-			const saved = localStorage.getItem(this.STORAGE_WIDTH_KEY);
+			const saved = getStoredValue<string | number | null>(this.STORAGE_WIDTH_KEY, this.LEGACY_STORAGE_WIDTH_KEY, null);
 			if (saved) {
 				this.panelWidth = Math.max(280, Math.min(window.innerWidth * 0.5, Number(saved)));
 			}
-			const savedModel = localStorage.getItem('maniyy_selected_model');
-			if (savedModel) {
-				try {
-					const parsed = JSON.parse(savedModel) as ModelConfig;
-					if (parsed?.model) {
-						this.selectedModel = parsed;
-					}
-				} catch {}
+			const parsed = getStoredValue<ModelConfig | null>(this.STORAGE_MODEL_KEY, this.LEGACY_STORAGE_MODEL_KEY, null);
+			if (parsed?.model) {
+				this.selectedModel = parsed;
 			}
 		}
 	}
@@ -154,9 +154,7 @@ export class ChatStore {
 		const max = typeof window !== 'undefined' ? window.innerWidth * 0.5 : 900;
 		const clamped = Math.max(280, Math.min(max, widthPx));
 		this.panelWidth = clamped;
-		if (typeof window !== 'undefined') {
-			localStorage.setItem(this.STORAGE_WIDTH_KEY, clamped.toString());
-		}
+		setStoredValue(this.STORAGE_WIDTH_KEY, clamped.toString());
 	};
 
 	toggleMaximize = (force?: boolean) => {
@@ -173,11 +171,7 @@ export class ChatStore {
 
 	setModel = (model: ModelConfig) => {
 		this.selectedModel = model;
-		if (typeof window !== 'undefined') {
-			try {
-				localStorage.setItem('maniyy_selected_model', JSON.stringify(model));
-			} catch {}
-		}
+		setStoredValue(this.STORAGE_MODEL_KEY, model);
 		if (model.capabilities.thinking && this.thinkingLevel === 'off') {
 			this.thinkingLevel = 'low';
 		} else if (!model.capabilities.thinking) {
@@ -231,7 +225,7 @@ export class ChatStore {
 				break;
 			case 'drawer':
 				reedrichStore.openDrawer({
-					type: cmd.payload.type as import('@maniyy/shared').DrawerType,
+					type: cmd.payload.type as DrawerType,
 					title: cmd.payload.title,
 					subtitle: cmd.payload.subtitle,
 					badge: cmd.payload.badge,
@@ -306,8 +300,7 @@ export class ChatStore {
 		const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
-		a.href = url;
-		a.download = `maniyy-chat-export-${Date.now()}.json`;
+		a.download = `maniy-chat-export-${Date.now()}.json`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};

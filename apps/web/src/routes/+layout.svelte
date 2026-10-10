@@ -116,7 +116,7 @@
 		<footer
 			class="mb-14 border-t border-[#EAEAEA] bg-white py-3 text-center font-mono text-[10px] text-[#787774] sm:text-[11px] md:mb-0 md:py-4"
 		>
-			Maniyy Cockpit · Svelte 5 + Tailwind · Status: {reedrichStore.isLive
+			Maniy Cockpit · Svelte 5 + Tailwind · Status: {reedrichStore.isLive
 				? 'Live Edge'
 				: 'Mock Cache'}
 		</footer>

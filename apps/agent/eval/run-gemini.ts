@@ -1,5 +1,5 @@
 import { GoogleGenAI, type FunctionDeclaration, Type } from '@google/genai';
-import type { PageContext } from '@maniyy/shared';
+import type { PageContext } from '@maniy/shared';
 import { createFinancialTools } from '../src/agent/tools/financial.js';
 import { createMutationTools } from '../src/agent/tools/mutations.js';
 import { createWalletTools } from '../src/agent/tools/wallet-management.js';

@@ -6,12 +6,10 @@ export interface StoredDateFilter {
 	endDate: string;
 	lastUpdated: number;
 }
+import { getStoredValue, setStoredValue, removeStoredValue } from '$lib/utils/storage';
 
-const STORAGE_KEY = 'maniyy_date_filter';
-
-function canUseStorage(): boolean {
-	return typeof localStorage !== 'undefined';
-}
+const MODERN_STORAGE_KEY = 'maniy_date_filter';
+const LEGACY_STORAGE_KEY = 'maniyy_date_filter';
 
 function computeMonthRange(offsetMonths = 0): { start: string; end: string } {
 	const now = new Date();
@@ -41,28 +39,13 @@ export class DateFilterStore {
 	}
 
 	init() {
-		if (!canUseStorage()) {
-			const def = computeMonthRange(0);
-			this.startDate = def.start;
-			this.endDate = def.end;
+		const saved = getStoredValue<StoredDateFilter | null>(MODERN_STORAGE_KEY, LEGACY_STORAGE_KEY, null);
+		if (saved && saved.preset && saved.startDate && saved.endDate) {
+			this.preset = saved.preset;
+			this.startDate = saved.startDate;
+			this.endDate = saved.endDate;
 			this.isInitialized = true;
 			return;
-		}
-
-		try {
-			const saved = localStorage.getItem(STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved) as StoredDateFilter;
-				if (parsed && parsed.preset && parsed.startDate && parsed.endDate) {
-					this.preset = parsed.preset;
-					this.startDate = parsed.startDate;
-					this.endDate = parsed.endDate;
-					this.isInitialized = true;
-					return;
-				}
-			}
-		} catch (err) {
-			console.warn('Failed to parse saved date filter from localStorage:', err);
 		}
 
 		// Default fallback: this_month
@@ -78,19 +61,13 @@ export class DateFilterStore {
 		this.startDate = start;
 		this.endDate = end;
 
-		if (canUseStorage()) {
-			try {
-				const payload: StoredDateFilter = {
-					preset,
-					startDate: start,
-					endDate: end,
-					lastUpdated: Date.now()
-				};
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-			} catch (err) {
-				console.error('Failed to save date filter to localStorage:', err);
-			}
-		}
+		const payload: StoredDateFilter = {
+			preset,
+			startDate: start,
+			endDate: end,
+			lastUpdated: Date.now()
+		};
+		setStoredValue(MODERN_STORAGE_KEY, payload);
 	}
 
 	reset() {
@@ -99,13 +76,7 @@ export class DateFilterStore {
 		this.startDate = def.start;
 		this.endDate = def.end;
 
-		if (canUseStorage()) {
-			try {
-				localStorage.removeItem(STORAGE_KEY);
-			} catch (err) {
-				console.error('Failed to remove date filter from localStorage:', err);
-			}
-		}
+		removeStoredValue(MODERN_STORAGE_KEY, LEGACY_STORAGE_KEY);
 	}
 }
 

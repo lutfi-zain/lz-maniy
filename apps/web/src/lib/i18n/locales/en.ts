@@ -33,7 +33,7 @@ export const en = {
 		currency: 'Currency'
 	},
 	nav: {
-		brand: 'Maniyy',
+		brand: 'Maniy',
 		cockpit: 'Cockpit',
 		ledger: 'Ledger',
 		accounts: 'Accounts & Banking',

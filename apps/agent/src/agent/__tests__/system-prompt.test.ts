@@ -7,7 +7,7 @@ import {
 	buildBehaviorProtocol,
 	buildToolCatalog
 } from '../system-prompt.js';
-import type { PageContext, AgentMemory } from '@maniyy/shared';
+import type { PageContext, AgentMemory } from '@maniy/shared';
 
 describe('System Prompt Builders', () => {
 	const mockPageContext: PageContext = {

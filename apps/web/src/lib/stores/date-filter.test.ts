@@ -32,7 +32,7 @@ describe('DateFilterStore Persistence & Invariants', () => {
 		expect(store.startDate).toBe('2026-10-01');
 		expect(store.endDate).toBe('2026-10-31');
 
-		const savedRaw = mockStorage.get('maniyy_date_filter');
+		const savedRaw = mockStorage.get('maniy_date_filter');
 		expect(savedRaw).toBeDefined();
 		const saved = JSON.parse(savedRaw!);
 		expect(saved.preset).toBe('next_month');
@@ -60,12 +60,13 @@ describe('DateFilterStore Persistence & Invariants', () => {
 	it('resets to current month and purges localStorage on reset()', () => {
 		const store = new DateFilterStore();
 		store.setFilter('custom', '2026-06-01', '2026-06-15');
-		expect(mockStorage.has('maniyy_date_filter')).toBe(true);
+		expect(mockStorage.has('maniy_date_filter')).toBe(true);
 
 		store.reset();
 
 		expect(store.preset).toBe('this_month');
 		expect(store.startDate).toMatch(/^\d{4}-\d{2}-01$/);
+		expect(mockStorage.has('maniy_date_filter')).toBe(false);
 		expect(mockStorage.has('maniyy_date_filter')).toBe(false);
 	});
 });

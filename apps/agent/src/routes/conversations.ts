@@ -8,7 +8,7 @@ import {
 	bulkInsertConversationWithMessages
 } from '../db/queries.js';
 import type { Env } from '../types.js';
-import type { ExportedConversation } from '@maniyy/shared';
+import type { ExportedConversation } from '@maniy/shared';
 
 const conversationsRouter = new Hono<{ Bindings: Env }>();
 

@@ -5,7 +5,7 @@ import { wrapToolsWithTracing } from '../../observability/instrument-tools.js';
 describe('Tool Tracing Instrumentation & Error Handling', () => {
 	it('instruments tool execution and generates tool span with attributes', async () => {
 		const tracer = new WorkerTracer({
-			serviceName: 'maniyy-agent',
+			serviceName: 'maniy-agent',
 			environment: 'test'
 		});
 
@@ -34,7 +34,7 @@ describe('Tool Tracing Instrumentation & Error Handling', () => {
 
 	it('records exception on tool span when tool execution fails', async () => {
 		const tracer = new WorkerTracer({
-			serviceName: 'maniyy-agent',
+			serviceName: 'maniy-agent',
 			environment: 'test'
 		});
 
@@ -64,7 +64,7 @@ describe('Tool Tracing Instrumentation & Error Handling', () => {
 
 	it('defaults openinference.span.kind to CHAIN and status.code to OK (1) on end() to prevent UNKNOWN/UNSET spans', () => {
 		const tracer = new WorkerTracer({
-			serviceName: 'maniyy-agent',
+			serviceName: 'maniy-agent',
 			environment: 'test'
 		});
 
@@ -77,7 +77,7 @@ describe('Tool Tracing Instrumentation & Error Handling', () => {
 
 	it('supports deferFlush() for streaming responses', () => {
 		const tracer = new WorkerTracer({
-			serviceName: 'maniyy-agent',
+			serviceName: 'maniy-agent',
 			environment: 'test'
 		});
 

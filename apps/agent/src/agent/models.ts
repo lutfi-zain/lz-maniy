@@ -2,7 +2,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { ModelConfig, ModelProvider } from '@maniyy/shared';
+import type { ModelConfig, ModelProvider } from '@maniy/shared';
 import type { Env } from '../types.js';
 
 export const AVAILABLE_MODELS: ModelConfig[] = [

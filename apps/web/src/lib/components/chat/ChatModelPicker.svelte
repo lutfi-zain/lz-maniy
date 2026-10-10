@@ -2,7 +2,7 @@
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import { onMount } from 'svelte';
 	import { CaretDown, Check, Sparkle, Brain } from 'phosphor-svelte';
-	import type { ThinkingLevel, ModelConfig } from '@maniyy/shared';
+	import type { ThinkingLevel, ModelConfig } from '@maniy/shared';
 	let open = $state(false);
 	let thinkingOpen = $state(false);
 	let { compact = false }: { compact?: boolean } = $props();

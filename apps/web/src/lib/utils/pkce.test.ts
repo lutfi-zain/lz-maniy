@@ -41,8 +41,8 @@ describe('PKCE Utilities (RFC 7636)', () => {
 	it('correctly builds the zero-click Google OAuth authorize URL', () => {
 		const urlString = buildGoogleAuthorizeUrl({
 			baseUrl: 'https://reedrich-mcp.lutfidmz.workers.dev/',
-			clientId: 'maniyy-web',
-			redirectUri: 'https://maniyy2.pages.dev/auth/callback',
+			clientId: 'maniy-web',
+			redirectUri: 'https://maniy.membran.app/auth/callback',
 			challenge: 'E9Melhoa2OwvFrGMTJguCH5rtx64ZnUMRo8R7Innzzs',
 			state: 'test-state-xyz',
 			scope: 'mcp'
@@ -52,8 +52,8 @@ describe('PKCE Utilities (RFC 7636)', () => {
 		expect(url.origin).toBe('https://reedrich-mcp.lutfidmz.workers.dev');
 		expect(url.pathname).toBe('/oauth/authorize');
 		expect(url.searchParams.get('response_type')).toBe('code');
-		expect(url.searchParams.get('client_id')).toBe('maniyy-web');
-		expect(url.searchParams.get('redirect_uri')).toBe('https://maniyy2.pages.dev/auth/callback');
+		expect(url.searchParams.get('client_id')).toBe('maniy-web');
+		expect(url.searchParams.get('redirect_uri')).toBe('https://maniy.membran.app/auth/callback');
 		expect(url.searchParams.get('code_challenge')).toBe(
 			'E9Melhoa2OwvFrGMTJguCH5rtx64ZnUMRo8R7Innzzs'
 		);

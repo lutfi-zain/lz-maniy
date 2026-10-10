@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import type { ChatMessage, ConversationMeta, UserSettings, AgentMemory } from '@maniyy/shared';
+import type { ChatMessage, ConversationMeta, UserSettings, AgentMemory } from '@maniy/shared';
 
 export interface DBConversation {
 	id: string;

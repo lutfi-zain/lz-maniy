@@ -177,7 +177,7 @@ export class AuthStore {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						grant_type: 'refresh_token',
-						client_id: 'maniyy-web',
+						client_id: 'maniy-web',
 						refresh_token: this.refreshToken
 					})
 				});

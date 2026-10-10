@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { tool } from 'ai';
 import { z } from 'zod';
-import type { AccountDetail, TransactionRecord, CategoryRecord, UserProfileDTO } from '@maniyy/shared';
+import type { AccountDetail, TransactionRecord, CategoryRecord, UserProfileDTO } from '@maniy/shared';
 import { createApiClient, extractErrorMessage } from './http.js';
 
 export function createFinancialTools(reedrichUrl: string, token: string, fetcher?: Fetcher) {

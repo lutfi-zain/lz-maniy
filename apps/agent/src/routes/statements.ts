@@ -7,7 +7,7 @@ import {
 	type SegmentedStatement
 } from '../agent/statements.js';
 import type { Env } from '../types.js';
-import type { StatementFileStatus, StatementParseResult } from '@maniyy/shared';
+import type { StatementFileStatus, StatementParseResult } from '@maniy/shared';
 
 const statementsRouter = new Hono<{ Bindings: Env }>();
 

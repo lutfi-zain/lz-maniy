@@ -35,7 +35,7 @@ export const id: TranslationSchema = {
 		currency: 'Mata Uang'
 	},
 	nav: {
-		brand: 'Maniyy',
+		brand: 'Maniy',
 		cockpit: 'Kokpit',
 		ledger: 'Buku Kas',
 		accounts: 'Akun & Bank',

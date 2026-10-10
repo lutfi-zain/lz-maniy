@@ -18,7 +18,7 @@ import {
 import { wrapToolsWithTracing } from '../src/observability/instrument-tools.js';
 import fs from 'node:fs';
 import os from 'node:os';
-import type { PageContext } from '@maniyy/shared';
+import type { PageContext } from '@maniy/shared';
 import type { Env } from '../src/types.js';
 
 interface ProviderContext {
@@ -82,12 +82,12 @@ function sandboxMutationTools<T extends Record<string, unknown>>(tools: T): T {
 	return sandboxed as unknown as T;
 }
 
-export default class ManiyyAgentProvider {
+export default class ManiyAgentProvider {
 	private providerId: string;
 	public config: Record<string, unknown>;
 
 	constructor(options: { id?: string; config?: Record<string, unknown> } = {}) {
-		this.providerId = options.id || 'maniyy-agent-provider';
+		this.providerId = options.id || 'maniy-agent-provider';
 		this.config = options.config || {};
 	}
 
@@ -157,9 +157,9 @@ export default class ManiyyAgentProvider {
 		const tracer = new WorkerTracer({
 			endpoint: process.env.PHOENIX_ENDPOINT || 'https://phoenix.membran.app/v1/traces',
 			apiKey: process.env.PHOENIX_API_KEY || 'phx_adm_sec_e4b1c2d3f4a5b6c7_sec',
-			serviceName: 'maniyy-agent-eval',
+			serviceName: 'maniy-agent-eval',
 			environment: 'eval',
-			projectName: process.env.PHOENIX_PROJECT_NAME || 'maniyy-agent-evals'
+			projectName: process.env.PHOENIX_PROJECT_NAME || 'maniy-agent-evals'
 		});
 
 		const reqStart = Date.now();

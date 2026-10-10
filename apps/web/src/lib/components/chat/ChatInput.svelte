@@ -4,7 +4,7 @@
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import { authStore } from '$lib/stores/auth.svelte.js';
 	import { PUBLIC_AGENT_URL, PUBLIC_API_URL } from '$env/static/public';
-	import type { StatementParseResult, StatementFileStatus } from '@maniyy/shared';
+	import type { StatementParseResult, StatementFileStatus } from '@maniy/shared';
 	import ImageAttachmentPreview from './ImageAttachmentPreview.svelte';
 	import StatementAttachmentPreview from './StatementAttachmentPreview.svelte';
 

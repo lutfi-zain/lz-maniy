@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { extractText } from 'unpdf';
-import type { StatementRow } from '@maniyy/shared';
+import type { StatementRow } from '@maniy/shared';
 
 export const STATEMENT_MAX_PAGES = 100;
 export const STATEMENT_PAGE_TEXT_LIMIT = 200_000;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildSystemPrompt } from '../../agent/system-prompt.js';
-import type { PageContext } from '@maniyy/shared';
+import type { PageContext } from '@maniy/shared';
 
 describe('buildSystemPrompt - Dynamic Temporal & Accounting Rules', () => {
 	const sampleContext: PageContext = {

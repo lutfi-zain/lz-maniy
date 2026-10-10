@@ -22,7 +22,7 @@ describe('Agent Tool HTTP W3C Traceparent Propagation', () => {
 
 		const tracer = new WorkerTracer({
 			traceId: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
-			projectName: 'maniyy-agent-production'
+			projectName: 'maniy-agent-production'
 		});
 
 		const { request } = createApiClient('https://reedrich.example.com', 'test_token');
@@ -45,8 +45,8 @@ describe('Agent Tool HTTP W3C Traceparent Propagation', () => {
 		expect(toolCallHeaders.traceparent).toMatch(
 			/^00-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4-[0-9a-f]{16}-01$/
 		);
-		expect(toolCallHeaders['x-project-name']).toBe('maniyy-agent-production');
-		expect(toolCallHeaders['x-phoenix-project']).toBe('maniyy-agent-production');
+		expect(toolCallHeaders['x-project-name']).toBe('maniy-agent-production');
+		expect(toolCallHeaders['x-phoenix-project']).toBe('maniy-agent-production');
 
 		// Verify the parentSpanId in traceparent matches the created reedrich.rpc:get_snapshot span
 		const rpcSpan = tracer.spans.find((s) => s.name === 'reedrich.rpc:get_snapshot');
@@ -67,7 +67,7 @@ describe('Agent Tool HTTP W3C Traceparent Propagation', () => {
 
 		const tracer = new WorkerTracer({
 			traceId: '11223344556677881122334455667788',
-			projectName: 'maniyy-agent-evals'
+			projectName: 'maniy-agent-evals'
 		});
 
 		const { request } = createApiClient('https://reedrich.internal', 'tok_xyz', mockFetcher);
@@ -88,6 +88,6 @@ describe('Agent Tool HTTP W3C Traceparent Propagation', () => {
 		expect(capturedRequest!.headers.get('traceparent')).toMatch(
 			/^00-11223344556677881122334455667788-[0-9a-f]{16}-01$/
 		);
-		expect(capturedRequest!.headers.get('x-project-name')).toBe('maniyy-agent-evals');
+		expect(capturedRequest!.headers.get('x-project-name')).toBe('maniy-agent-evals');
 	});
 });

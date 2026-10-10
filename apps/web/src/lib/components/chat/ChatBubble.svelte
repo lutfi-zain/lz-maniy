@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ChatMessage } from '@maniyy/shared';
+	import type { ChatMessage } from '@maniy/shared';
 	import { CaretLeft, CaretRight, ArrowClockwise } from 'phosphor-svelte';
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import ChatUICommandCard from './ChatUICommandCard.svelte';

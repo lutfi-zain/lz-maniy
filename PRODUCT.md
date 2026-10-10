@@ -8,7 +8,7 @@ product
 Personal finance managers, planners, and conscious spenders looking for clarity on cashflow, multi-period projections, and goal milestones without SaaS clutter.
 
 ## Product Purpose
-Maniyy V2 is a financial planning and account detail intelligence dashboard providing real-time multi-currency portfolio tracking, horizon planning, and agent assistance.
+Maniy is a financial planning and account detail intelligence dashboard providing real-time multi-currency portfolio tracking, horizon planning, and agent assistance.
 
 ## Brand Personality
 - Editorial clarity

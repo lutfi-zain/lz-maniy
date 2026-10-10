@@ -38,7 +38,7 @@ import {
 import { estimateTokens, shouldCompact } from '../agent/compaction.js';
 import { compactConversation } from '../agent/compaction-worker.js';
 import type { Env } from '../types.js';
-import type { ChatStreamRequest } from '@maniyy/shared';
+import type { ChatStreamRequest } from '@maniy/shared';
 
 const chatRouter = new Hono<{ Bindings: Env }>();
 

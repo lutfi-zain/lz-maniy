@@ -1,5 +1,5 @@
 {
-	"name": "@maniyy/web",
+	"name": "@maniy/web",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -43,7 +43,7 @@
 	"dependencies": {
 		"@base-ui/react": "^1.8.0",
 		"@fontsource-variable/geist": "^5.3.0",
-		"@maniyy/shared": "workspace:*",
+		"@maniy/shared": "workspace:*",
 		"bits-ui": "^2.19.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
