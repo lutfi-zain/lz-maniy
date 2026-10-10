@@ -263,6 +263,18 @@ export class ChatStore {
 		this.hasAttemptedAutoResume = true;
 	};
 
+	reset = () => {
+		this.abortStream();
+		this.activeConversationId = null;
+		this.messages = [];
+		this.conversations = [];
+		this.creditsRemaining = null;
+		this.lastCreditsUsed = null;
+		this.contextUsage = null;
+		this.panelOpen = false;
+		this.hasAttemptedAutoResume = false;
+	};
+
 	loadConversations = async () => {
 		if (authStore.isDemo) {
 			this.conversations = [

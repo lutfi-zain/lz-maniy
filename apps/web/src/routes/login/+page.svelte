@@ -3,6 +3,7 @@
 	import { DEFAULT_API_URL } from '$lib/stores/mock-data';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { reedrichStore } from '$lib/stores/reedrich.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import {
 		generateVerifier,
 		generateChallenge,
@@ -55,6 +56,15 @@
 		isLoading = true;
 		errorMessage = null;
 
+		// 1. Force purge any residual session or old tokens first
+		authStore.logout();
+		reedrichStore.reset();
+		chatStore.reset();
+		if (typeof sessionStorage !== 'undefined') {
+			sessionStorage.clear();
+		}
+
+		// 2. Set fresh, clean guest demo session
 		authStore.setSession(
 			{
 				access_token: 'sandbox_evaluator_token',
@@ -67,11 +77,9 @@
 			}
 		);
 
+		// 3. Hydrate with clean, sanitized mock data
 		reedrichStore.loadMock();
-
-		const target = sessionStorage.getItem('reedrich_auth_target') || '/';
-		sessionStorage.removeItem('reedrich_auth_target');
-		goto(target);
+		goto('/');
 	}
 
 	function handleManualApiKeyLogin(e: Event) {

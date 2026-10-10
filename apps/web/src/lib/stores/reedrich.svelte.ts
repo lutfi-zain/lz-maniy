@@ -1498,15 +1498,22 @@ export class ReedrichStore {
 	}
 
 	reset() {
+		this.apiToken = '';
 		this.snapshot = null;
 		this.categories = [];
 		this.allBudgets = [];
 		this.activeWallets = [];
 		this.recurringTemplates = [];
+		this.rawDebts = null;
+		this.rawLoans = null;
+		this.selectedInstitution = null;
+		this.activeTab = 'all';
+		this.activeDrawer = null;
+		this.drawerTransactions = [];
 		this.transactionCache.clear();
-		this.loadMock();
 		this.isLive = false;
-		this.statusMessage = 'Sesi di-reset. Menggunakan data cache mock.';
+		this.isLoading = false;
+		this.statusMessage = 'Sesi di-reset. Siap.';
 	}
 }
 

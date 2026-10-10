@@ -231,6 +231,16 @@ export class AuthStore {
 				console.error('Failed to purge auth credentials from localStorage:', err);
 			}
 		}
+
+		if (typeof sessionStorage !== 'undefined') {
+			try {
+				sessionStorage.removeItem('reedrich_auth_target');
+				sessionStorage.removeItem('reedrich_pkce_verifier');
+				sessionStorage.removeItem('reedrich_oauth_state');
+			} catch (err) {
+				console.error('Failed to purge session storage on logout:', err);
+			}
+		}
 	}
 
 	private extractJwtClaims(token: string) {

@@ -18,6 +18,7 @@
 	import { transactionFormStore } from '$lib/stores/transaction-form.svelte';
 	import { dFmt } from '$lib/utils/dates';
 	import ChatToggleButton from '$lib/components/chat/ChatToggleButton.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte.js';
 	const pathname = $derived(page.url.pathname);
 	let isUserMenuOpen = $state(false);
 
@@ -31,6 +32,7 @@
 		authStore.logout();
 		dateFilterStore.reset();
 		reedrichStore.reset();
+		chatStore.reset();
 		goto('/login');
 	}
 
