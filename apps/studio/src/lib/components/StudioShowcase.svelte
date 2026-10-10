@@ -104,9 +104,9 @@
 						aria-label="Launch Quant Membran"
 					>
 						<img
-							src="/images/showcase/quant-showcase.jpg"
+							src="/images/showcase/quant-showcase.png"
 							alt="Quant Membran Intelligence Platform"
-							class="w-full aspect-16/10 object-cover group-hover:scale-[1.02] transition-transform duration-500"
+							class="w-full aspect-16/9 object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
 							loading="lazy"
 						/>
 					</a>
