@@ -26,8 +26,8 @@
 					>
 						<img
 							src="/images/showcase/maniy-showcase.png"
-							alt="Maniy Executive Cockpit"
-							class="w-full aspect-16/10 object-cover group-hover:scale-[1.02] transition-transform duration-500"
+							alt="Maniy Horizon Board & Executive Cockpit"
+							class="w-full aspect-16/9 object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
 							loading="lazy"
 						/>
 					</a>
