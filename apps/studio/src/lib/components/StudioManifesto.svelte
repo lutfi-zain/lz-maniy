@@ -1,65 +1,35 @@
-<section id="manifesto" class="py-20 sm:py-28 md:py-36 border-b border-[#1E2638] bg-[#0E131D]/40">
-	<div class="max-w-[1120px] mx-auto px-4 sm:px-6">
-		<!-- Section Header -->
-		<div class="flex items-center justify-between mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-[#1E2638]">
-			<span class="font-mono text-xs text-[#94A3B8] tracking-widest uppercase">
-				[03] Atelier Manifesto
+<section id="manifesto" class="py-24 sm:py-32 lg:py-40 bg-white border-b border-[#e6e8eb]">
+	<div class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
+		<div class="max-w-[1100px] mb-12 sm:mb-16">
+			<span class="font-mono text-xs text-[#989fab] tracking-widest uppercase block mb-6">
+				Atelier Ethos
 			</span>
-			<span class="font-mono text-xs text-[#475569]">
-				Operating Ethos
-			</span>
+			<h2 class="text-3xl sm:text-5xl md:text-6xl lg:text-[68px] font-bold text-[#06070a] leading-[1.08] tracking-tightest mb-8">
+				We transform companies through engineering and design innovation.
+			</h2>
+			<p class="text-xl sm:text-2xl md:text-3xl text-[#4e5361] font-normal leading-[1.35] tracking-tight">
+				A full-service software atelier designing and building inventive digital experiences across edge runtimes, financial cockpits, and applied reasoning models.
+			</p>
 		</div>
 
-		<!-- Oversized Swiss Editorial Pull-Quote -->
-		<div class="max-w-[980px] my-6 sm:my-10">
-			<blockquote class="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tightest text-[#F8FAFC] leading-[1.08]">
-				"High-agency software engineered without intermediary bloat. Every query, component, and agent is crafted directly by senior hands."
-			</blockquote>
-		</div>
-
-		<!-- Three Foundational Tenets -->
-		<div class="mt-14 sm:mt-20 pt-10 border-t border-[#1E2638] grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 font-sans">
+		<div class="pt-12 border-t border-[#e6e8eb] grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-16 text-base sm:text-lg text-[#666c7a] font-normal leading-relaxed">
 			<div>
-				<div class="font-mono text-xs text-[#10B981] mb-3 font-semibold">
-					01 / FIRST PRINCIPLES
-				</div>
-				<h4 class="text-base sm:text-lg font-bold text-[#F8FAFC] mb-2 tracking-tight">
-					Zero Speculative Bloat
-				</h4>
-				<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-					We refuse corporate slide decks, speculative roadmaps, and account manager friction. We take foundational theses from mathematical theory directly to production edge code.
+				<p class="mb-6">
+					Our cross-disciplinary team combines strategy, brand craft, systems engineering, and AI architecture for swift, impactful results. Working directly with our clients, we merge mathematical certainty with interface elegance to consistently exceed expectations.
+				</p>
+				<p>
+					We tackle one foundational domain at a time: taking a core thesis from first principles to production deployment on global edge infrastructure.
 				</p>
 			</div>
 
 			<div>
-				<div class="font-mono text-xs text-[#38BDF8] mb-3 font-semibold">
-					02 / FULL STACK MASTERY
-				</div>
-				<h4 class="text-base sm:text-lg font-bold text-[#F8FAFC] mb-2 tracking-tight">
-					Vertical Depth
-				</h4>
-				<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-					From low-level PostgreSQL connection pooling to reactive Svelte 5 state runes and neural evaluation harnesses, our craft spans the entire vertical spectrum.
+				<p class="mb-6">
+					Membran operates as an independent software studio. We do not maintain layers of account managers, slide decks, or speculative roadmaps. Every line of architecture, database query, and user interface is crafted directly by senior engineering hands.
 				</p>
-			</div>
-
-			<div>
-				<div class="font-mono text-xs text-[#F8FAFC] mb-3 font-semibold">
-					03 / RADICAL TRANSPARENCY
+				<div class="pt-4 font-mono text-xs text-[#06070a] font-bold uppercase tracking-wider">
+					OPERATING MODEL: INDEPENDENT LAB &amp; BOOTSTRAPPED ATELIER
 				</div>
-				<h4 class="text-base sm:text-lg font-bold text-[#F8FAFC] mb-2 tracking-tight">
-					Observable Proof
-				</h4>
-				<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-					We believe systems should prove their validity. Every telemetry span, backtest metric, and financial partition is open to deterministic inspection.
-				</p>
 			</div>
-		</div>
-
-		<!-- Attribution Strip -->
-		<div class="mt-10 sm:mt-14 pt-6 border-t border-[#1E2638]/60 flex flex-wrap items-center justify-between text-xs font-mono text-[#475569] gap-2">
-			<span>MEMBRAN OPERATING ETHOS: TANGERANG / JAKARTA</span>
-			<span>ESTABLISHED 2026</span>
 		</div>
 	</div>
 </section>

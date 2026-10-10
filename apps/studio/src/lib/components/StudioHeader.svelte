@@ -1,5 +1,6 @@
 <script lang="ts">
 	let mobileOpen = $state(false);
+	let scrolled = $state(false);
 
 	function toggleMobile() {
 		mobileOpen = !mobileOpen;
@@ -8,91 +9,84 @@
 	function closeMobile() {
 		mobileOpen = false;
 	}
+
+	function handleScroll() {
+		scrolled = window.scrollY > 20;
+	}
 </script>
 
-<header class="sticky top-0 z-50 w-full px-3 sm:px-6 pt-2.5 sm:pt-4">
-	<div class="max-w-[1120px] mx-auto border border-[#1E2638] bg-[#0A0D12]/90 backdrop-blur-md rounded-xl sm:rounded-2xl px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-2xl shadow-black/60 transition-all">
-		<!-- Brand Monogram & Wordmark -->
-		<a href="/" class="min-h-[44px] flex items-center gap-2.5 sm:gap-3 text-[#F8FAFC] no-underline group focus-visible:ring-2 focus-visible:ring-[#10B981] rounded-lg" aria-label="Membran Homepage">
-			<span class="font-mono font-bold text-xs sm:text-sm border border-[#1E2638] px-2 py-0.5 rounded bg-[#121721] group-hover:border-[#334155] group-hover:text-[#10B981] transition-colors">
+<svelte:window onscroll={handleScroll} />
+
+<header
+	class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 {scrolled
+		? 'bg-white/90 backdrop-blur-md border-b border-[#e6e8eb] shadow-xs'
+		: 'bg-transparent'}"
+>
+	<div class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 py-5 sm:py-6 flex items-center justify-between">
+		<!-- Brand Logo -->
+		<a href="/" class="flex items-center gap-3 no-underline group" aria-label="Membran Homepage">
+			<span class="size-8 rounded-sm bg-[#06070a] text-white font-mono font-bold text-xs flex items-center justify-center transition-transform group-hover:scale-105">
 				M
 			</span>
-			<div class="flex flex-col">
-				<span class="font-sans font-bold tracking-tight text-xs sm:text-sm text-[#F8FAFC]">
-					MEMBRAN
-				</span>
-				<span class="font-mono text-[9px] text-[#475569] hidden sm:block">
-					SOFTWARE ATELIER
-				</span>
-			</div>
+			<span class="font-sans font-bold text-lg sm:text-xl tracking-tight text-[#06070a]">
+				MEMBRAN
+			</span>
 		</a>
 
-		<!-- Live Telemetry Pill -->
+		<!-- Live Telemetry Badge -->
 		<a
 			href="https://phoenix.membran.app"
 			target="_blank"
 			rel="noopener"
-			class="hidden lg:inline-flex min-h-[38px] items-center gap-2.5 font-mono text-[11px] text-[#94A3B8] border border-[#1E2638] px-3.5 py-1 rounded-full bg-[#121721]/70 hover:border-[#334155] hover:text-[#F8FAFC] transition-colors"
+			class="hidden xl:inline-flex items-center gap-2 font-mono text-[11px] text-[#4e5361] border border-[#e6e8eb] bg-[#f3f4f6]/80 px-3.5 py-1 rounded-full hover:border-[#cbd0d6] hover:text-[#06070a] transition-colors"
 			aria-label="Open live telemetry tracing on Arize Phoenix"
 		>
 			<span class="relative flex size-2">
-				<span class="telemetry-beacon-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75"></span>
-				<span class="relative inline-flex size-2 rounded-full bg-[#10B981]"></span>
+				<span class="telemetry-beacon-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+				<span class="relative inline-flex size-2 rounded-full bg-[#10b981]"></span>
 			</span>
 			<span>Arize Phoenix: OTLP Live</span>
 		</a>
 
-		<!-- Desktop Navigation Links -->
-		<nav class="hidden md:flex items-center gap-1 sm:gap-2 font-mono text-xs" aria-label="Main Navigation">
-			<a
-				href="#capabilities"
-				class="min-h-[40px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] transition-colors no-underline rounded-md"
-			>
+		<!-- Desktop Navigation Menu -->
+		<nav class="hidden md:flex items-center gap-8 font-sans text-[15px] font-medium text-[#06070a]" aria-label="Main Navigation">
+			<a href="#capabilities" class="hover:text-[#666c7a] transition-colors no-underline">
 				Capabilities
 			</a>
-			<a
-				href="#works"
-				class="min-h-[40px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] transition-colors no-underline rounded-md"
-			>
-				Selected Works
+			<a href="#works" class="hover:text-[#666c7a] transition-colors no-underline">
+				Work
 			</a>
-			<a
-				href="#atelier"
-				class="min-h-[40px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] transition-colors no-underline rounded-md"
-			>
+			<a href="#manifesto" class="hover:text-[#666c7a] transition-colors no-underline">
 				Atelier
 			</a>
-			<a
-				href="#faq"
-				class="min-h-[40px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] transition-colors no-underline rounded-md"
-			>
+			<a href="#faq" class="hover:text-[#666c7a] transition-colors no-underline">
 				FAQ
 			</a>
 		</nav>
 
 		<!-- Right Action & Mobile Toggle -->
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-3">
 			<a
 				href="mailto:lutfi@membran.app"
-				class="min-h-[40px] inline-flex items-center justify-center font-sans font-semibold text-xs px-4 py-2 rounded-lg bg-[#F8FAFC] text-[#0A0D12] hover:bg-white hover:shadow-md hover:shadow-white/10 active:bg-[#E2E8F0] transition-all no-underline"
+				class="min-h-[42px] inline-flex items-center justify-center font-sans font-medium text-sm px-6 py-2.5 rounded-full bg-[#06070a] text-white hover:bg-[#353945] active:bg-[#06070a] transition-colors no-underline shadow-xs"
 			>
-				<span>Let's Talk</span>
+				<span>Contact</span>
 			</a>
 
 			<button
 				type="button"
 				onclick={toggleMobile}
-				class="md:hidden min-h-[40px] min-w-[40px] flex items-center justify-center text-[#94A3B8] hover:text-[#F8FAFC] border border-[#1E2638] rounded-lg bg-[#121721] transition-colors"
+				class="md:hidden min-h-[42px] min-w-[42px] flex items-center justify-center text-[#06070a] border border-[#e6e8eb] rounded-full bg-[#f3f4f6] transition-colors"
 				aria-expanded={mobileOpen}
 				aria-label="Toggle navigation menu"
 			>
 				{#if mobileOpen}
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 						<line x1="18" y1="6" x2="6" y2="18"></line>
 						<line x1="6" y1="6" x2="18" y2="18"></line>
 					</svg>
 				{:else}
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 						<line x1="3" y1="12" x2="21" y2="12"></line>
 						<line x1="3" y1="6" x2="21" y2="6"></line>
 						<line x1="3" y1="18" x2="21" y2="18"></line>
@@ -104,44 +98,28 @@
 
 	<!-- Mobile Drawer Menu -->
 	{#if mobileOpen}
-		<div class="md:hidden max-w-[1120px] mx-auto mt-2 border border-[#1E2638] bg-[#0A0D12]/95 backdrop-blur-xl rounded-xl p-4 shadow-2xl flex flex-col gap-2 font-mono text-xs animate-entrance-1">
-			<a
-				href="#capabilities"
-				onclick={closeMobile}
-				class="min-h-[44px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] border-b border-[#1E2638]/40 no-underline"
-			>
-				[01] Capabilities
+		<div class="md:hidden border-t border-[#e6e8eb] bg-white/95 backdrop-blur-xl px-6 py-6 shadow-xl flex flex-col gap-4 font-sans text-base font-medium text-[#06070a] animate-entrance-1">
+			<a href="#capabilities" onclick={closeMobile} class="py-2 border-b border-[#f3f4f6] no-underline">
+				Capabilities
 			</a>
-			<a
-				href="#works"
-				onclick={closeMobile}
-				class="min-h-[44px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] border-b border-[#1E2638]/40 no-underline"
-			>
-				[02] Selected Works (Maniy & Quant)
+			<a href="#works" onclick={closeMobile} class="py-2 border-b border-[#f3f4f6] no-underline">
+				Selected Works
 			</a>
-			<a
-				href="#atelier"
-				onclick={closeMobile}
-				class="min-h-[44px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] border-b border-[#1E2638]/40 no-underline"
-			>
-				[03] Atelier Dossier
+			<a href="#manifesto" onclick={closeMobile} class="py-2 border-b border-[#f3f4f6] no-underline">
+				Atelier Manifesto
 			</a>
-			<a
-				href="#faq"
-				onclick={closeMobile}
-				class="min-h-[44px] px-3 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] border-b border-[#1E2638]/40 no-underline"
-			>
-				[04] Interactive FAQ
+			<a href="#faq" onclick={closeMobile} class="py-2 border-b border-[#f3f4f6] no-underline">
+				FAQ
 			</a>
 			<a
 				href="https://phoenix.membran.app"
 				target="_blank"
 				rel="noopener"
 				onclick={closeMobile}
-				class="min-h-[44px] px-3 flex items-center justify-between text-[#10B981] pt-1 no-underline"
+				class="py-2 flex items-center justify-between text-[#10b981] font-mono text-xs no-underline"
 			>
 				<span>Telemetry: phoenix.membran.app</span>
-				<span class="size-2 rounded-full bg-[#10B981]"></span>
+				<span class="size-2 rounded-full bg-[#10b981]"></span>
 			</a>
 		</div>
 	{/if}

@@ -1,268 +1,190 @@
-<section id="capabilities" class="py-16 sm:py-24 border-b border-[#1E2638] animate-entrance-2">
-	<div class="max-w-[1120px] mx-auto px-4 sm:px-6">
-		<!-- Section Header -->
-		<div class="flex items-center justify-between mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-[#1E2638]">
-			<span class="font-mono text-xs text-[#94A3B8] tracking-widest uppercase">
-				[01] Core Capabilities
-			</span>
-			<span class="font-mono text-xs text-[#475569]">
-				Engineering Disciplines
-			</span>
-		</div>
+<script lang="ts">
+	let activeIndex = $state(0);
 
-		<div class="mb-12 sm:mb-16 max-w-[820px]">
-			<h2 class="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#F8FAFC] mb-4 leading-tight">
-				We architect mission-critical software across six foundational pillars.
-			</h2>
-			<p class="text-base sm:text-lg text-[#94A3B8] font-light leading-relaxed">
-				Combining mathematical determinism with applied cognitive systems to produce reliable, high-agency software.
+	function selectItem(index: number) {
+		activeIndex = activeIndex === index ? -1 : index;
+	}
+
+	const capabilities = [
+		{
+			title: 'Deterministic Accounting',
+			tag: 'Math Integrity',
+			image: '/images/capabilities/01-deterministic.jpg',
+			description:
+				'A brand is more than just a logo. For Membran, financial truth is more than an estimation. Zero-hallucination ledgers where balances, daily runways, and currency conversions are computed by verified ACID relational queries on PostgreSQL 16 and D1, never inferred by stochastic model weights.'
+		},
+		{
+			title: 'Digital Products',
+			tag: 'Executive Cockpits',
+			image: '/images/capabilities/02-digital-products.jpg',
+			description:
+				'At Membran, we focus on creating real connections. We combine smart design with behavioral science to make digital products that feel human. Our senior architects craft software that is not just beautiful, but meaningful. Home of Maniy v2 Executive Cockpit and AI Financial Reasoning Agent.'
+		},
+		{
+			title: 'Websites',
+			tag: 'Editorial Design',
+			image: '/images/capabilities/03-websites.jpg',
+			description:
+				'Your digital presence starts with your website. That’s where your brand comes to life. We design sites that clearly show who you are and what you stand for, all while giving users a smooth, engaging experience. Radical editorial aesthetics, zero AI-slop, and sub-50ms first contentful paint.'
+		},
+		{
+			title: 'Development',
+			tag: 'Edge Runtimes',
+			image: '/images/capabilities/04-development.jpg',
+			description:
+				'Our app and web developers care about both looks and performance. We build fast, reliable products that work great on every device. Deployed worldwide across Cloudflare Workers and Pages, with Hyperdrive connection pooling eliminating cold starts and database lag.'
+		},
+		{
+			title: 'Content & Observability',
+			tag: 'Open Telemetry',
+			image: '/images/capabilities/05-content.jpg',
+			description:
+				'Great content and rigorous system observability are foundational to trust. Zero black-box AI behavior: every tool invocation, LLM span latency, and memory retrieval step is streamed live to Arize Phoenix using open OpenTelemetry (OTLP) protocols.'
+		},
+		{
+			title: 'Generative AI & Quantitative Systems',
+			tag: 'Applied Intelligence',
+			image: '/images/capabilities/06-generative-ai.jpg',
+			description:
+				'We use AI to work smarter and build better products. Our team leads the way in AI-powered UX, creating new ways for people to interact with digital tools and setting the standard for what’s next. Home of Quant Membran Bitcoin Intelligence Platform unifying 10 Statistical Families.'
+		}
+	];
+</script>
+
+<section id="capabilities" class="py-20 sm:py-28 lg:py-36 bg-white border-b border-[#e6e8eb]">
+	<div class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
+		<!-- Section Lead Statement -->
+		<div class="max-w-[1100px] mb-16 sm:mb-24">
+			<p class="text-2xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold text-[#06070a] leading-[1.15] tracking-tightest">
+				We build transformative digital experiences for the world's leading brands by blending AI, design, and technology.
 			</p>
 		</div>
 
-		<!-- 6-Tier Bento Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-			<!-- 01. Deterministic Accounting -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#10B981] font-semibold">
-							01 / MATH INTEGRITY
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							ACID LEDGER
-						</span>
-					</div>
+		<!-- Desktop & Tablet Interactive Capabilities Grid -->
+		<div class="hidden lg:grid grid-cols-12 gap-12 items-start">
+			<!-- Left List (6 items) -->
+			<div class="col-span-7 divide-y divide-[#e6e8eb]">
+				{#each capabilities as item, i}
+					<div class="py-6 transition-colors">
+						<button
+							type="button"
+							onclick={() => (activeIndex = i)}
+							class="w-full text-left flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007aff] rounded-lg py-2"
+						>
+							<div class="flex items-center gap-6">
+								<span class="font-mono text-xs text-[#989fab]">
+									0{i + 1}
+								</span>
+								<h3
+									class="text-2xl xl:text-3xl font-bold tracking-tight transition-colors {activeIndex === i
+										? 'text-[#06070a]'
+										: 'text-[#666c7a] group-hover:text-[#06070a]'}"
+								>
+									{item.title}
+								</h3>
+							</div>
 
-					<!-- Bespoke Geometric SVG: Isomeric Matrix Cube -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#10B981]/30 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#10B981]" aria-hidden="true">
-							<!-- Isometric Cube Top -->
-							<polygon points="60,12 96,30 60,48 24,30" stroke="currentColor" stroke-width="1.5" fill="rgba(16, 185, 129, 0.08)" />
-							<!-- Isometric Cube Left -->
-							<polygon points="24,30 60,48 60,84 24,66" stroke="currentColor" stroke-width="1.5" fill="rgba(16, 185, 129, 0.04)" />
-							<!-- Isometric Cube Right -->
-							<polygon points="60,48 96,30 96,66 60,84" stroke="currentColor" stroke-width="1.5" fill="rgba(16, 185, 129, 0.12)" />
-							<!-- Inner Coordinates -->
-							<line x1="60" y1="48" x2="60" y2="12" stroke="#475569" stroke-width="1" stroke-dasharray="2 2" />
-							<line x1="24" y1="30" x2="96" y2="66" stroke="#475569" stroke-width="1" stroke-dasharray="2 2" />
-							<circle cx="60" cy="48" r="3" fill="#10B981" />
-						</svg>
-					</div>
+							<svg
+								class="size-5 transition-transform duration-300 {activeIndex === i
+									? 'rotate-180 text-[#007aff]'
+									: 'text-[#989fab] group-hover:text-[#06070a]'}"
+								viewBox="0 0 21 13"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="m1.467 1.732 9.018 8.852 8.684-8.524" />
+							</svg>
+						</button>
 
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						Deterministic Accounting
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Zero-hallucination ledgers. Balances, runway metrics, and currency conversions are computed by verified relational queries on PostgreSQL 16 and D1, never estimated by LLM weights.
-					</p>
-				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					CORE: VERIFIED ACID TRANSACTIONS
-				</div>
+						{#if activeIndex === i}
+							<div class="mt-4 pl-12 pr-6 text-base text-[#4e5361] font-normal leading-relaxed animate-entrance-1">
+								<p class="mb-4">
+									{item.description}
+								</p>
+								<span class="inline-block font-mono text-[11px] uppercase tracking-wider text-[#007aff] border border-[#007aff]/20 bg-[#007aff]/5 px-2.5 py-1 rounded">
+									{item.tag}
+								</span>
+							</div>
+						{/if}
+					</div>
+				{/each}
 			</div>
 
-			<!-- 02. Evaluated AI Reasoning -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#38BDF8] font-semibold">
-							02 / REASONING AGENTS
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							EVAL HARNESS
-						</span>
+			<!-- Right Sticky Visual Display -->
+			<div class="col-span-5 sticky top-32">
+				{#if activeIndex >= 0}
+					<div class="border border-[#e6e8eb] rounded-2xl overflow-hidden bg-[#f3f4f6] shadow-xl animate-entrance-1">
+						<img
+							src={capabilities[activeIndex].image}
+							alt={capabilities[activeIndex].title}
+							class="w-full aspect-square object-cover"
+							loading="lazy"
+						/>
+						<div class="p-6 bg-white border-t border-[#e6e8eb]">
+							<div class="font-mono text-xs text-[#989fab] uppercase tracking-wider mb-1">
+								Membran Pillar 0{activeIndex + 1}
+							</div>
+							<div class="font-sans font-bold text-xl text-[#06070a]">
+								{capabilities[activeIndex].title}
+							</div>
+						</div>
 					</div>
-
-					<!-- Bespoke Geometric SVG: Directed Acyclic Graph / Evals -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#38BDF8]/30 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#38BDF8]" aria-hidden="true">
-							<!-- Nodes -->
-							<circle cx="20" cy="48" r="7" stroke="currentColor" stroke-width="1.5" fill="rgba(56, 189, 248, 0.1)" />
-							<circle cx="60" cy="24" r="7" stroke="currentColor" stroke-width="1.5" fill="rgba(56, 189, 248, 0.1)" />
-							<circle cx="60" cy="72" r="7" stroke="currentColor" stroke-width="1.5" fill="rgba(56, 189, 248, 0.1)" />
-							<circle cx="100" cy="48" r="9" stroke="currentColor" stroke-width="2" fill="rgba(56, 189, 248, 0.2)" />
-							<!-- Connecting Edges -->
-							<line x1="27" y1="44" x2="53" y2="28" stroke="currentColor" stroke-width="1.5" />
-							<line x1="27" y1="52" x2="53" y2="68" stroke="currentColor" stroke-width="1.5" />
-							<line x1="67" y1="28" x2="92" y2="44" stroke="currentColor" stroke-width="1.5" />
-							<line x1="67" y1="68" x2="92" y2="52" stroke="currentColor" stroke-width="1.5" />
-							<!-- Checkmark at Terminal Node -->
-							<polyline points="97,48 99,50 104,45" stroke="#F8FAFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</div>
-
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						Evaluated AI Reasoning
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Rigorous evaluation suites and specialized tool executors. AI models act as intent parsers and multi-step dispatchers, bounded by credit pre-checks and golden dataset regression suites.
-					</p>
-				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					HARNESS: DETERMINISTIC TOOL ROUTING
-				</div>
+				{/if}
 			</div>
+		</div>
 
-			<!-- 03. High-Fidelity Systems -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#F8FAFC] font-semibold">
-							03 / INTERFACE CRAFT
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							SVELTE 5 RUNES
-						</span>
-					</div>
+		<!-- Mobile & Tablet Accordion View -->
+		<div class="lg:hidden divide-y divide-[#e6e8eb]">
+			{#each capabilities as item, i}
+				<div class="py-5">
+					<button
+						type="button"
+						onclick={() => selectItem(i)}
+						class="w-full text-left flex items-center justify-between py-2 focus-visible:outline-none"
+						aria-expanded={activeIndex === i}
+					>
+						<div class="flex items-center gap-4">
+							<span class="font-mono text-xs text-[#989fab]">
+								0{i + 1}
+							</span>
+							<h3 class="text-xl sm:text-2xl font-bold tracking-tight text-[#06070a]">
+								{item.title}
+							</h3>
+						</div>
 
-					<!-- Bespoke Geometric SVG: Layered Window Geometry -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#94A3B8]/40 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#94A3B8]" aria-hidden="true">
-							<!-- Background Panel -->
-							<rect x="18" y="14" width="76" height="54" rx="4" stroke="#334155" stroke-width="1.5" fill="#121721" />
-							<!-- Foreground Panel -->
-							<rect x="30" y="26" width="76" height="54" rx="4" stroke="currentColor" stroke-width="1.5" fill="rgba(18, 23, 33, 0.9)" />
-							<!-- Panel Header & Crosshair -->
-							<line x1="30" y1="38" x2="106" y2="38" stroke="#334155" stroke-width="1" />
-							<circle cx="38" cy="32" r="2" fill="#475569" />
-							<circle cx="44" cy="32" r="2" fill="#475569" />
-							<!-- Data Bars -->
-							<rect x="38" y="46" width="40" height="4" rx="2" fill="#10B981" />
-							<rect x="38" y="56" width="24" height="4" rx="2" fill="#38BDF8" />
-							<rect x="38" y="66" width="52" height="4" rx="2" fill="#475569" />
+						<svg
+							class="size-4 transition-transform duration-300 {activeIndex === i ? 'rotate-180 text-[#007aff]' : 'text-[#989fab]'}"
+							viewBox="0 0 21 13"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							aria-hidden="true"
+						>
+							<path d="m1.467 1.732 9.018 8.852 8.684-8.524" />
 						</svg>
-					</div>
+					</button>
 
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						High-Fidelity Interfaces
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Radical editorial design systems devoid of generic AI slop. Built on Svelte 5 reactive runes, responsive asymmetrical viewports, strict keyboard accessibility, and sub-50ms paint times.
-					</p>
+					{#if activeIndex === i}
+						<div class="mt-4 space-y-4 animate-entrance-1">
+							<div class="rounded-xl overflow-hidden border border-[#e6e8eb] bg-[#f3f4f6]">
+								<img
+									src={item.image}
+									alt={item.title}
+									class="w-full aspect-square object-cover"
+									loading="lazy"
+								/>
+							</div>
+							<p class="text-sm sm:text-base text-[#4e5361] leading-relaxed">
+								{item.description}
+							</p>
+						</div>
+					{/if}
 				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					STANDARDS: WAI-ARIA &amp; NO-SLOP CRAFT
-				</div>
-			</div>
-
-			<!-- 04. Global Edge Runtimes -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#10B981] font-semibold">
-							04 / EDGE RUNTIME
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							SUB-100MS
-						</span>
-					</div>
-
-					<!-- Bespoke Geometric SVG: Distributed Network Bus -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#10B981]/30 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#10B981]" aria-hidden="true">
-							<!-- Central Bus -->
-							<line x1="16" y1="48" x2="104" y2="48" stroke="currentColor" stroke-width="2" />
-							<!-- Nodes along the bus -->
-							<circle cx="28" cy="48" r="5" stroke="currentColor" stroke-width="2" fill="#0A0D12" />
-							<circle cx="60" cy="48" r="6" stroke="currentColor" stroke-width="2" fill="rgba(16, 185, 129, 0.2)" />
-							<circle cx="92" cy="48" r="5" stroke="currentColor" stroke-width="2" fill="#0A0D12" />
-							<!-- Edge Rays -->
-							<line x1="28" y1="43" x2="28" y2="24" stroke="#475569" stroke-width="1.5" />
-							<circle cx="28" cy="24" r="3" fill="#38BDF8" />
-							<line x1="92" y1="53" x2="92" y2="72" stroke="#475569" stroke-width="1.5" />
-							<circle cx="92" cy="72" r="3" fill="#10B981" />
-							<!-- Pulse Rings -->
-							<circle cx="60" cy="48" r="14" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.6" />
-						</svg>
-					</div>
-
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						Global Edge Architecture
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Deployed worldwide across Cloudflare Workers and Pages. Compute executes directly at the edge nearest the client, bypassing TCP/TLS connection lag via Cloudflare Hyperdrive acceleration.
-					</p>
-				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					INFRA: CLOUDFLARE PAGES &amp; HYPERDRIVE
-				</div>
-			</div>
-
-			<!-- 05. Distributed Tracing -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#38BDF8] font-semibold">
-							05 / OBSERVABILITY
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							ARIZE PHOENIX
-						</span>
-					</div>
-
-					<!-- Bespoke Geometric SVG: Waterfall Trace Span -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#38BDF8]/30 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#38BDF8]" aria-hidden="true">
-							<!-- Timeline Axis -->
-							<line x1="20" y1="18" x2="20" y2="78" stroke="#334155" stroke-width="1" />
-							<!-- Trace Spans -->
-							<rect x="24" y="24" width="76" height="8" rx="2" fill="rgba(56, 189, 248, 0.25)" stroke="currentColor" stroke-width="1" />
-							<rect x="36" y="38" width="44" height="8" rx="2" fill="rgba(16, 185, 129, 0.3)" stroke="#10B981" stroke-width="1" />
-							<rect x="52" y="52" width="28" height="8" rx="2" fill="rgba(56, 189, 248, 0.3)" stroke="currentColor" stroke-width="1" />
-							<rect x="44" y="66" width="56" height="8" rx="2" fill="rgba(148, 163, 184, 0.2)" stroke="#94A3B8" stroke-width="1" />
-						</svg>
-					</div>
-
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						Open Distributed Tracing
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Zero black-box AI behavior. Every tool invocation, LLM span duration, and memory retrieval step is streamed live to Arize Phoenix using standardized OpenTelemetry (OTLP) protocols.
-					</p>
-				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					SUITE: PHOENIX.MEMBRAN.APP (LIVE)
-				</div>
-			</div>
-
-			<!-- 06. Quantitative Consensus Engines -->
-			<div class="border border-[#1E2638] rounded-xl bg-[#121721] p-6 sm:p-8 flex flex-col justify-between hover:border-[#334155] transition-all group">
-				<div>
-					<div class="flex items-center justify-between mb-6">
-						<span class="font-mono text-xs text-[#F8FAFC] font-semibold">
-							06 / STATISTICAL CONSENSUS
-						</span>
-						<span class="font-mono text-[10px] text-[#475569] border border-[#1E2638] px-2 py-0.5 rounded">
-							10 FAMILIES
-						</span>
-					</div>
-
-					<!-- Bespoke Geometric SVG: Quantitative Regime Distribution -->
-					<div class="mb-6 h-36 border border-[#1E2638]/70 rounded-lg bg-[#0A0D12] p-4 flex items-center justify-center group-hover:border-[#94A3B8]/40 transition-colors">
-						<svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="text-[#F8FAFC]" aria-hidden="true">
-							<!-- Baseline -->
-							<line x1="16" y1="74" x2="104" y2="74" stroke="#334155" stroke-width="1" />
-							<!-- Gaussian Distribution Curve -->
-							<path d="M 16 74 Q 40 73 50 48 Q 60 18 70 48 Q 80 73 104 74" stroke="currentColor" stroke-width="1.5" fill="none" />
-							<!-- Regime Partition Barriers -->
-							<line x1="45" y1="28" x2="45" y2="74" stroke="#38BDF8" stroke-width="1" stroke-dasharray="2 2" />
-							<line x1="75" y1="28" x2="75" y2="74" stroke="#10B981" stroke-width="1" stroke-dasharray="2 2" />
-							<!-- Regime Indicator Dot -->
-							<circle cx="60" cy="18" r="3" fill="#10B981" />
-						</svg>
-					</div>
-
-					<h3 class="text-lg sm:text-xl font-bold tracking-tight text-[#F8FAFC] mb-2.5">
-						Quantitative Consensus Engines
-					</h3>
-					<p class="text-sm text-[#94A3B8] font-light leading-relaxed">
-						Institutional-grade market intelligence. 10 statistical indicator families, Gaussian HMM regime switching, and Bayesian Optuna presets orchestrated across Python 3.11 and Hono gateways.
-					</p>
-				</div>
-				<div class="mt-6 pt-4 border-t border-[#1E2638]/60 font-mono text-[11px] text-[#475569]">
-					QUANT: QUANT.MEMBRAN.APP
-				</div>
-			</div>
+			{/each}
 		</div>
 	</div>
 </section>

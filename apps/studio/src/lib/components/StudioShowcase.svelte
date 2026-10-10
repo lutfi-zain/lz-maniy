@@ -1,57 +1,86 @@
-<section id="works" class="py-16 sm:py-24 border-b border-[#1E2638] animate-entrance-3">
-	<div class="max-w-[1120px] mx-auto px-4 sm:px-6">
+<section id="works" class="py-20 sm:py-28 lg:py-36 bg-white border-b border-[#e6e8eb]">
+	<div class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
 		<!-- Section Header -->
-		<div class="flex items-center justify-between mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-[#1E2638]">
-			<span class="font-mono text-xs text-[#94A3B8] tracking-widest uppercase">
-				[02] Selected Works
+		<div class="flex items-center justify-between mb-8 sm:mb-12 pb-4 border-b border-[#e6e8eb]">
+			<span class="font-mono text-xs text-[#989fab] tracking-widest uppercase">
+				Selected Work
 			</span>
-			<span class="font-mono text-xs text-[#475569]">
+			<span class="font-mono text-xs text-[#666c7a]">
 				Production Flagships
 			</span>
 		</div>
 
-		<div class="mb-12 sm:mb-16 max-w-[820px]">
-			<h2 class="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#F8FAFC] mb-4 leading-tight">
-				Two flagship instruments engineered from first principles.
-			</h2>
-			<p class="text-base sm:text-lg text-[#94A3B8] font-light leading-relaxed">
-				Explore our active production deployments in personal financial intelligence and quantitative algorithmic modeling.
-			</p>
-		</div>
+		<div class="space-y-16 sm:space-y-24">
+			<!-- ==================================================== -->
+			<!-- WORK 01: MANIY                                       -->
+			<!-- ==================================================== -->
+			<article class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+				<!-- Media Canvas -->
+				<div class="lg:col-span-7 rounded-2xl overflow-hidden border border-[#e6e8eb] bg-[#f3f4f6] group shadow-sm hover:shadow-md transition-shadow">
+					<a
+						href="https://maniy.membran.app"
+						target="_blank"
+						rel="noopener"
+						class="block overflow-hidden no-underline"
+						aria-label="Launch Maniy"
+					>
+						<img
+							src="/images/showcase/maniy-showcase.png"
+							alt="Maniy Executive Cockpit"
+							class="w-full aspect-16/10 object-cover group-hover:scale-[1.02] transition-transform duration-500"
+							loading="lazy"
+						/>
+					</a>
+				</div>
 
-		<div class="space-y-10 sm:space-y-16">
-			<!-- ============================================== -->
-			<!-- FLAGSHIP 01: MANIY                            -->
-			<!-- ============================================== -->
-			<div class="border border-[#1E2638] rounded-2xl bg-[#121721] p-6 sm:p-10 md:p-12 hover:border-[#334155] transition-all duration-300 group">
-				<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 sm:mb-10">
+				<!-- Details & Metrics -->
+				<div class="lg:col-span-5 flex flex-col justify-between space-y-6">
 					<div>
-						<div class="flex flex-wrap items-center gap-3 mb-3">
-							<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F8FAFC]">
-								Maniy
-							</h3>
-							<span class="font-mono text-xs text-[#10B981] border border-[#10B981]/30 bg-[#10B981]/10 px-2.5 py-0.5 rounded">
-								Live Production v2
+						<!-- Tags -->
+						<div class="flex flex-wrap items-center gap-2 mb-4 font-sans text-xs">
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								PFM
 							</span>
-							<span class="font-mono text-xs text-[#475569]">
-								PFM &amp; Account Intelligence
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								Executive Cockpit
+							</span>
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								Svelte 5
+							</span>
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/30">
+								Production v2
 							</span>
 						</div>
-						<p class="text-sm sm:text-base md:text-lg text-[#94A3B8] max-w-[660px] font-light leading-relaxed">
-							Executive Cockpit and AI Financial Reasoning Agent. Eliminating the bank balance illusion
-							through strict liquidity partitioning between daily Spendable runway and Locked commitments.
-							Natural language multi-item bookkeeping with zero arithmetic hallucinations.
+
+						<h3 class="text-3xl sm:text-4xl font-bold tracking-tight text-[#06070a] mb-4">
+							Maniy
+						</h3>
+
+						<p class="text-base sm:text-lg text-[#4e5361] font-normal leading-relaxed mb-6">
+							Executive Cockpit and AI Financial Reasoning Agent. Eliminating the bank balance illusion through strict liquidity partitioning between daily Spendable runway and Locked commitments.
 						</p>
+
+						<!-- Metrics Strip -->
+						<div class="grid grid-cols-2 gap-4 p-4 rounded-xl border border-[#e6e8eb] bg-[#f3f4f6] font-mono text-xs mb-6">
+							<div>
+								<div class="text-[#7f8694] text-[10px] uppercase mb-0.5">Spendable Runway</div>
+								<div class="text-base font-bold text-[#10b981]">Rp 12.350.000</div>
+							</div>
+							<div>
+								<div class="text-[#7f8694] text-[10px] uppercase mb-0.5">Locked Reserves</div>
+								<div class="text-base font-bold text-[#007aff]">Rp 33.500.000</div>
+							</div>
+						</div>
 					</div>
 
-					<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+					<div>
 						<a
 							href="https://maniy.membran.app"
 							target="_blank"
 							rel="noopener"
-							class="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#F8FAFC] text-[#0A0D12] font-semibold text-xs px-5 py-3 rounded-lg hover:bg-white hover:shadow-lg hover:shadow-white/5 active:bg-[#E2E8F0] transition-all group-hover:translate-x-0.5 no-underline"
+							class="min-h-[46px] inline-flex items-center gap-2.5 font-sans font-semibold text-sm px-6 py-3 rounded-full bg-[#06070a] text-white hover:bg-[#353945] transition-colors no-underline shadow-xs"
 						>
-							<span>Launch Maniy Cockpit</span>
+							<span>View Case Study &amp; Launch</span>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 								<line x1="7" y1="17" x2="17" y2="7"></line>
 								<polyline points="7 7 17 7 17 17"></polyline>
@@ -59,94 +88,78 @@
 						</a>
 					</div>
 				</div>
+			</article>
 
-				<!-- Architectural Cockpit Preview Canvas -->
-				<div class="border border-[#1E2638] rounded-xl bg-[#0A0D12] p-5 sm:p-7 md:p-8">
-					<div class="flex flex-wrap items-center justify-between pb-4 sm:pb-6 mb-4 sm:mb-6 border-b border-[#1E2638] text-[11px] sm:text-xs font-mono text-[#94A3B8] gap-2">
-						<span class="flex items-center gap-2">
-							<span class="size-2 rounded-full bg-[#10B981]"></span>
-							CORE PARTITION ENGINE
-						</span>
-						<span class="text-[#10B981]">EDGE LATENCY: 12ms</span>
-					</div>
-
-					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								Spendable Runway
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#10B981] mb-1">
-								Rp 12.350.000
-							</div>
-							<div class="text-xs text-[#475569]">
-								Daily safe-to-spend cash
-							</div>
-						</div>
-
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								Locked Reserves
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#38BDF8] mb-1">
-								Rp 33.500.000
-							</div>
-							<div class="text-xs text-[#475569]">
-								Protected commitments &amp; goals
-							</div>
-						</div>
-
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50 sm:col-span-2 lg:col-span-1">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								Consolidated Net Worth
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-1">
-								Rp 45.850.000
-							</div>
-							<div class="text-xs text-[#475569]">
-								Single relational source of truth
-							</div>
-						</div>
-					</div>
-
-					<div class="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-[#1E2638] flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs font-mono text-[#475569]">
-						<span>STACK: SVELTE 5 . CLOUDFLARE EDGE . DRIZZLE . POSTGRESQL 16</span>
-						<span class="text-[#94A3B8]">URL: MANIY.MEMBRAN.APP</span>
-					</div>
+			<!-- ==================================================== -->
+			<!-- WORK 02: QUANT MEMBRAN                               -->
+			<!-- ==================================================== -->
+			<article class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pt-8 border-t border-[#e6e8eb]">
+				<!-- Media Canvas -->
+				<div class="lg:col-span-7 rounded-2xl overflow-hidden border border-[#e6e8eb] bg-[#f3f4f6] group shadow-sm hover:shadow-md transition-shadow">
+					<a
+						href="https://quant.membran.app"
+						target="_blank"
+						rel="noopener"
+						class="block overflow-hidden no-underline"
+						aria-label="Launch Quant Membran"
+					>
+						<img
+							src="/images/showcase/quant-showcase.jpg"
+							alt="Quant Membran Intelligence Platform"
+							class="w-full aspect-16/10 object-cover group-hover:scale-[1.02] transition-transform duration-500"
+							loading="lazy"
+						/>
+					</a>
 				</div>
-			</div>
 
-			<!-- ============================================== -->
-			<!-- FLAGSHIP 02: QUANT MEMBRAN                    -->
-			<!-- ============================================== -->
-			<div class="border border-[#1E2638] rounded-2xl bg-[#121721] p-6 sm:p-10 md:p-12 hover:border-[#334155] transition-all duration-300 group">
-				<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 sm:mb-10">
+				<!-- Details & Metrics -->
+				<div class="lg:col-span-5 flex flex-col justify-between space-y-6">
 					<div>
-						<div class="flex flex-wrap items-center gap-3 mb-3">
-							<h3 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F8FAFC]">
-								Quant Membran
-							</h3>
-							<span class="font-mono text-xs text-[#38BDF8] border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-2.5 py-0.5 rounded">
-								Quant Intelligence Platform
+						<!-- Tags -->
+						<div class="flex flex-wrap items-center gap-2 mb-4 font-sans text-xs">
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								Fintech
 							</span>
-							<span class="font-mono text-xs text-[#475569]">
-								10 Statistical Families
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								Quantitative AI
+							</span>
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#f3f4f6] text-[#4e5361] border border-[#e6e8eb]">
+								Python 3.11
+							</span>
+							<span class="font-mono px-2.5 py-0.5 rounded-full bg-[#007aff]/10 text-[#007aff] border border-[#007aff]/30">
+								Live Platform
 							</span>
 						</div>
-						<p class="text-sm sm:text-base md:text-lg text-[#94A3B8] max-w-[660px] font-light leading-relaxed">
-							Unified Quantitative &amp; Statistical Bitcoin Intelligence Platform. Multi-layered quantitative defense
-							combining Macro Cycle Valuation, Orthogonal Regime-Switching Ensemble (Gaussian HMM), and Denoised Ichimoku
-							into institutional-grade consensus.
+
+						<h3 class="text-3xl sm:text-4xl font-bold tracking-tight text-[#06070a] mb-4">
+							Quant Membran
+						</h3>
+
+						<p class="text-base sm:text-lg text-[#4e5361] font-normal leading-relaxed mb-6">
+							Unified Quantitative &amp; Statistical Bitcoin Trading Platform. 10 statistical indicator families, Gaussian HMM regime switching, and Bayesian Optuna presets for institutional consensus.
 						</p>
+
+						<!-- Metrics Strip -->
+						<div class="grid grid-cols-2 gap-4 p-4 rounded-xl border border-[#e6e8eb] bg-[#f3f4f6] font-mono text-xs mb-6">
+							<div>
+								<div class="text-[#7f8694] text-[10px] uppercase mb-0.5">LTTD Strategy Win Rate</div>
+								<div class="text-base font-bold text-[#10b981]">85.7% (68.96 PF)</div>
+							</div>
+							<div>
+								<div class="text-[#7f8694] text-[10px] uppercase mb-0.5">Macro Cycle Pillars</div>
+								<div class="text-base font-bold text-[#007aff]">17 Indicators</div>
+							</div>
+						</div>
 					</div>
 
-					<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+					<div>
 						<a
 							href="https://quant.membran.app"
 							target="_blank"
 							rel="noopener"
-							class="min-h-[44px] inline-flex items-center justify-center gap-2 bg-[#F8FAFC] text-[#0A0D12] font-semibold text-xs px-5 py-3 rounded-lg hover:bg-white hover:shadow-lg hover:shadow-white/5 active:bg-[#E2E8F0] transition-all group-hover:translate-x-0.5 no-underline"
+							class="min-h-[46px] inline-flex items-center gap-2.5 font-sans font-semibold text-sm px-6 py-3 rounded-full bg-[#06070a] text-white hover:bg-[#353945] transition-colors no-underline shadow-xs"
 						>
-							<span>Launch Quant Platform</span>
+							<span>View Case Study &amp; Launch</span>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 								<line x1="7" y1="17" x2="17" y2="7"></line>
 								<polyline points="7 7 17 7 17 17"></polyline>
@@ -154,61 +167,7 @@
 						</a>
 					</div>
 				</div>
-
-				<!-- Architectural Quantitative Console Preview Canvas -->
-				<div class="border border-[#1E2638] rounded-xl bg-[#0A0D12] p-5 sm:p-7 md:p-8">
-					<div class="flex flex-wrap items-center justify-between pb-4 sm:pb-6 mb-4 sm:mb-6 border-b border-[#1E2638] text-[11px] sm:text-xs font-mono text-[#94A3B8] gap-2">
-						<span class="flex items-center gap-2">
-							<span class="size-2 rounded-full bg-[#38BDF8]"></span>
-							MULTI-LAYER STATISTICAL CONSENSUS
-						</span>
-						<span class="text-[#38BDF8]">CIRCUIT BREAKER: ACTIVE</span>
-					</div>
-
-					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								LTTD Strategy Backtest
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#10B981] mb-1">
-								85.7% Win Rate
-							</div>
-							<div class="text-xs text-[#475569]">
-								68.96 Profit Factor (14 macro trades)
-							</div>
-						</div>
-
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								Macro Cycle Valuation
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-1">
-								17 Indicators
-							</div>
-							<div class="text-xs text-[#475569]">
-								Continuous transaction ledger &amp; Optuna
-							</div>
-						</div>
-
-						<div class="p-4 sm:p-5 rounded-lg border border-[#1E2638] bg-[#121721]/50 sm:col-span-2 lg:col-span-1">
-							<div class="font-mono text-[11px] text-[#94A3B8] uppercase tracking-wider mb-2">
-								Regime Defense
-							</div>
-							<div class="font-mono text-xl sm:text-2xl font-bold text-[#38BDF8] mb-1">
-								Gaussian HMM
-							</div>
-							<div class="text-xs text-[#475569]">
-								Automated Cash &amp; Sideways Protection
-							</div>
-						</div>
-					</div>
-
-					<div class="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-[#1E2638] flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs font-mono text-[#475569]">
-						<span>STACK: BUN . HONO GATEWAY . PYTHON 3.11 . REACT 19 . LIGHTWEIGHT CHARTS V5</span>
-						<span class="text-[#94A3B8]">URL: QUANT.MEMBRAN.APP</span>
-					</div>
-				</div>
-			</div>
+			</article>
 		</div>
 	</div>
 </section>

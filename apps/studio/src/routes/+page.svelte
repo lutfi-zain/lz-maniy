@@ -2,6 +2,7 @@
 	import StudioHeader from '$lib/components/StudioHeader.svelte';
 	import StudioHero from '$lib/components/StudioHero.svelte';
 	import StudioCapabilities from '$lib/components/StudioCapabilities.svelte';
+	import StudioLogoWall from '$lib/components/StudioLogoWall.svelte';
 	import StudioShowcase from '$lib/components/StudioShowcase.svelte';
 	import StudioManifesto from '$lib/components/StudioManifesto.svelte';
 	import StudioDossier from '$lib/components/StudioDossier.svelte';
@@ -10,18 +11,19 @@
 </script>
 
 <svelte:head>
-	<title>Membran — Independent Software Atelier & Applied AI Lab</title>
+	<title>Membran | UX Design &amp; Software Atelier</title>
 	<meta
 		name="description"
-		content="Membran is an independent software atelier and applied AI lab engineering deterministic instruments. Production home of Maniy and Quant Membran."
+		content="Membran is a global UX design and software atelier headquartered in Jakarta. We create digital products, design systems, and deterministic AI instruments across industries."
 	/>
 </svelte:head>
 
-<div class="min-h-screen flex flex-col bg-[#0A0D12] text-[#F8FAFC]">
+<div class="min-h-screen flex flex-col bg-white text-[#06070a]">
 	<StudioHeader />
 	<main class="flex-1">
 		<StudioHero />
 		<StudioCapabilities />
+		<StudioLogoWall />
 		<StudioShowcase />
 		<StudioManifesto />
 		<StudioDossier />

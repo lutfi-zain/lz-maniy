@@ -2,42 +2,54 @@
 
 @theme {
 	--font-mono: 'JetBrains Mono', monospace;
-	--font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-	--color-bg: #0a0d12;
-	--color-card: #121721;
-	--color-card-hover: #161c29;
-	--color-card-subtle: #0e131d;
-	--color-border: #1e2638;
-	--color-border-hover: #334155;
-	--color-fg: #f8fafc;
-	--color-muted: #94a3b8;
-	--color-subtle: #475569;
-	--color-accent: #10b981;
+	--color-white: #ffffff;
+	--color-black: #06070a;
+	--color-gray-5: #f3f4f6;
+	--color-gray-100: #e6e8eb;
+	--color-gray-200: #cbd0d6;
+	--color-gray-300: #b2b8c2;
+	--color-gray-400: #989fab;
+	--color-gray-500: #7f8694;
+	--color-gray-600: #666c7a;
+	--color-gray-700: #4e5361;
+	--color-gray-800: #353945;
+	--color-gray-850: #252833;
+	--color-gray-900: #171921;
+	--color-accent-blue: #007aff;
+	--color-accent-emerald: #10b981;
 	--color-accent-quant: #38bdf8;
 }
 
 :root {
-	--bg: #0a0d12;
-	--card: #121721;
-	--card-subtle: #0e131d;
-	--border: #1e2638;
-	--border-hover: #334155;
-	--fg: #f8fafc;
-	--muted: #94a3b8;
-	--subtle: #475569;
-	--accent: #10b981;
-	--accent-quant: #38bdf8;
+	--color-white: #ffffff;
+	--color-black: #06070a;
+	--color-gray-5: #f3f4f6;
+	--color-gray-100: #e6e8eb;
+	--color-gray-200: #cbd0d6;
+	--color-gray-300: #b2b8c2;
+	--color-gray-400: #989fab;
+	--color-gray-500: #7f8694;
+	--color-gray-600: #666c7a;
+	--color-gray-700: #4e5361;
+	--color-gray-800: #353945;
+	--color-gray-850: #252833;
+	--color-gray-900: #171921;
+	--color-accent-blue: #007aff;
+	--color-accent-emerald: #10b981;
 }
 
 html,
 body {
-	background-color: var(--color-bg);
-	color: var(--color-fg);
+	background-color: #ffffff;
+	color: #06070a;
 	font-family: var(--font-sans);
-	line-height: 1.6;
+	line-height: 1.5;
 	overflow-x: hidden;
 	min-height: 100vh;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 /* Typography & Display Utilities */
