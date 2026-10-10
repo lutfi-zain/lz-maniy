@@ -116,15 +116,21 @@
 
 			<!-- Right Sticky Visual Display -->
 			<div class="col-span-5 sticky top-32">
-				{#if activeIndex >= 0}
-					<div class="border border-[#e6e8eb] rounded-2xl overflow-hidden bg-[#f3f4f6] shadow-xl animate-entrance-1">
-						<img
-							src={capabilities[activeIndex].image}
-							alt={capabilities[activeIndex].title}
-							class="w-full aspect-square object-cover"
-							loading="lazy"
-						/>
-						<div class="p-6 bg-white border-t border-[#e6e8eb]">
+				<div class="border border-[#e6e8eb] rounded-2xl overflow-hidden bg-[#f3f4f6] shadow-xl">
+					<div class="relative w-full aspect-square overflow-hidden bg-[#f3f4f6]">
+						{#each capabilities as item, idx}
+							<img
+								src={item.image}
+								alt={item.title}
+								class="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out {activeIndex === idx
+									? 'opacity-100 scale-100 z-10'
+									: 'opacity-0 scale-95 pointer-events-none z-0'}"
+								loading="eager"
+							/>
+						{/each}
+					</div>
+					{#if activeIndex >= 0}
+						<div class="p-6 bg-white border-t border-[#e6e8eb] transition-all">
 							<div class="font-mono text-xs text-[#989fab] uppercase tracking-wider mb-1">
 								Membran Pillar 0{activeIndex + 1}
 							</div>
@@ -132,8 +138,8 @@
 								{capabilities[activeIndex].title}
 							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
 			</div>
 		</div>
 
