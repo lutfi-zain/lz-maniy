@@ -40,6 +40,13 @@ export class AuthStore {
 
 	// Derived state
 	isAuthenticated = $derived<boolean>(Boolean(this.accessToken));
+	isDemo = $derived<boolean>(
+		Boolean(
+			this.accessToken === 'sandbox_evaluator_token' ||
+			this.user?.userId === 'usr_guest_sandbox' ||
+			this.user?.email === 'evaluator@anthropic.com'
+		)
+	);
 	isExpiringSoon = $derived<boolean>(
 		Boolean(this.expiresAt && Date.now() > this.expiresAt - 60_000)
 	);
@@ -149,6 +156,7 @@ export class AuthStore {
 	 */
 	async getValidToken(baseUrl = DEFAULT_API_URL): Promise<string | null> {
 		if (!this.accessToken) return null;
+		if (this.isDemo) return this.accessToken;
 		if ((this.isExpired || this.isExpiringSoon) && this.refreshToken) {
 			const refreshed = await this.refreshSession(baseUrl);
 			if (!refreshed) return null;

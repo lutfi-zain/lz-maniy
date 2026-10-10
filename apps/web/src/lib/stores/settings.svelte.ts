@@ -51,6 +51,14 @@ export class SettingsStore {
 	}
 
 	async load(agentBaseUrl?: string, token?: string): Promise<void> {
+		if (authStore.isDemo) {
+			if (!this.settings.activePeriods || this.settings.activePeriods.length === 0) {
+				this.settings.activePeriods = getDefaultActivePeriods();
+			}
+			this.isLoaded = true;
+			return;
+		}
+
 		if (agentBaseUrl) this.agentBaseUrl = agentBaseUrl;
 		if (token) this.token = token;
 

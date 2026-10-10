@@ -1,4 +1,12 @@
-import type { AccountDetail, CategoryRecord } from '$lib/types/account-detail';
+import type {
+	AccountDetail,
+	CategoryRecord,
+	TransactionRecord,
+	TransactionEnvelope,
+	TransactionQueryParams,
+	RecurringTemplate,
+	HorizonBoardDTO
+} from '$lib/types/account-detail';
 
 import { PUBLIC_API_URL } from '$env/static/public';
 
@@ -461,3 +469,292 @@ export const MOCK_CATEGORIES: CategoryRecord[] = [
 	{ categoryId: 'cat_5', categoryName: 'Cicilan Motor', categoryType: 'expense' },
 	{ categoryId: 'cat_6', categoryName: 'Gaji & Pendapatan', categoryType: 'income' }
 ];
+
+export const MOCK_TRANSACTIONS: TransactionRecord[] = [
+	{
+		transactionId: 'tx_demo_01',
+		transactionWalletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+		transactionCategoryId: 'cat_6',
+		transactionAmount: 21835000,
+		transactionType: 'income',
+		transactionDescription: 'Gaji Bulanan & Retainer Software Studio',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-01T09:00:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_02',
+		transactionWalletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+		transactionTargetWalletId: 'eb15e4b7-d4fa-4d1d-93f9-715cb3897cb2',
+		transactionCategoryId: 'cat_2',
+		transactionAmount: 3500000,
+		transactionType: 'transfer',
+		transactionDescription: 'Alokasi Bulanan ke Pocket Sewa Rumah',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-02T10:00:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_03',
+		transactionWalletId: 'c92f8229-d642-4368-b280-23966da29fd7',
+		transactionCategoryId: 'cat_1',
+		transactionAmount: 35000,
+		transactionType: 'expense',
+		transactionDescription: 'Indomaret Coffee Point dari HUZ',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-08T07:45:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_04',
+		transactionWalletId: 'c92f8229-d642-4368-b280-23966da29fd7',
+		transactionCategoryId: 'cat_2',
+		transactionAmount: 63000,
+		transactionType: 'expense',
+		transactionDescription: 'Bensin Motor Pertamax dari HUZ',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-08T08:15:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_05',
+		transactionWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		transactionCategoryId: 'cat_3',
+		transactionAmount: 2030000,
+		transactionType: 'expense',
+		transactionDescription: 'Nafkah Istri Oktober',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-03T11:00:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_06',
+		transactionWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		transactionCategoryId: 'cat_4',
+		transactionAmount: 1500000,
+		transactionType: 'expense',
+		transactionDescription: 'Kebutuhan & Susu Saada',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-04T14:30:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_07',
+		transactionWalletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+		transactionCategoryId: 'cat_5',
+		transactionAmount: 1300000,
+		transactionType: 'expense',
+		transactionDescription: 'Cicilan Yamaha Nmax Turbo Ultimate',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-05T09:30:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_08',
+		transactionWalletId: '3e82b7f7-b087-43cf-aaae-214fc66107a6',
+		transactionCategoryId: 'cat_1',
+		transactionAmount: 120200,
+		transactionType: 'expense',
+		transactionDescription: 'KFC suami dan istri',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-06T19:40:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_09',
+		transactionWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		transactionCategoryId: 'cat_2',
+		transactionAmount: 450000,
+		transactionType: 'expense',
+		transactionDescription: 'Token Listrik PLN Rumah',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-07T13:00:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_10',
+		transactionWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		transactionCategoryId: 'cat_2',
+		transactionAmount: 385000,
+		transactionType: 'expense',
+		transactionDescription: 'Internet Indihome Fiber',
+		transactionIsPlanned: 0,
+		transactionDate: '2026-10-07T16:20:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_11',
+		transactionWalletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+		transactionBudgetId: '5260371e-2153-4f52-808f-0a11a333cb0b',
+		transactionCategoryId: 'cat_2',
+		transactionAmount: 1500000,
+		transactionType: 'expense',
+		transactionDescription: 'Rencana Jenguk Mertua Bekasi',
+		transactionIsPlanned: 1,
+		transactionDate: '2026-10-25T10:00:00+07:00'
+	},
+	{
+		transactionId: 'tx_demo_12',
+		transactionWalletId: '52bbe86f-0ac5-4e6f-a987-f761c24e25ca',
+		transactionCategoryId: 'cat_4',
+		transactionAmount: 302808,
+		transactionType: 'expense',
+		transactionDescription: 'Rencana Pengganti Vitamin D Saada',
+		transactionIsPlanned: 1,
+		transactionDate: '2026-10-31T09:00:00+07:00'
+	}
+];
+
+export const MOCK_RECURRING_TEMPLATES: RecurringTemplate[] = [
+	{
+		templateId: 'rec_1',
+		templateName: 'Cicilan Yamaha Nmax',
+		templateWalletId: '731417c2-cb2c-4e52-8b36-05bb64e1c53b',
+		templateCategoryId: 'cat_5',
+		templateAmount: 1300000,
+		templateType: 'expense',
+		templateFrequency: 'monthly',
+		templateStartDate: '2026-01-05',
+		templateNextRunDate: '2026-11-05',
+		templateIsActive: 1
+	},
+	{
+		templateId: 'rec_2',
+		templateName: 'Nafkah Istri Bulanan',
+		templateWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		templateCategoryId: 'cat_3',
+		templateAmount: 2030000,
+		templateType: 'expense',
+		templateFrequency: 'monthly',
+		templateStartDate: '2026-01-03',
+		templateNextRunDate: '2026-11-03',
+		templateIsActive: 1
+	},
+	{
+		templateId: 'rec_3',
+		templateName: 'Tagihan Internet Fiber',
+		templateWalletId: '40fc8137-fd9f-41a9-bae2-4f7682ec2d25',
+		templateCategoryId: 'cat_2',
+		templateAmount: 385000,
+		templateType: 'expense',
+		templateFrequency: 'monthly',
+		templateStartDate: '2026-01-07',
+		templateNextRunDate: '2026-11-07',
+		templateIsActive: 1
+	}
+];
+
+export function getMockTransactions(params: TransactionQueryParams = {}): TransactionEnvelope {
+	let list = [...MOCK_TRANSACTIONS];
+
+	if (params.q || params.search) {
+		const q = (params.q || params.search || '').toLowerCase();
+		list = list.filter((t) => (t.transactionDescription || '').toLowerCase().includes(q));
+	}
+
+	if (params.type && params.type !== 'all') {
+		list = list.filter((t) => t.transactionType === params.type);
+	}
+
+	if (params.walletId) {
+		const wId = Array.isArray(params.walletId) ? params.walletId : [params.walletId];
+		list = list.filter((t) => wId.includes(t.transactionWalletId));
+	}
+
+	if (params.status === 'realized') {
+		list = list.filter((t) => t.transactionIsPlanned === 0);
+	} else if (params.status === 'planned') {
+		list = list.filter((t) => t.transactionIsPlanned === 1);
+	} else if (params.isPlanned !== undefined) {
+		const pVal = params.isPlanned ? 1 : 0;
+		list = list.filter((t) => t.transactionIsPlanned === pVal);
+	}
+
+	const total = list.length;
+	const limit = params.limit ?? 50;
+	const offset = params.offset ?? 0;
+	const items = list.slice(offset, offset + limit);
+
+	return {
+		items,
+		pagination: {
+			total,
+			limit,
+			offset,
+			hasNext: offset + limit < total,
+			totalPages: Math.ceil(total / limit) || 1
+		}
+	};
+}
+
+export function getMockHorizonBoard(): HorizonBoardDTO {
+	const nwTotal = MOCK_SNAPSHOT.netWorth.consolidated.total;
+	const nwSpendable = MOCK_SNAPSHOT.wallets.spendable.total;
+	const nwLocked = MOCK_SNAPSHOT.wallets.locked.total;
+
+	return {
+		baseCurrency: 'IDR',
+		generatedAt: new Date().toISOString(),
+		startingNetWorth: {
+			total: nwTotal,
+			spendable: nwSpendable,
+			locked: nwLocked
+		},
+		periods: [
+			{
+				periodKey: '2026-10',
+				startDate: '2026-10-01',
+				endDate: '2026-10-31',
+				cashflow: {
+					income: 21835000,
+					expense: 16261065,
+					net: 5573935,
+					netSpendable: 2073935,
+					netLocked: 3500000
+				},
+				netWorth: {
+					total: nwTotal,
+					spendable: nwSpendable,
+					locked: nwLocked
+				},
+				walletBalances: [
+					{ walletId: '731417c2', walletName: 'BCA Main', balance: 141994, currency: 'IDR', isLocked: 0 },
+					{ walletId: '40fc8137', walletName: 'Main Wallet', balance: 11507, currency: 'IDR', isLocked: 0 },
+					{ walletId: 'eb15e4b7', walletName: 'BCA Pocket Sewa', balance: 8833937, currency: 'IDR', isLocked: 1 }
+				],
+				goals: [
+					{
+						goalId: '393b2c26',
+						name: 'Sewa Rumah 2026',
+						currentAmount: 14230897,
+						targetAmount: 18000000,
+						progressPercentage: 79.06,
+						isReached: false
+					}
+				]
+			},
+			{
+				periodKey: '2026-11',
+				startDate: '2026-11-01',
+				endDate: '2026-11-30',
+				cashflow: {
+					income: 21835000,
+					expense: 15400000,
+					net: 6435000,
+					netSpendable: 2935000,
+					netLocked: 3500000
+				},
+				netWorth: {
+					total: nwTotal + 6435000,
+					spendable: nwSpendable + 2935000,
+					locked: nwLocked + 3500000
+				},
+				walletBalances: [
+					{ walletId: '731417c2', walletName: 'BCA Main', balance: 1500000, currency: 'IDR', isLocked: 0 },
+					{ walletId: 'eb15e4b7', walletName: 'BCA Pocket Sewa', balance: 12333937, currency: 'IDR', isLocked: 1 }
+				],
+				goals: [
+					{
+						goalId: '393b2c26',
+						name: 'Sewa Rumah 2026',
+						currentAmount: 17730897,
+						targetAmount: 18000000,
+						progressPercentage: 98.5,
+						isReached: false
+					}
+				]
+			}
+		]
+	};
+}
+

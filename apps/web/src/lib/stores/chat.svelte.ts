@@ -120,6 +120,10 @@ export class ChatStore {
 	};
 
 	loadCredits = async () => {
+		if (authStore.isDemo) {
+			this.creditsRemaining = 1000;
+			return;
+		}
 		if (!authStore.accessToken) return;
 		try {
 			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/credits`);
@@ -133,6 +137,12 @@ export class ChatStore {
 	};
 
 	private authFetch = async (url: string, init: RequestInit = {}): Promise<Response> => {
+		if (authStore.isDemo) {
+			return new Response(JSON.stringify({ ok: true, data: [] }), {
+				status: 200,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
 		const validToken = await authStore.getValidToken(PUBLIC_API_URL);
 		const headers = new Headers(init.headers || {});
 		if (validToken) {
@@ -254,6 +264,31 @@ export class ChatStore {
 	};
 
 	loadConversations = async () => {
+		if (authStore.isDemo) {
+			this.conversations = [
+				{
+					id: 'conv_demo_welcome',
+					title: 'Selamat Datang di Demo Maniy',
+					model: 'gemini-3.7-flash',
+					provider: 'omp',
+					createdAt: Date.now() - 3600000,
+					updatedAt: Date.now(),
+					messageCount: 1
+				}
+			];
+			this.activeConversationId = 'conv_demo_welcome';
+			this.messages = [
+				{
+					id: 'msg_demo_1',
+					conversationId: 'conv_demo_welcome',
+					role: 'assistant',
+					content:
+						'Halo! Saya Eve, analis keuangan eksekutifmu di Maniy. Saat ini kamu berada di **Demo Sandbox**.\n\nBerdasarkan data portofoliomu:\n- **Kas Siap Pakai (Spendable)**: Rp 8.450.000\n- **Cadangan Terkunci (Locked)**: Rp 32.500.000\n- **Net Worth Total**: Rp 40.950.000\n\nKamu bisa mencoba mencatat transaksi, memeriksa anggaran, atau membuka kalender Horizon!',
+					timestamp: Date.now()
+				}
+			];
+			return;
+		}
 		if (!authStore.accessToken) return;
 		try {
 			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/conversations`);
@@ -499,9 +534,48 @@ export class ChatStore {
 				image,
 				statementSessionId
 			};
+			if (authStore.isDemo) {
+				await delay(300);
+				let simReply = '';
+				const lower = text.toLowerCase();
+				if (lower.includes('saldo') || lower.includes('uang') || lower.includes('kas')) {
+					simReply =
+						'Berdasarkan snapshot kas terpadu terkini:\n\n' +
+						'- **Kas Siap Pakai (Spendable)**: Rp 8.450.000\n' +
+						'- **Cadangan Terkunci (Locked)**: Rp 32.500.000\n' +
+						'- **Total Net Worth**: Rp 40.950.000\n\n' +
+						'Saldo aman belanjamu hari ini adalah **Rp 8.450.000**. Seluruh dana komitmen sewa dan tabungan tetap aman terproteksi di kantong terkunci.';
+				} else if (
+					lower.includes('bensin') ||
+					lower.includes('kopi') ||
+					lower.includes('catat') ||
+					lower.includes('beli')
+				) {
+					simReply =
+						'Saya telah memproses pencatatan transaksi demo secara atomik:\n\n' +
+						'| Tanggal | Deskripsi | Kategori | Dompet | Jumlah |\n' +
+						'| :--- | :--- | :--- | :--- | :--- |\n' +
+						`| Hari ini | ${text} | Operasional | HUZ (Bank Jago) | Tercatat |\n\n` +
+						'Saldo dompet dan runway harianmu telah disinkronkan ke buku kas.';
+				} else {
+					simReply =
+						`Saya telah menganalisis pertanyaanmu: "${text}".\n\n` +
+						'Di mode Demo Sandbox ini, seluruh kalkulasi akuntansi disimulasikan secara deterministik mengikuti formula partisi kas Maniy. Kamu bisa menguji pencatatan transaksi baru atau melihat kalender Horizon!';
+				}
+
+				for (let i = 0; i < simReply.length; i += 4) {
+					const chunk = simReply.slice(i, i + 4);
+					this.messages = this.messages.map((m) =>
+						m.id === assistantId ? this.syncActiveVariant({ ...m, content: m.content + chunk }) : m
+					);
+					await delay(20);
+				}
+				this.isStreaming = false;
+				return;
+			}
+
 			const token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
 			const res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
-				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`,

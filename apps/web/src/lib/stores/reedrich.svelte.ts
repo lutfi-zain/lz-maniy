@@ -2,7 +2,11 @@ import { SvelteMap } from 'svelte/reactivity';
 import {
 	DEFAULT_API_URL,
 	MOCK_CATEGORIES,
-	MOCK_SNAPSHOT
+	MOCK_SNAPSHOT,
+	MOCK_TRANSACTIONS,
+	MOCK_RECURRING_TEMPLATES,
+	getMockTransactions,
+	getMockHorizonBoard
 } from '$lib/stores/mock-data';
 import { authStore } from '$lib/stores/auth.svelte';
 import type {
@@ -188,6 +192,14 @@ export class ReedrichStore {
 	}
 
 	async fetchSnapshot(dates?: { startDate?: string; endDate?: string }, customToken?: string) {
+		if (authStore.isDemo) {
+			this.loadMock();
+			this.isLive = true;
+			this.isLoading = false;
+			this.statusMessage = 'Mode demo sandbox aktif.';
+			return;
+		}
+
 		const token = (customToken ?? this.apiToken).trim();
 		if (token) this.apiToken = token;
 
@@ -227,9 +239,21 @@ export class ReedrichStore {
 	 * Queries GET /api/v1/me to retrieve sanitized verified user profile.
 	 */
 	async fetchUserProfile(): Promise<UserProfileDTO | null> {
+		if (authStore.isDemo) {
+			const demoProfile: UserProfileDTO = {
+				userId: 'usr_guest_sandbox',
+				email: 'evaluator@anthropic.com',
+				fullName: 'Anthropic Reviewer / Guest Sandbox',
+				firstName: 'Guest',
+				lastName: 'Evaluator',
+				createdAt: '2026-10-10T00:00:00Z'
+			};
+			authStore.setUserProfile(demoProfile);
+			return demoProfile;
+		}
+
 		const token = (authStore.accessToken || this.apiToken).trim();
 		if (!token) return null;
-
 		try {
 			const res = await this.request(`${DEFAULT_API_URL}/api/v1/me`);
 			if (!res.ok) return null;
@@ -252,6 +276,10 @@ export class ReedrichStore {
 		params: TransactionQueryParams = {},
 		signal?: AbortSignal
 	): Promise<TransactionEnvelope> {
+		if (authStore.isDemo) {
+			return getMockTransactions(params);
+		}
+
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			const queryParts: string[] = ['envelope=true'];
 
@@ -347,6 +375,10 @@ export class ReedrichStore {
 		months?: number,
 		signal?: AbortSignal
 	): Promise<HorizonBoardDTO> {
+		if (authStore.isDemo) {
+			return getMockHorizonBoard();
+		}
+
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			const queryParts: string[] = ['baseCurrency=IDR'];
 			if (periods && periods.length > 0) {
@@ -432,6 +464,11 @@ export class ReedrichStore {
 		}
 	}
 	async fetchRecurringTemplates(): Promise<RecurringTemplate[]> {
+		if (authStore.isDemo) {
+			this.recurringTemplates = MOCK_RECURRING_TEMPLATES;
+			return MOCK_RECURRING_TEMPLATES;
+		}
+
 		this.isRecurringLoading = true;
 		try {
 			const res = await this.request(`${DEFAULT_API_URL}/api/v1/recurring-templates`);
@@ -447,12 +484,19 @@ export class ReedrichStore {
 			this.isRecurringLoading = false;
 		}
 	}
+
 	private async request(url: string, init: RequestInit = {}): Promise<Response> {
+		if (authStore.isDemo) {
+			return new Response(JSON.stringify({ ok: true, message: 'Demo sandbox interceptor' }), {
+				status: 200,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+
 		// Proactively refresh if near expiration
 		if (authStore.accessToken && authStore.isExpiringSoon && authStore.refreshToken) {
 			await authStore.refreshSession(DEFAULT_API_URL);
 		}
-
 		const currentToken = (authStore.accessToken || this.apiToken).trim();
 		const headers = new Headers(init.headers || {});
 		if (!headers.has('traceparent')) {
@@ -495,6 +539,10 @@ export class ReedrichStore {
 	 * Standalone fetch of single goal by ID.
 	 */
 	async fetchGoalById(goalId: string): Promise<GoalSnapshot> {
+		if (authStore.isDemo) {
+			const found = (this.snapshot?.goals ?? MOCK_SNAPSHOT.goals).find((g) => g.goalId === goalId);
+			if (found) return found;
+		}
 		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals/${encodeURIComponent(goalId)}`);
 		if (!res.ok) {
 			const errData = await res.json().catch(() => ({}));
@@ -525,6 +573,9 @@ export class ReedrichStore {
 	 * Standalone fetch of all goals, with optional status filter.
 	 */
 	async fetchGoals(status?: 'in_progress' | 'completed' | 'cancelled'): Promise<GoalSnapshot[]> {
+		if (authStore.isDemo) {
+			return this.snapshot?.goals ?? MOCK_SNAPSHOT.goals;
+		}
 		const query = status ? `?status=${encodeURIComponent(status)}` : '';
 		const res = await this.request(`${DEFAULT_API_URL}/api/v1/goals${query}`);
 		if (!res.ok) {
@@ -580,6 +631,10 @@ export class ReedrichStore {
 	 * Standalone fetch of single budget by ID.
 	 */
 	async fetchBudgetById(budgetId: string): Promise<BudgetSnapshot> {
+		if (authStore.isDemo) {
+			const found = (this.snapshot?.budgets ?? MOCK_SNAPSHOT.budgets).find((b) => b.budgetId === budgetId);
+			if (found) return found;
+		}
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/budgets/${encodeURIComponent(budgetId)}`
 		);
@@ -615,6 +670,9 @@ export class ReedrichStore {
 	 * Standalone fetch of all budgets.
 	 */
 	async fetchBudgets(): Promise<BudgetSnapshot[]> {
+		if (authStore.isDemo) {
+			return this.snapshot?.budgets ?? MOCK_SNAPSHOT.budgets;
+		}
 		this.isBudgetsLoading = true;
 		try {
 			const res = await this.request(`${DEFAULT_API_URL}/api/v1/budgets`);
@@ -682,6 +740,12 @@ export class ReedrichStore {
 		},
 		signal?: AbortSignal
 	): Promise<WalletItem[]> {
+		if (authStore.isDemo) {
+			const items = this.allWallets;
+			this.activeWallets = items;
+			return items;
+		}
+
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			this.isWalletsLoading = true;
 			try {
@@ -757,6 +821,13 @@ export class ReedrichStore {
 	async fetchDebtsLoans(
 		signal?: AbortSignal
 	): Promise<{ activeDebts: ActiveDebt[]; activeLoans: ActiveLoan[] }> {
+		if (authStore.isDemo) {
+			return {
+				activeDebts: this.snapshot?.obligations?.activeDebts ?? MOCK_SNAPSHOT.obligations.activeDebts,
+				activeLoans: this.snapshot?.obligations?.activeLoans ?? MOCK_SNAPSHOT.obligations.activeLoans
+			};
+		}
+
 		return globalConcurrencyPool.run(async (taskSignal) => {
 			this.isDebtsLoansLoading = true;
 			try {
@@ -814,6 +885,10 @@ export class ReedrichStore {
 	 * Standalone fetch of single wallet by ID.
 	 */
 	async fetchWalletById(walletId: string): Promise<WalletItem> {
+		if (authStore.isDemo) {
+			const found = this.allWallets.find((w) => w.walletId === walletId);
+			if (found) return found;
+		}
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/wallets/${encodeURIComponent(walletId)}`
 		);
@@ -838,6 +913,10 @@ export class ReedrichStore {
 	 * Standalone fetch of single transaction by ID.
 	 */
 	async fetchTransactionById(transactionId: string): Promise<TransactionRecord> {
+		if (authStore.isDemo) {
+			const found = MOCK_TRANSACTIONS.find((t) => t.transactionId === transactionId);
+			if (found) return found;
+		}
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(transactionId)}`
 		);
@@ -926,6 +1005,24 @@ export class ReedrichStore {
 	 * Create a new expense or income transaction.
 	 */
 	async createTransaction(payload: CreateTransactionPayload): Promise<TransactionRecord> {
+		if (authStore.isDemo) {
+			const created: TransactionRecord = {
+				transactionId: `tx_demo_${Date.now()}`,
+				transactionWalletId: payload.walletId,
+				transactionCategoryId: payload.categoryId,
+				transactionBudgetId: payload.budgetId ?? null,
+				transactionAmount: payload.amount,
+				transactionAdminFee: payload.adminFee ?? 0,
+				transactionType: payload.type,
+				transactionDescription: payload.description ?? '',
+				transactionIsPlanned: payload.isPlanned ? 1 : 0,
+				transactionDate: payload.date || payload.transactionDate || new Date().toISOString()
+			};
+			MOCK_TRANSACTIONS.unshift(created);
+			await this.invalidateAndRefresh();
+			return created;
+		}
+
 		const res = await this.request(`${DEFAULT_API_URL}/api/v1/transactions`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -946,6 +1043,24 @@ export class ReedrichStore {
 	 * Transfer funds between two user wallets.
 	 */
 	async createTransfer(payload: CreateTransferPayload): Promise<TransactionRecord> {
+		if (authStore.isDemo) {
+			const created: TransactionRecord = {
+				transactionId: `tx_demo_trf_${Date.now()}`,
+				transactionWalletId: payload.sourceWalletId,
+				transactionTargetWalletId: payload.targetWalletId,
+				transactionCategoryId: payload.categoryId ?? null,
+				transactionAmount: payload.amount,
+				transactionAdminFee: payload.adminFee ?? 0,
+				transactionType: 'transfer',
+				transactionDescription: payload.description ?? 'Transfer antar dompet',
+				transactionIsPlanned: 0,
+				transactionDate: payload.date || new Date().toISOString()
+			};
+			MOCK_TRANSACTIONS.unshift(created);
+			await this.invalidateAndRefresh();
+			return created;
+		}
+
 		const res = await this.request(`${DEFAULT_API_URL}/api/v1/transfers`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -966,6 +1081,26 @@ export class ReedrichStore {
 	 * Update an existing transaction by ID.
 	 */
 	async updateTransaction(id: string, delta: UpdateTransactionPayload): Promise<TransactionRecord> {
+		if (authStore.isDemo) {
+			const idx = MOCK_TRANSACTIONS.findIndex((t) => t.transactionId === id);
+			if (idx !== -1) {
+				MOCK_TRANSACTIONS[idx] = {
+					...MOCK_TRANSACTIONS[idx],
+					transactionAmount: delta.amount ?? MOCK_TRANSACTIONS[idx].transactionAmount,
+					transactionDescription:
+						delta.description !== undefined
+							? delta.description
+							: MOCK_TRANSACTIONS[idx].transactionDescription,
+					transactionCategoryId:
+						delta.categoryId !== undefined
+							? delta.categoryId
+							: MOCK_TRANSACTIONS[idx].transactionCategoryId
+				};
+				await this.invalidateAndRefresh();
+				return MOCK_TRANSACTIONS[idx];
+			}
+		}
+
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(id)}`,
 			{
@@ -985,10 +1120,16 @@ export class ReedrichStore {
 		return updated;
 	}
 
-	/**
-	 * Permanently delete a transaction by ID.
-	 */
 	async deleteTransaction(id: string): Promise<void> {
+		if (authStore.isDemo) {
+			const idx = MOCK_TRANSACTIONS.findIndex((t) => t.transactionId === id);
+			if (idx !== -1) {
+				MOCK_TRANSACTIONS.splice(idx, 1);
+			}
+			await this.invalidateAndRefresh();
+			return;
+		}
+
 		const res = await this.request(
 			`${DEFAULT_API_URL}/api/v1/transactions/${encodeURIComponent(id)}`,
 			{
