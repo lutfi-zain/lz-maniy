@@ -51,11 +51,6 @@
 						Quant Membran — Bitcoin Intelligence Platform
 					</a>
 				</div>
-				<div>
-					<a href="https://phoenix.membran.app" target="_blank" rel="noopener" class="text-[#10b981] hover:text-[#34d399] transition-colors no-underline">
-						Arize Phoenix — Live Distributed Telemetry
-					</a>
-				</div>
 			</div>
 
 			<!-- Col 3: Social & Verified Links -->

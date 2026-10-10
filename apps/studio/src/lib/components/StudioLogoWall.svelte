@@ -2,7 +2,7 @@
 	const techStack = [
 		{ name: 'Cloudflare Edge', tag: 'Workers & Pages', src: '/images/tech/cloudflare.svg' },
 		{ name: 'PostgreSQL 16', tag: 'Relational ACID Core', src: '/images/tech/postgresql.svg' },
-		{ name: 'Arize Phoenix', tag: 'OTLP Telemetry Live', src: '/images/tech/phoenix.svg' },
+		{ name: 'Docker Engine', tag: 'Container Runtime', src: '/images/tech/docker.svg' },
 		{ name: 'Svelte 5', tag: 'Reactive Runes UI', src: '/images/tech/svelte.svg' },
 		{ name: 'Python 3.11', tag: 'Quant Model Engine', src: '/images/tech/python.svg' },
 		{ name: 'Bun Runtime', tag: 'High-Throughput I/O', src: '/images/tech/bun.svg' },

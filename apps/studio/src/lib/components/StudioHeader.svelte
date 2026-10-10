@@ -33,20 +33,6 @@
 			</span>
 		</a>
 
-		<!-- Live Telemetry Badge -->
-		<a
-			href="https://phoenix.membran.app"
-			target="_blank"
-			rel="noopener"
-			class="hidden xl:inline-flex items-center gap-2 font-mono text-[11px] text-[#4e5361] border border-[#e6e8eb] bg-[#f3f4f6]/80 px-3.5 py-1 rounded-full hover:border-[#cbd0d6] hover:text-[#06070a] transition-colors"
-			aria-label="Open live telemetry tracing on Arize Phoenix"
-		>
-			<span class="relative flex size-2">
-				<span class="telemetry-beacon-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
-				<span class="relative inline-flex size-2 rounded-full bg-[#10b981]"></span>
-			</span>
-			<span>Arize Phoenix: OTLP Live</span>
-		</a>
 
 		<!-- Desktop Navigation Menu -->
 		<nav class="hidden md:flex items-center gap-8 font-sans text-[15px] font-medium text-[#06070a]" aria-label="Main Navigation">
@@ -110,16 +96,6 @@
 			</a>
 			<a href="#faq" onclick={closeMobile} class="py-2 border-b border-[#f3f4f6] no-underline">
 				FAQ
-			</a>
-			<a
-				href="https://phoenix.membran.app"
-				target="_blank"
-				rel="noopener"
-				onclick={closeMobile}
-				class="py-2 flex items-center justify-between text-[#10b981] font-mono text-xs no-underline"
-			>
-				<span>Telemetry: phoenix.membran.app</span>
-				<span class="size-2 rounded-full bg-[#10b981]"></span>
 			</a>
 		</div>
 	{/if}

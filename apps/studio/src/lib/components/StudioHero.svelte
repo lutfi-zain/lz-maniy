@@ -29,8 +29,8 @@
 				<div class="text-sm sm:text-base font-bold text-[#007aff]">Maniy &amp; Quant</div>
 			</div>
 			<div>
-				<div class="text-[11px] text-[#989fab] uppercase mb-1">Telemetry</div>
-				<div class="text-sm sm:text-base font-bold text-[#10b981]">Arize Phoenix Live</div>
+				<div class="text-[11px] text-[#989fab] uppercase mb-1">Model</div>
+				<div class="text-sm sm:text-base font-bold text-[#10b981]">Independent Atelier</div>
 			</div>
 		</div>
 	</div>
