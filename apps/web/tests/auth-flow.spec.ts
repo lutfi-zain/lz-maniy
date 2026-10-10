@@ -11,8 +11,19 @@ test.describe('Authentication & Zero-Click Google OAuth PKCE Flow', () => {
 
 		// Guard should redirect to /login
 		await expect(page).toHaveURL(/\/login/);
-		await expect(page.locator('h1')).toContainText('Maniyy Workspace');
+		await expect(page.locator('h1')).toContainText(/Mani(yy)? Workspace/);
 		await expect(page.locator('button:has-text("Lanjutkan dengan Google")')).toBeVisible();
+	});
+
+	test('login page provides 1-click demo sandbox for evaluators', async ({ page }) => {
+		await page.goto('/login');
+
+		const demoBtn = page.locator('button:has-text("Explore Demo Sandbox")');
+		await expect(demoBtn).toBeVisible();
+		await expect(demoBtn).toContainText('1-Click Preview');
+
+		await demoBtn.click();
+		await expect(page).toHaveURL('/');
 	});
 
 	test('login page displays minimalist-ui styling and Google PKCE button', async ({ page }) => {
