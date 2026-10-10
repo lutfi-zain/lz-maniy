@@ -37,7 +37,7 @@ The landing page MUST present an imposing editorial header and studio manifesto 
 ### Requirement: Selected Work Showcase
 The landing page MUST present both Maniy v2 and Quant Membran as premier production artifacts rather than generic SaaS utility cards.
 
-#### Scenario: Inspecting Dual Flagship Artifacts
+#### Scenario: Inspecting Flagship Artifact
 - **WHEN** the visitor views the Selected Works section
 - **THEN** the page renders:
   1. **Maniy v2**: Executive Cockpit & AI Financial Reasoning Agent with real Spendable vs Locked runway canvas, stack architecture notes, and direct outbound link to `https://maniy.membran.app`.
