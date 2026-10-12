@@ -587,6 +587,7 @@ export class ChatStore {
 
 			let token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
 			let res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
+				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`,
@@ -601,6 +602,7 @@ export class ChatStore {
 				if (refreshed && authStore.accessToken) {
 					token = authStore.accessToken;
 					res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
+						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
 							Authorization: `Bearer ${token}`,

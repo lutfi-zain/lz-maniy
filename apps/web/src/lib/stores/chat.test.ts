@@ -257,6 +257,8 @@ describe('ChatStore', () => {
 			expect(refreshSpy).toHaveBeenCalledTimes(1);
 			const chatCalls = mockFetch.mock.calls.filter(([url]) => String(url).includes('/api/chat'));
 			expect(chatCalls.length).toBe(2);
+			expect(chatCalls[0][1]?.method).toBe('POST');
+			expect(chatCalls[1][1]?.method).toBe('POST');
 			expect(store.isStreaming).toBe(false);
 			const assistantMsg = store.messages.find((m) => m.role === 'assistant');
 			expect(assistantMsg?.content).toBe('Halo dari agen!');
