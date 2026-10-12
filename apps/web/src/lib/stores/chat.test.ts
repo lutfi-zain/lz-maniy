@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ChatStore } from './chat.svelte.js';
-
+import { authStore } from './auth.svelte.js';
 describe('ChatStore', () => {
 	let store: ChatStore;
 
@@ -171,6 +171,95 @@ describe('ChatStore', () => {
 			await store.resumeLastConversationIfFresh();
 			expect(called).toBe(false);
 			expect(store.activeConversationId).toBeNull();
+		});
+	});
+
+	describe('executeStream resilience and error surfacing', () => {
+		const originalFetch = globalThis.fetch;
+
+		afterEach(() => {
+			globalThis.fetch = originalFetch;
+			vi.restoreAllMocks();
+		});
+
+		it('surfaces generic agent error directly in assistant message content', async () => {
+			authStore.accessToken = 'test_token';
+			vi.spyOn(authStore, 'isDemo', 'get').mockReturnValue(false);
+			vi.spyOn(authStore, 'getValidToken').mockResolvedValue('test_token');
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 500,
+				headers: new Headers()
+			});
+
+			await store.sendMessage('Halo');
+
+			expect(store.isStreaming).toBe(false);
+			const assistantMsg = store.messages.find((m) => m.role === 'assistant');
+			expect(assistantMsg).toBeDefined();
+			expect(assistantMsg?.content).toContain('⚠️ Agent error: 500');
+		});
+
+		it('surfaces credit exhaustion 402 error clearly in message content', async () => {
+			authStore.accessToken = 'test_token';
+			vi.spyOn(authStore, 'isDemo', 'get').mockReturnValue(false);
+			vi.spyOn(authStore, 'getValidToken').mockResolvedValue('test_token');
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 402,
+				headers: new Headers()
+			});
+
+			await store.sendMessage('Cek saldo');
+
+			expect(store.isStreaming).toBe(false);
+			const assistantMsg = store.messages.find((m) => m.role === 'assistant');
+			expect(assistantMsg?.content).toContain('Saldo kredit Anda habis (HTTP 402)');
+		});
+
+		it('retries request once after successful 401 token refresh', async () => {
+			authStore.accessToken = 'expired_token';
+			authStore.refreshToken = 'valid_refresh';
+			vi.spyOn(authStore, 'isDemo', 'get').mockReturnValue(false);
+			vi.spyOn(authStore, 'getValidToken').mockResolvedValue('expired_token');
+			const refreshSpy = vi.spyOn(authStore, 'refreshSession').mockImplementation(async () => {
+				authStore.accessToken = 'new_fresh_token';
+				return true;
+			});
+
+			const ssePayload = '0:"Halo dari agen!"\n';
+			const stream = new ReadableStream({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode(ssePayload));
+					controller.close();
+				}
+			});
+
+			const mockFetch = vi.fn()
+				.mockResolvedValueOnce({
+					ok: false,
+					status: 401,
+					headers: new Headers()
+				})
+				.mockResolvedValueOnce({
+					ok: true,
+					status: 200,
+					headers: new Headers({ 'X-Conversation-Id': 'conv_123' }),
+					body: stream
+				});
+
+			globalThis.fetch = mockFetch;
+
+			await store.sendMessage('Tes 401');
+
+			expect(refreshSpy).toHaveBeenCalledTimes(1);
+			const chatCalls = mockFetch.mock.calls.filter(([url]) => String(url).includes('/api/chat'));
+			expect(chatCalls.length).toBe(2);
+			expect(store.isStreaming).toBe(false);
+			const assistantMsg = store.messages.find((m) => m.role === 'assistant');
+			expect(assistantMsg?.content).toBe('Halo dari agen!');
 		});
 	});
 });

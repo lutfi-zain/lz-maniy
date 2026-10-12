@@ -26,7 +26,7 @@ jobs:
         run: bun run --cwd apps/web build
         env:
           PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL || 'https://reedrich-mcp.lutfidmz.workers.dev' }}
-          PUBLIC_AGENT_URL: ${{ secrets.PUBLIC_AGENT_URL || 'https://maniyy-agent.lutfidmz.workers.dev' }}
+          PUBLIC_AGENT_URL: ${{ secrets.PUBLIC_AGENT_URL || 'https://maniy-agent.lutfidmz.workers.dev' }}
 
       - name: Deploy to Cloudflare Pages
         run: bunx wrangler pages deploy build --project-name=maniyy2 --branch=main

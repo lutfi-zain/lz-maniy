@@ -585,8 +585,8 @@ export class ChatStore {
 				return;
 			}
 
-			const token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
-			const res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
+			let token = (await authStore.getValidToken(PUBLIC_API_URL)) || authStore.accessToken;
+			let res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`,
@@ -596,8 +596,31 @@ export class ChatStore {
 				signal: this.abortController.signal
 			});
 
-			if (!res.ok) throw new Error(`Agent error: ${res.status}`);
+			if (res.status === 401 && authStore.refreshToken) {
+				const refreshed = await authStore.refreshSession(PUBLIC_API_URL);
+				if (refreshed && authStore.accessToken) {
+					token = authStore.accessToken;
+					res = await fetch(`${PUBLIC_AGENT_URL}/api/chat`, {
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`,
+							traceparent: generateTraceParent()
+						},
+						body: JSON.stringify(body),
+						signal: this.abortController.signal
+					});
+				}
+			}
 
+			if (!res.ok) {
+				if (res.status === 401) {
+					throw new Error('Sesi login telah berakhir (HTTP 401). Silakan login kembali.');
+				}
+				if (res.status === 402) {
+					throw new Error('Saldo kredit Anda habis (HTTP 402). Silakan hubungi admin untuk top-up.');
+				}
+				throw new Error(`Agent error: ${res.status}`);
+			}
 			const newConvId = res.headers.get('X-Conversation-Id');
 			if (newConvId) {
 				this.activeConversationId = newConvId;
@@ -769,11 +792,8 @@ export class ChatStore {
 			if (currentAssistant && !currentAssistant.content && this.activeConversationId) {
 				try {
 					await delay(600);
-					const convRes = await fetch(
-						`${PUBLIC_AGENT_URL}/api/conversations/${this.activeConversationId}`,
-						{
-							headers: { Authorization: `Bearer ${authStore.accessToken}` }
-						}
+					const convRes = await this.authFetch(
+						`${PUBLIC_AGENT_URL}/api/conversations/${this.activeConversationId}`
 					);
 					if (convRes.ok) {
 						const convData = (await convRes.json()) as { messages: ChatMessage[] };
@@ -788,17 +808,26 @@ export class ChatStore {
 					/* ignore */
 				}
 			}
-		} catch (err) {
-			if ((err as Error)?.name === 'AbortError') {
-				this.messages = this.messages.map((m) =>
-					m.id === assistantId
-						? this.syncActiveVariant({
-								...m,
-								content: m.content || 'Koneksi terputus saat menerima jawaban. Silakan coba lagi.'
-							})
-						: m
-				);
+		} catch (err: unknown) {
+			const error = err as Error;
+			let fallbackText = '';
+
+			if (error?.name === 'AbortError') {
+				fallbackText = 'Koneksi terputus saat menerima jawaban. Silakan coba lagi.';
+			} else if (error?.message) {
+				fallbackText = `⚠️ ${error.message}`;
+			} else {
+				fallbackText = '⚠️ Terjadi kendala teknis saat menerima jawaban dari agen.';
 			}
+
+			this.messages = this.messages.map((m) =>
+				m.id === assistantId
+					? this.syncActiveVariant({
+							...m,
+							content: m.content ? `${m.content}\n\n${fallbackText}` : fallbackText
+						})
+					: m
+			);
 		} finally {
 			this.isStreaming = false;
 			this.abortController = null;

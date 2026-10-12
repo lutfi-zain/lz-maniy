@@ -76,6 +76,24 @@ The chat UI SHALL render conversation messages incrementally using shadcn-svelte
 - **THEN** an inline error indicator is displayed in the bubble with a prominent `Coba Lagi` action
 - **THEN** clicking `Coba Lagi` triggers an automatic retry for that message turn
 
+#### Scenario: Non-Abort Stream Error Surfacing
+- **WHEN** an assistant stream request to `POST /api/chat` encounters an error that is not a user abort (such as HTTP 401, HTTP 402, HTTP 500, or network disconnection)
+- **THEN** the system MUST NOT silently swallow the error
+- **THEN** the system MUST populate the assistant message content with a formatted error notification (e.g. `⚠️ Gagal menerima jawaban: [Pesan Error]`)
+- **THEN** the streaming state MUST terminate (`isStreaming = false`) so the input and action controls are unlocked
+
+#### Scenario: Automatic 401 Stream Token Refresh Recovery
+- **WHEN** the stream request to `POST /api/chat` returns an HTTP 401 Unauthorized status and a refresh token is present
+- **THEN** the chat store MUST attempt to refresh the session via `authStore.refreshSession()`
+- **THEN** if refresh succeeds, the chat store MUST retry the stream request once with the new access token
+- **THEN** if refresh fails, the assistant message content MUST display `⚠️ Sesi login telah berakhir. Silakan login kembali.`
+
+#### Scenario: Terminal Empty Message State Resolution
+- **GIVEN** an assistant message has completed or terminated streaming
+- **WHEN** the message has no text content and no UI command
+- **THEN** the message bubble MUST NOT display an indefinite "Menyusun jawaban..." loading indicator
+- **THEN** the bubble MUST display a warning card with an error note and a "Coba Lagi" (retry) action button
+
 ### Requirement: Markdown Message Rendering
 The chat UI SHALL render assistant message markdown with tables that scroll horizontally inside the message bubble instead of overflowing it.
 

@@ -75,10 +75,22 @@
 				<ChatUICommandCard command={uiCommand} />
 			{:else if message.content}
 				<MarkdownContent content={message.content} />
-			{:else}
+			{:else if chatStore.isStreaming}
 				<div class="flex items-center gap-1.5 py-1 text-xs text-[#787774]">
 					<span class="inline-block size-2 animate-pulse rounded-full bg-[#111111]"></span>
 					<span class="font-medium">Menyusun jawaban...</span>
+				</div>
+			{:else}
+				<div class="flex items-center justify-between gap-3 py-1 text-xs text-[#9F2F2D]">
+					<span>⚠️ Jawaban tidak dapat dimuat.</span>
+					<button
+						type="button"
+						class="flex items-center gap-1 font-medium underline hover:text-[#111111] cursor-pointer"
+						onclick={() => chatStore.retryMessage(message.id)}
+					>
+						<ArrowClockwise size={12} weight="bold" />
+						<span>Coba lagi</span>
+					</button>
 				</div>
 			{/if}
 
