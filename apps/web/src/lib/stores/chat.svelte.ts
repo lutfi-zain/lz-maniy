@@ -52,14 +52,9 @@ export class ChatStore {
 	creditsRemaining = $state<number | null>(null);
 	lastCreditsUsed = $state<number | null>(null);
 	contextUsage = $state<ContextUsage | null>(null);
-	selectedModel = $state<ModelConfig>({
-		provider: 'omp',
-		model: 'google-antigravity/gemini-3.7-flash',
-		displayName: 'Gemini 3.7 Flash',
-		capabilities: { vision: true, tool_calling: true, thinking: true },
-		thinkingLevels: ['off', 'low', 'medium', 'high'],
-		contextWindow: 1_000_000
-	});
+	selectedModel = $state<ModelConfig>(
+		DEFAULT_MODELS.find((m) => m.model === 'google-antigravity/gemini-3.8-flash') ?? DEFAULT_MODELS[0]
+	);
 
 	private abortController: AbortController | null = null;
 	private readonly STORAGE_WIDTH_KEY = 'maniy_chat_panel_width';
@@ -77,7 +72,12 @@ export class ChatStore {
 			}
 			const parsed = getStoredValue<ModelConfig | null>(this.STORAGE_MODEL_KEY, this.LEGACY_STORAGE_MODEL_KEY, null);
 			if (parsed?.model) {
-				this.selectedModel = parsed;
+				const match = this.availableModels.find((m) => m.model === parsed.model);
+				if (match) {
+					this.selectedModel = match;
+				} else {
+					this.selectedModel = this.availableModels[0];
+				}
 			}
 		}
 	}
@@ -281,7 +281,7 @@ export class ChatStore {
 				{
 					id: 'conv_demo_welcome',
 					title: 'Selamat Datang di Demo Maniy',
-					model: 'gemini-3.7-flash',
+					model: 'gemini-3.8-flash',
 					provider: 'omp',
 					createdAt: Date.now() - 3600000,
 					updatedAt: Date.now(),

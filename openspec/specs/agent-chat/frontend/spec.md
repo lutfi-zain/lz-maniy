@@ -287,19 +287,18 @@ The chat UI SHALL display conversation context window utilization.
 - **WHEN** the backend triggers automatic compaction during a request
 - **THEN** a brief inline notification appears in the message flow: "Riwayat percakapan dirangkum untuk menghemat konteks."
 
-### Requirement: Default Model and Thinking Level Change
-The chat UI SHALL initialize with the updated default model and thinking level.
+### Requirement: Default Model Selection and Alignment
+The chat frontend store SHALL default to `google-antigravity/gemini-3.8-flash` on initial load and when clearing or creating a new conversation.
 
-#### Scenario: Initial Default State
-- **WHEN** the ChatStore initializes without prior user selection
-- **THEN** `selectedModel` defaults to `google-antigravity/gemini-3.7-flash` (provider `omp`)
+#### Scenario: Initial Chat Store Model
+- **WHEN** the chat store is initialized
+- **THEN** `selectedModel` is set to `google-antigravity/gemini-3.8-flash` with provider `omp`
 - **THEN** `thinkingLevel` defaults to `'medium'`
 
-#### Scenario: Model Picker Categories Update
-- **WHEN** the model picker dropdown renders
-- **THEN** no "OpenCode Zen" category or `opencode-zen/muse-spark-1.3-contributor-free` model appears
-- **THEN** only "Google Antigravity" models are listed
-
+#### Scenario: Available Models Population
+- **WHEN** the chat store loads available models
+- **THEN** the active model list only includes verified models matching the backend `AVAILABLE_MODELS`
+- **THEN** deprecated model identifiers (`gemini-3.7-flash`) are omitted from the model selector options
 ### Requirement: PDF Statement Attachments with Parse Status
 The chat UI SHALL support attaching bank statement PDF files (single or bulk) with per-file parse status, attaching the resulting statement session to the chat request.
 

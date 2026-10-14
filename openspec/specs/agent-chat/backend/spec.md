@@ -352,13 +352,21 @@ The agent service SHALL support model selection and execution via the OMP Auth G
 - **THEN** the server returns an HTTP 500 JSON error indicating gateway credentials are not configured, without crashing worker runtime
 
 ### Requirement: Curated OMP Gateway Model Lineup
+The agent service SHALL restrict available models in `AVAILABLE_MODELS` exclusively to verified, functioning Google Antigravity Gemini models supported by the upstream OMP AI Gateway.
 
-The agent service SHALL restrict available models in `AVAILABLE_MODELS` exclusively to Google Antigravity Gemini (`google-antigravity/gemini-3.1-flash-lite`, `google-antigravity/gemini-3.7-flash`, `google-antigravity/gemini-3.8-flash`) and OpenCode Spark 1.3 Free (`opencode-zen/muse-spark-1.3-contributor-free`). Direct Groq and legacy unproxied models SHALL be removed from active listing.
+#### Scenario: Verified Gateway Model Listing
+- **WHEN** `AVAILABLE_MODELS` is evaluated or queried via `GET /api/models`
+- **THEN** it contains only verified models:
+  - `google-antigravity/gemini-3.8-flash`
+  - `google-antigravity/gemini-3.5-flash-lite`
+  - `google-antigravity/gemini-3.1-flash-lite`
+  - `google-antigravity/gemini-2.5-flash`
+  - `google-antigravity/gemini-2.5-flash-lite`
+- **THEN** unverified or removed models (`gemini-3.7-flash`, `gemini-2.5-pro`, `gemini-3.1-pro`, `gemini-3.6-flash`) are not present in `AVAILABLE_MODELS`
 
-#### Scenario: Public Model Listing via GET /api/models
-- **WHEN** client sends `GET /api/models`
-- **THEN** the response returns exactly 4 models: 3 Google Antigravity Gemini variants and 1 OpenCode Spark 1.3 Free variant, each flagged with their respective capabilities (`vision`, `tool_calling`, `thinking`)
-
+#### Scenario: Upstream Gateway Unknown Model Fallback
+- **WHEN** a chat request specifies a model that is rejected by the upstream gateway with an unknown model error
+- **THEN** the agent service falls back to `google-antigravity/gemini-3.8-flash` or emits a descriptive SSE error event instead of a masked `3:"An error occurred."`
 ### Requirement: Gateway Reasoning and Thinking Level Mapping
 
 The agent service SHALL map client-requested `thinkingLevel` (`off`, `minimal`, `low`, `medium`, `high`) to `reasoningEffort` or OpenAI provider options when invoking reasoning models through the OMP gateway.
@@ -413,7 +421,7 @@ The agent service SHALL remove non-functional models and update defaults to a re
 
 #### Scenario: Default Model Selection
 - **WHEN** a chat request arrives without an explicit model selection or with an unrecognized model
-- **THEN** the service defaults to `google-antigravity/gemini-3.7-flash` with provider `omp`
+- **THEN** the service defaults to `google-antigravity/gemini-3.8-flash` with provider `omp`
 
 #### Scenario: Legacy OpenCode Conversation Fallback
 - **WHEN** a resumed conversation references provider `opencode` or the removed model

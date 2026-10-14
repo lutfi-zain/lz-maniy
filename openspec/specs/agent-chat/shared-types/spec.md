@@ -202,9 +202,13 @@ The shared types package SHALL reflect the removal of OpenCode and updated defau
 
 #### Scenario: DEFAULT_MODELS Update
 - **WHEN** consumer imports `DEFAULT_MODELS` from `@maniyy/shared`
-- **THEN** the array contains exactly 3 models: `google-antigravity/gemini-3.1-flash-lite`, `google-antigravity/gemini-3.7-flash`, `google-antigravity/gemini-3.8-flash`
-- **THEN** no model with provider `opencode` or model ID containing `opencode-zen` or `muse-spark` is present
-
+- **THEN** the array contains the 5 verified OMP AI Gateway models:
+  - `google-antigravity/gemini-3.8-flash`
+  - `google-antigravity/gemini-3.5-flash-lite`
+  - `google-antigravity/gemini-3.1-flash-lite`
+  - `google-antigravity/gemini-2.5-flash`
+  - `google-antigravity/gemini-2.5-flash-lite`
+- **THEN** unsupported models (`gemini-3.7-flash`, `gemini-2.5-pro`, `gemini-3.1-pro`, `gemini-3.6-flash`, `gemini-3-pro`) are omitted
 #### Scenario: AssistantVariant Thinking Field
 - **WHEN** consumer imports `AssistantVariant` from `@maniyy/shared`
 - **THEN** the interface includes `thinking?: string` alongside existing `content`, `toolInvocations`, `timestamp`, and `error` fields

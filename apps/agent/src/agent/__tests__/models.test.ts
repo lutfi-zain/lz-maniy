@@ -3,21 +3,14 @@ import { getModel, AVAILABLE_MODELS } from '../models.js';
 import type { Env } from '../../types.js';
 
 describe('models', () => {
-	it('has all 12 OMP Gemini models in AVAILABLE_MODELS', () => {
-		expect(AVAILABLE_MODELS.length).toBe(12);
+	it('has all 5 verified OMP Gemini models in AVAILABLE_MODELS', () => {
+		expect(AVAILABLE_MODELS.length).toBe(5);
 		const ids = AVAILABLE_MODELS.map((m) => m.model);
-		expect(ids).toContain('google-antigravity/gemini-2.5-flash-lite');
-		expect(ids).toContain('google-antigravity/gemini-2.5-flash');
-		expect(ids).toContain('google-antigravity/gemini-2.5-pro');
-		expect(ids).toContain('google-antigravity/gemini-3-flash');
-		expect(ids).toContain('google-antigravity/gemini-3-pro');
-		expect(ids).toContain('google-antigravity/gemini-3.1-flash-lite');
-		expect(ids).toContain('google-antigravity/gemini-3.1-pro');
-		expect(ids).toContain('google-antigravity/gemini-3.5-flash-lite');
-		expect(ids).toContain('google-antigravity/gemini-3.5-flash');
-		expect(ids).toContain('google-antigravity/gemini-3.6-flash');
-		expect(ids).toContain('google-antigravity/gemini-3.7-flash');
 		expect(ids).toContain('google-antigravity/gemini-3.8-flash');
+		expect(ids).toContain('google-antigravity/gemini-3.5-flash-lite');
+		expect(ids).toContain('google-antigravity/gemini-3.1-flash-lite');
+		expect(ids).toContain('google-antigravity/gemini-2.5-flash');
+		expect(ids).toContain('google-antigravity/gemini-2.5-flash-lite');
 	});
 
 	it('instantiates omp provider model without errors', () => {
@@ -31,8 +24,8 @@ describe('models', () => {
 			OMP_GATEWAY_URL: 'https://ai.membran.app/v1'
 		};
 
-		const model = getModel(mockEnv, 'omp', 'google-antigravity/gemini-3.7-flash');
+		const model = getModel(mockEnv, 'omp', 'google-antigravity/gemini-3.8-flash');
 		expect(model).toBeDefined();
-		expect(model.modelId).toBe('google-antigravity/gemini-3.7-flash');
+		expect(model.modelId).toBe('google-antigravity/gemini-3.8-flash');
 	});
 });

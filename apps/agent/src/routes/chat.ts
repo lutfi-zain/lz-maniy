@@ -79,21 +79,22 @@ chatRouter.post('/', async (c) => {
 	}
 	creditSpan?.setStatus({ code: 1 });
 	creditSpan?.end();
-	// 2. Resolve model (with legacy opencode fallback and default gemini-3.7-flash)
+	// 2. Resolve model (with legacy/unrouted fallback and default gemini-3.8-flash)
+	const DEFAULT_MODEL_ID = 'google-antigravity/gemini-3.8-flash';
 	let requestedProvider = body.model?.provider ?? 'omp';
-	let requestedModel = body.model?.model ?? 'google-antigravity/gemini-3.7-flash';
+	let requestedModel = body.model?.model ?? DEFAULT_MODEL_ID;
 
-	// Silent fallback for legacy opencode provider
-	if ((requestedProvider as string) === 'opencode') {
+	// Silent fallback for legacy opencode provider or unrouted model IDs
+	if ((requestedProvider as string) === 'opencode' || requestedModel.includes('3.7-flash')) {
 		requestedProvider = 'omp';
-		requestedModel = 'google-antigravity/gemini-3.7-flash';
+		requestedModel = DEFAULT_MODEL_ID;
 	}
 
 	let modelConfig =
 		AVAILABLE_MODELS.find(
 			(m) => m.provider === requestedProvider && m.model === requestedModel
 		) ??
-		AVAILABLE_MODELS.find((m) => m.model === 'google-antigravity/gemini-3.7-flash') ??
+		AVAILABLE_MODELS.find((m) => m.model === DEFAULT_MODEL_ID) ??
 		AVAILABLE_MODELS[0];
 
 	// Vision Fallback check: if image is present and model lacks vision, fallback to Groq qwen3.8-27b
@@ -481,6 +482,19 @@ chatRouter.post('/', async (c) => {
 						console.error('Failed to augment d: metadata with credits:', e);
 					}
 				}
+				if (line.startsWith('3:')) {
+					try {
+						const errVal = JSON.parse(line.slice(2).trim());
+						const rawMsg = typeof errVal === 'string' ? errVal : JSON.stringify(errVal);
+						const cleanMsg = rawMsg.includes('Unknown model')
+							? 'Model yang dipilih tidak tersedia di gateway upstream. Silakan ganti model atau muat ulang.'
+							: rawMsg;
+						yield `3:${JSON.stringify(cleanMsg)}\n`;
+						continue;
+					} catch {
+						/* ignore */
+					}
+				}
 				yield line + '\n';
 			}
 		}
@@ -492,12 +506,25 @@ chatRouter.post('/', async (c) => {
 		async start(controller) {
 			const encoder = new TextEncoder();
 			try {
-				for await (const chunk of transformDataStream(result.toDataStream())) {
+				for await (const chunk of transformDataStream(
+					result.toDataStream({
+						getErrorMessage: (err) => {
+							const msg = (err as Error)?.message || String(err);
+							return msg.includes('Unknown model')
+								? 'Model yang dipilih tidak tersedia di gateway upstream. Silakan ganti model atau muat ulang.'
+								: msg;
+						}
+					})
+				)) {
 					controller.enqueue(encoder.encode(chunk));
 				}
 			} catch (err) {
 				inferenceSpan?.recordException(err);
-				controller.enqueue(encoder.encode(`3:${JSON.stringify((err as Error)?.message || String(err))}\n`));
+				const rawMsg = (err as Error)?.message || String(err);
+				const cleanMsg = rawMsg.includes('Unknown model')
+					? 'Model yang dipilih tidak tersedia di gateway upstream. Silakan ganti model atau muat ulang.'
+					: rawMsg;
+				controller.enqueue(encoder.encode(`3:${JSON.stringify(cleanMsg)}\n`));
 			} finally {
 				controller.close();
 				c.executionCtx.waitUntil(
