@@ -404,11 +404,7 @@ chatRouter.post('/', async (c) => {
 					{ role: 'system', content: systemPrompt.slice(0, 1200) },
 					...priorMessages.slice(-4).map((m) => ({ role: m.role, content: m.content })),
 					{ role: 'user', content: body.message }
-				],
-				tools: Object.keys(rawTools).slice(0, 8).map((tName) => ({
-					name: tName,
-					description: `ReedRich financial tool ${tName}`
-				}))
+				]
 			}),
 			'ai.model': modelConfig.model,
 			'ai.provider': modelConfig.provider,
