@@ -48,7 +48,7 @@ export class ChatStore {
 	lastDockedWidth = $state<number>(360);
 	availableModels = $state<ModelConfig[]>([...DEFAULT_MODELS]);
 	showConversationList = $state<boolean>(false);
-	thinkingLevel = $state<ThinkingLevel>('medium');
+	thinkingLevel = $state<ThinkingLevel>('low');
 	creditsRemaining = $state<number | null>(null);
 	lastCreditsUsed = $state<number | null>(null);
 	contextUsage = $state<ContextUsage | null>(null);
@@ -839,6 +839,32 @@ export class ChatStore {
 			if (!creditsUpdatedFromStream) {
 				this.loadCredits().catch(() => {});
 			}
+		}
+	};
+
+	sendFeedback = async (
+		messageId: string,
+		score: number,
+		reason?: string
+	): Promise<boolean> => {
+		if (!this.activeConversationId) return false;
+		try {
+			const res = await this.authFetch(`${PUBLIC_AGENT_URL}/api/chat/feedback`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					messageId,
+					conversationId: this.activeConversationId,
+					score,
+					reason
+				})
+			});
+			return res.ok;
+		} catch (err) {
+			console.warn('[ChatStore] Failed to submit message feedback:', err);
+			return false;
 		}
 	};
 }

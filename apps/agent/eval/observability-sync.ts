@@ -16,11 +16,16 @@ function resolveEnv(): {
 	langfuseBaseUrl: string;
 	langfusePublicKey?: string;
 	langfuseSecretKey?: string;
+	ompGatewayKey?: string;
+	phoenixApiKey?: string;
+	phoenixBaseUrl: string;
 } {
 	let langfusePublicKey = process.env.LANGFUSE_PUBLIC_KEY;
 	let langfuseSecretKey = process.env.LANGFUSE_SECRET_KEY;
 	let langfuseBaseUrl = process.env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com';
-
+	let ompGatewayKey = process.env.OMP_GATEWAY_KEY;
+	let phoenixApiKey = process.env.PHOENIX_API_KEY || 'phx_adm_sec_e4b1c2d3f4a5b6c7_sec';
+	let phoenixBaseUrl = (process.env.PHOENIX_ENDPOINT || 'https://phoenix.membran.app').replace(/\/v1\/traces\/?$/, '').replace(/\/+$/, '');
 	if (!langfusePublicKey || !langfuseSecretKey) {
 		const devVarsPath = path.resolve(__dirname, '..', '.dev.vars');
 		if (fs.existsSync(devVarsPath)) {
@@ -34,12 +39,14 @@ function resolveEnv(): {
 					if (key === 'LANGFUSE_PUBLIC_KEY' && !langfusePublicKey) langfusePublicKey = val;
 					if (key === 'LANGFUSE_SECRET_KEY' && !langfuseSecretKey) langfuseSecretKey = val;
 					if (key === 'LANGFUSE_BASE_URL' && !process.env.LANGFUSE_BASE_URL) langfuseBaseUrl = val;
+					if (key === 'OMP_GATEWAY_KEY' && !ompGatewayKey) ompGatewayKey = val;
+					if (key === 'PHOENIX_API_KEY' && !process.env.PHOENIX_API_KEY) phoenixApiKey = val;
 				}
 			}
 		}
 	}
 
-	return { langfuseBaseUrl, langfusePublicKey, langfuseSecretKey };
+	return { langfuseBaseUrl, langfusePublicKey, langfuseSecretKey, ompGatewayKey, phoenixApiKey, phoenixBaseUrl };
 }
 
 function readPromptText(fileName: string, fallback: string): string {
@@ -168,6 +175,77 @@ async function syncLangfuseDataset(baseUrl: string, authHeader: string): Promise
 	return { datasetSynced: true, itemsCount };
 }
 
+async function syncLangfuseGatewayConnection(baseUrl: string, authHeader: string, gatewayKey: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${baseUrl}/api/public/llm-connections`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: authHeader
+			},
+			body: JSON.stringify({
+				provider: 'omp-gateway',
+				adapter: 'openai',
+				baseURL: 'https://ai.membran.app/v1',
+				secretKey: gatewayKey || 'omp_gateway_sec_token',
+				customModels: [
+					'google-antigravity/gemini-3.8-flash',
+					'google-antigravity/gemini-3.5-flash-lite',
+					'google-antigravity/gemini-3.1-flash-lite',
+					'google-antigravity/gemini-2.5-flash-lite'
+				],
+				withDefaultModels: false
+			})
+		});
+		return res.ok;
+	} catch (err) {
+		console.warn('[Sync] Failed to register Langfuse LLM Connection for omp-gateway:', err);
+		return false;
+	}
+}
+
+async function syncPhoenixGatewayConnection(baseUrl: string, apiKey: string, gatewayKey: string): Promise<boolean> {
+	try {
+		const graphqlUrl = `${baseUrl.replace(/\/+$/, '')}/graphql`;
+		const res = await fetch(graphqlUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${apiKey}`
+			},
+			body: JSON.stringify({
+				query: `mutation CreateProvider($input: CreateGenerativeModelCustomProviderMutationInput!) {
+					createGenerativeModelCustomProvider(input: $input) {
+						provider { id name provider sdk }
+					}
+				}`,
+				variables: {
+					input: {
+						name: 'omp-gateway',
+						description: 'OMP AI Gateway providing Google Antigravity Gemini models',
+						provider: 'omp-gateway',
+						clientConfig: {
+							openai: {
+								openaiAuthenticationMethod: { apiKey: gatewayKey || 'omp_gateway_sec_token' },
+								openaiClientKwargs: { baseUrl: 'https://ai.membran.app/v1' },
+								openaiApiType: 'CHAT_COMPLETIONS'
+							}
+						}
+					}
+				}
+			})
+		});
+		const json = (await res.json()) as { data?: unknown; errors?: Array<{ message: string }> };
+		if (json.data || (json.errors && json.errors.some((e) => e.message.toLowerCase().includes('already exists') || e.message.toLowerCase().includes('unique')))) {
+			return true;
+		}
+		return false;
+	} catch (err) {
+		console.warn('[Sync] Failed to register Phoenix Custom Model Provider for omp-gateway:', err);
+		return false;
+	}
+}
+
 export async function syncObservabilitySuite(): Promise<void> {
 	console.log('🚀 Starting 1:1 Dual-Observability Suite Synchronization (Phoenix + Langfuse)...');
 
@@ -197,6 +275,16 @@ export async function syncObservabilitySuite(): Promise<void> {
 
 	const { itemsCount } = await syncLangfuseDataset(cleanBaseUrl, authHeader);
 	console.log(`✅ Langfuse: ${itemsCount} golden dataset items synchronized in 'maniyy-agent-golden-dataset'.`);
+	const { ompGatewayKey, phoenixBaseUrl, phoenixApiKey } = resolveEnv();
+	const lfGwSynced = await syncLangfuseGatewayConnection(cleanBaseUrl, authHeader, ompGatewayKey || 'omp_gateway_sec_token');
+	if (lfGwSynced) {
+		console.log('✅ Langfuse: omp-gateway LLM Connection registered (Gemini 3.8, 3.5, 3.1, 2.5).');
+	}
+
+	const phxGwSynced = await syncPhoenixGatewayConnection(phoenixBaseUrl, phoenixApiKey || '', ompGatewayKey || 'omp_gateway_sec_token');
+	if (phxGwSynced) {
+		console.log('✅ Arize Phoenix: omp-gateway GenerativeModelCustomProvider registered.');
+	}
 
 	console.log('🎯 100% Identical Twin Parity Achieved between Arize Phoenix & Langfuse Cloud!');
 }

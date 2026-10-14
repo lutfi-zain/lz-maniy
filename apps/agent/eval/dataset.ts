@@ -420,5 +420,401 @@ export const EVAL_DATASET: EvalTestCase[] = [
 			mustNotContain: ['$'],
 			minSteps: 1
 		}
+	},
+	{
+		id: 'TC-37',
+		category: 'planning_projection',
+		prompt: 'Kalau saya mau beli laptop gaming 15 juta di November, sisa gaji dan pangkas pos apa yang paling aman?',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['laptop', 'Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-38',
+		category: 'planning_projection',
+		prompt: 'Berapa runway safe-to-spend saya kalau tidak ada pemasukan sama sekali selama 3 bulan ke depan?',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['runway', 'bulan'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-39',
+		category: 'planning_projection',
+		prompt: 'Simulasikan jika bonus tahunan Rp 10.000.000 cair di Desember, alokasikan 50% ke tabungan dan sisanya ke operasional.',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['5.000.000', 'tabungan'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-40',
+		category: 'planning_projection',
+		prompt: 'Apakah pengeluaran rutin bulanan saya melebihi 60% dari rata-rata income bulanan?',
+		expected: {
+			requiredTools: ['financial_summary', 'list_recurring'],
+			mustContain: ['rutin'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-41',
+		category: 'planning_projection',
+		prompt: 'Coba proyeksikan saldo akhir tahun di dompet Operasional BCA kalau pengeluaran makan dipangkas 500rb per bulan.',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['Operasional', 'BCA'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-42',
+		category: 'planning_projection',
+		prompt: 'Hitung berapa bulan lagi saya bisa mengumpulkan dana darurat 30 juta dengan laju tabungan saat ini.',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['bulan'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-43',
+		category: 'planning_projection',
+		prompt: 'Bagaimana dampak cashflow bulan depan jika saya mencicil HP baru Rp 1.500.000 per bulan selama 6 bulan?',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['1.500.000', 'cashflow'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-44',
+		category: 'planning_projection',
+		prompt: 'Jika saya likuidasi USDT senilai 1.8 juta, apakah cukup menutupi defisit operasional minggu ini?',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['defisit'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-45',
+		category: 'financial_sanity',
+		prompt: 'Saya butuh dana cepat 15 juta untuk DP mobil, pakai saja uang dari pos Sewa Rumah ya?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['Sewa Rumah', 'tidak'],
+			mustNotContain: ['$', 'silakan'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-46',
+		category: 'financial_sanity',
+		prompt: 'Bisa transfer saldo dari Cadangan Maternity ke dompet jajan sekarang?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['Maternity', 'terkunci'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-47',
+		category: 'financial_sanity',
+		prompt: 'Tolong bayar tagihan kartu kredit pakai dana darurat yang di kantong cadangan.',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['cadangan', 'darurat'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-48',
+		category: 'financial_sanity',
+		prompt: 'Apakah saldo cadangan saya boleh dipakai liburan ke Bali akhir tahun?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['cadangan', 'tidak disarankan'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-49',
+		category: 'financial_sanity',
+		prompt: 'Pindahkan 5 juta dari dompet terkunci ke spendable cash untuk beli jam tangan.',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['terkunci'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-50',
+		category: 'financial_sanity',
+		prompt: 'Kenapa saldo Rp 32.500.000 di cadangan tidak masuk ke angka safe to spend?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['terkunci', 'cadangan', 'safe'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-51',
+		category: 'multi_currency',
+		prompt: 'Berapa total estimasi nilai Rupiah dari saldo 115.61 USDT saya di kurs saat ini?',
+		expected: {
+			requiredTools: ['get_snapshot', 'list_wallets'],
+			mustContain: ['USDT', 'Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-52',
+		category: 'multi_currency',
+		prompt: 'Kalau saya jual seluruh saldo crypto Bitget ke Rupiah via P2P rate 15.800, dapat berapa net?',
+		expected: {
+			requiredTools: ['get_snapshot', 'list_wallets'],
+			mustContain: ['Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-53',
+		category: 'multi_currency',
+		prompt: 'Apakah total kekayaan bersih (net worth) saya sudah memperhitungkan aset valas dan crypto?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['net worth', 'valas'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-54',
+		category: 'multi_currency',
+		prompt: 'Berapa persen komposisi aset kripto/valas dibanding total portofolio kas saya?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['%'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-55',
+		category: 'multi_currency',
+		prompt: 'Tampilkan perincian saldo per dompet yang menggunakan mata uang selain IDR.',
+		expected: {
+			requiredTools: ['list_wallets'],
+			mustContain: ['USDT'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-56',
+		category: 'multi_currency',
+		prompt: 'Jika kurs USD naik ke 16.500, berapa kenaikan estimasi net worth saya dalam IDR?',
+		expected: {
+			requiredTools: ['get_snapshot'],
+			mustContain: ['IDR', 'Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-57',
+		category: 'transaction_record',
+		prompt: 'Catat pengeluaran makan siang 45 ribu di Warteg pakai QRIS BCA tadi jam 12.',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['45.000', 'BCA'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-58',
+		category: 'transaction_record',
+		prompt: 'Catat transfer 200 ribu dari BCA ke Gopay biaya admin 1000.',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['BCA', 'Gopay'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-59',
+		category: 'transaction_record',
+		prompt: 'Saya barusan terima transfer gaji freelance Rp 3.500.000 ke rekening Mandiri.',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['3.500.000', 'freelance'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-60',
+		category: 'transaction_record',
+		prompt: 'Catat belanja bulanan di supermarket Rp 650.000 pakai kartu debit BCA.',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['650.000', 'supermarket'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-61',
+		category: 'transaction_record',
+		prompt: 'Bagi transaksi 100 ribu kemarin jadi dua: 60 ribu makan dan 40 ribu pulsa.',
+		expected: {
+			requiredTools: ['list_transactions', 'create_transaction'],
+			mustContain: ['60.000', '40.000'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-62',
+		category: 'transaction_record',
+		prompt: 'Catat pembayaran langganan Netflix Rp 186.000 dari kartu kredit Mandiri.',
+		expected: {
+			requiredTools: ['create_transaction'],
+			mustContain: ['186.000', 'Netflix'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-63',
+		category: 'category_breakdown',
+		prompt: 'Berapa total pengeluaran kategori Makanan & Minuman di bulan ini sejauh ini?',
+		expected: {
+			requiredTools: ['financial_summary', 'list_transactions'],
+			mustContain: ['Makanan', 'Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-64',
+		category: 'category_breakdown',
+		prompt: 'Kategori pengeluaran apa yang menyerap anggaran paling besar bulan ini?',
+		expected: {
+			requiredTools: ['financial_summary'],
+			mustContain: ['kategori'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-65',
+		category: 'category_breakdown',
+		prompt: 'Apakah pengeluaran transportasi saya sudah melebihi pagu anggaran bulan ini?',
+		expected: {
+			requiredTools: ['financial_summary', 'list_budgets'],
+			mustContain: ['transportasi'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-66',
+		category: 'category_breakdown',
+		prompt: 'Tampilkan perbandingan belanja harian minggu pertama vs minggu kedua bulan ini.',
+		expected: {
+			requiredTools: ['financial_summary', 'list_transactions'],
+			mustContain: ['minggu', 'Rp'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-67',
+		category: 'category_breakdown',
+		prompt: 'Berapa sisa pagu anggaran kategori Leisure untuk sisa hari bulan ini?',
+		expected: {
+			requiredTools: ['list_budgets', 'financial_summary'],
+			mustContain: ['Leisure', 'sisa'],
+			mustNotContain: ['$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-68',
+		category: 'tone_format',
+		prompt: 'Tampilkan rangkuman arus kas bulan ini dalam format tabel Markdown rapi tanpa emoji.',
+		expected: {
+			requiredTools: ['financial_summary'],
+			mustContain: ['|', 'Pengeluaran', 'Pemasukan'],
+			mustNotContain: ['$', '💸', '💰', '📊', '📈', '🚀', '🔥', '✨'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-69',
+		category: 'tone_format',
+		prompt: 'Jawab ringkas dalam 2 kalimat saja tanpa basa-basi: berapa sisa uang makan saya?',
+		expected: {
+			requiredTools: ['financial_summary'],
+			mustContain: ['Rp'],
+			mustNotContain: ['Halo', 'Tentu saja', 'Dengan senang hati', '$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-70',
+		category: 'tone_format',
+		prompt: 'Buatkan breakdown hutang piutang dalam tabel Markdown dengan kolom Nama, Jumlah, dan Jatuh Tempo.',
+		expected: {
+			requiredTools: ['list_debts_loans'],
+			mustContain: ['|', 'Jatuh Tempo'],
+			mustNotContain: ['$', '👉', '📌', '⚠️'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-71',
+		category: 'tone_format',
+		prompt: 'Berikan evaluasi kesehatan finansial saya dengan nada profesional tanpa salam pembuka klise.',
+		expected: {
+			requiredTools: ['get_snapshot', 'financial_summary'],
+			mustContain: ['finansial', 'Rp'],
+			mustNotContain: ['Halo kak', 'Halo Lutfi', 'Semoga harimu menyenangkan', '$'],
+			minSteps: 1
+		}
+	},
+	{
+		id: 'TC-72',
+		category: 'tone_format',
+		prompt: 'Tampilkan daftar transaksi 3 hari terakhir dalam bullet list simpel tanpa emoticon apa pun.',
+		expected: {
+			requiredTools: ['list_transactions'],
+			mustContain: ['-'],
+			mustNotContain: ['$', '👍', '🙏', '😊', '✅', '❌'],
+			minSteps: 1
+		}
 	}
 ];

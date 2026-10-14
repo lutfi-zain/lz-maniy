@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { ChatMessage } from '@maniy/shared';
-	import { CaretLeft, CaretRight, ArrowClockwise } from 'phosphor-svelte';
+	import { CaretLeft, CaretRight, ArrowClockwise, ThumbsUp, ThumbsDown } from 'phosphor-svelte';
 	import { chatStore } from '$lib/stores/chat.svelte.js';
 	import ChatUICommandCard from './ChatUICommandCard.svelte';
 	import ChatToolInvocation from './ChatToolInvocation.svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
 
 	let { message }: { message: ChatMessage } = $props();
+	let feedbackScore = $state<number | null>(null);
 
 	const isUser = $derived(message.role === 'user');
 	const variants = $derived(message.variants ?? []);
@@ -141,18 +142,48 @@
 					{:else}
 						<div></div>
 					{/if}
+					<div class="flex items-center gap-1.5">
+						<div class="flex items-center gap-0.5 border-r border-[#EAEAEA] pr-1.5 mr-0.5">
+							<button
+								type="button"
+								onclick={async () => {
+									feedbackScore = 1;
+									await chatStore.sendFeedback(message.id, 1);
+								}}
+								disabled={chatStore.isStreaming || feedbackScore !== null}
+								class="rounded p-1 transition-colors {feedbackScore === 1 ? 'text-[#2E7D32] bg-[#E8F5E9]' : 'text-[#787774] hover:bg-[#F7F6F3] hover:text-[#111111]'} disabled:opacity-50 cursor-pointer"
+								title="Bagus / Akurat (Thumbs Up)"
+								aria-label="Thumbs up"
+							>
+								<ThumbsUp size={12} weight={feedbackScore === 1 ? 'fill' : 'bold'} />
+							</button>
+							<button
+								type="button"
+								onclick={async () => {
+									feedbackScore = 0;
+									await chatStore.sendFeedback(message.id, 0);
+								}}
+								disabled={chatStore.isStreaming || feedbackScore !== null}
+								class="rounded p-1 transition-colors {feedbackScore === 0 ? 'text-[#C23934] bg-[#FDEBEC]' : 'text-[#787774] hover:bg-[#F7F6F3] hover:text-[#111111]'} disabled:opacity-50 cursor-pointer"
+								title="Kurang Tepat / Salah (Thumbs Down)"
+								aria-label="Thumbs down"
+							>
+								<ThumbsDown size={12} weight={feedbackScore === 0 ? 'fill' : 'bold'} />
+							</button>
+						</div>
 
-					<button
-						type="button"
-						onclick={() => chatStore.retryMessage(message.id)}
-						disabled={chatStore.isStreaming}
-						class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[#787774] transition-colors hover:bg-[#F7F6F3] hover:text-[#111111] disabled:opacity-40"
-						title="Ulang jawaban (Retry)"
-						aria-label="Ulang jawaban"
-					>
-						<ArrowClockwise size={12} weight="bold" />
-						<span>Ulang</span>
-					</button>
+						<button
+							type="button"
+							onclick={() => chatStore.retryMessage(message.id)}
+							disabled={chatStore.isStreaming}
+							class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[#787774] transition-colors hover:bg-[#F7F6F3] hover:text-[#111111] disabled:opacity-40"
+							title="Ulang jawaban (Retry)"
+							aria-label="Ulang jawaban"
+						>
+							<ArrowClockwise size={12} weight="bold" />
+							<span>Ulang</span>
+						</button>
+					</div>
 				</div>
 			{/if}
 		{/if}

@@ -79,7 +79,7 @@ describe('ChatStore', () => {
 	});
 
 	it('configures and updates thinking level', () => {
-		expect(store.thinkingLevel).toBe('medium');
+		expect(store.thinkingLevel).toBe('low');
 		store.setThinkingLevel('high');
 		expect(store.thinkingLevel).toBe('high');
 		store.setThinkingLevel('off');

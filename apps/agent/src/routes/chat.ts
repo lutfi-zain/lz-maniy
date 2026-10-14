@@ -20,6 +20,8 @@ import { createFeedbackTools } from '../agent/tools/feedback.js';
 import { createMemoryTools } from '../agent/tools/memory.js';
 import { createUICommandTools } from '../agent/tools/ui-commands.js';
 import { createStatementTools } from '../agent/tools/statements.js';
+import { evaluateTurn } from '../observability/evaluators.js';
+import { sendTelegramAlert } from '../observability/alerts.js';
 import {
 	createConversation,
 	getConversation,
@@ -48,6 +50,8 @@ chatRouter.post('/', async (c) => {
 	const user = c.get('user');
 	const tracer = c.get('tracer');
 	const body = await c.req.json<ChatStreamRequest>();
+	const reqStart = Date.now();
+	let capturedToolResults: unknown[] = [];
 
 	if (!body.message?.trim() && !body.image) {
 		return c.json({ error: 'bad_request', message: 'Message is required' }, 400);
@@ -445,6 +449,9 @@ chatRouter.post('/', async (c) => {
 			const allToolCalls = (ev.steps && ev.steps.length > 0)
 				? ev.steps.flatMap((s) => s.toolCalls || [])
 				: (ev.toolCalls || []);
+			if (ev.steps && ev.steps.length > 0) {
+				capturedToolResults = ev.steps.flatMap((s) => s.toolResults || []);
+			}
 
 			if (allToolCalls.length > 0) {
 				allToolCalls.forEach((tc, idx) => {
@@ -576,6 +583,57 @@ chatRouter.post('/', async (c) => {
 								});
 								await touchConversation(c.env.DB, activeConvId);
 								msgSpan?.setStatus({ code: 1 }).end();
+								// 1. Latency check (>25s SLA breach)
+								const turnDurationMs = Date.now() - reqStart;
+								if (turnDurationMs > 25000) {
+									await sendTelegramAlert(c.env, {
+										title: 'P99 Latency SLA Breach (>25s)',
+										sessionId: activeConvId,
+										userId: user.userId,
+										userMessage: body.message,
+										assistantOutput: streamedText,
+										latencyMs: turnDurationMs,
+										phoenixTraceId: tracer?.rootSpan?.traceId
+									});
+								}
+
+								// 2. Continuous evaluation (Adaptive sampling: 100% on issue/error, 15% on normal turns)
+								const isSampled = Math.random() < 0.15;
+								const hasIssue = !streamedText || streamedText.includes('⚠️') || streamedText.includes('Kendala');
+								if ((hasIssue || isSampled) && streamedText) {
+									try {
+										const { results, hasAnomaly } = evaluateTurn(
+											body.message,
+											streamedText,
+											capturedToolResults
+										);
+
+										for (const r of results) {
+											tracer?.rootSpan?.setAttribute(`eval.${r.name}.score`, r.score);
+											tracer?.rootSpan?.setAttribute(`eval.${r.name}.label`, r.label);
+											if (r.explanation) {
+												tracer?.rootSpan?.setAttribute(`eval.${r.name}.explanation`, r.explanation);
+											}
+										}
+
+										if (hasAnomaly) {
+											const failedEval = results.find((r) => r.score < 0.5);
+											await sendTelegramAlert(c.env, {
+												title: `Automated Eval Alert: ${failedEval?.name || 'Anomaly Detected'}`,
+												sessionId: activeConvId,
+												userId: user.userId,
+												userMessage: body.message,
+												assistantOutput: streamedText,
+												score: failedEval?.score ?? 0,
+												reason: failedEval?.explanation || failedEval?.label,
+												phoenixTraceId: tracer?.rootSpan?.traceId,
+												latencyMs: turnDurationMs
+											});
+										}
+									} catch (evalErr) {
+										console.warn('[Eval] Post-production evaluation error:', evalErr);
+									}
+								}
 							}
 						} finally {
 							inferenceSpan?.setStatus({ code: 1 }).end();

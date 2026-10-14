@@ -20,6 +20,16 @@ export interface Env {
 	LANGFUSE_SECRET_KEY?: string;
 	LANGFUSE_BASE_URL?: string;
 	LANGFUSE_ENABLED?: string;
+	TELEGRAM_BOT_TOKEN?: string;
+	TELEGRAM_ALERT_CHAT_ID?: string;
+}
+
+export interface ChatFeedbackPayload {
+	messageId: string;
+	conversationId: string;
+	score: number; // 1 for positive (thumbs up), 0 for negative (thumbs down)
+	reason?: string;
+	traceId?: string;
 }
 
 export interface AuthedUser {
