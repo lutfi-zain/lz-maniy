@@ -21,8 +21,12 @@ service = "reedrich-mcp"
 [vars]
 REEDRICH_API_URL = "https://reedrich-mcp.lutfidmz.workers.dev"
 OMP_GATEWAY_URL = "https://ai.membran.app/v1"
+LANGFUSE_BASE_URL = "https://us.cloud.langfuse.com"
+LANGFUSE_ENABLED = "true"
 
 # Secrets (set via `wrangler secret put`):
 # GEMINI_API_KEY
 # GROQ_API_KEY
 # OMP_GATEWAY_KEY
+# LANGFUSE_PUBLIC_KEY
+# LANGFUSE_SECRET_KEY

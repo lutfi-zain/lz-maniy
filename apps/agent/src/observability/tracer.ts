@@ -31,6 +31,10 @@ export interface TracerConfig {
 	projectName?: string;
 	traceId?: string;
 	parentSpanId?: string;
+	langfuseEndpoint?: string;
+	langfusePublicKey?: string;
+	langfuseSecretKey?: string;
+	langfuseEnabled?: boolean | string;
 }
 
 export function generateTraceId(): string {
@@ -130,7 +134,7 @@ export function sanitizeTracePayload(value: unknown, options: SanitizeTraceOptio
 
 	return raw
 		.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED_TOKEN]')
-		.replace(/\b(?:rd_live_|fp_live_|gsk_|AIza|phx_adm_sec_)[A-Za-z0-9_-]+/g, '[REDACTED_API_KEY]')
+		.replace(/\b(?:rd_live_|fp_live_|gsk_|AIza|phx_adm_sec_|sk-lf-|pk-lf-)[A-Za-z0-9_-]+/g, '[REDACTED_API_KEY]')
 		.replace(/\b\d{16}\b/g, '[REDACTED_NIK]')
 		.replace(/\b(?:\d[ -]*?){13,15}\d\b/g, '[REDACTED_ACCOUNT]');
 }
@@ -334,6 +338,12 @@ export class WorkerSpan {
 	setAttribute(key: string, value: string | number | boolean | undefined): this {
 		if (value !== undefined) {
 			this.attributes[key] = value;
+			if (key === 'user.id' && !this.attributes['langfuse.user.id']) {
+				this.attributes['langfuse.user.id'] = value;
+			}
+			if ((key === 'session.id' || key === 'conversation.id') && !this.attributes['langfuse.session.id']) {
+				this.attributes['langfuse.session.id'] = value;
+			}
 		}
 		return this;
 	}
@@ -394,6 +404,10 @@ export class WorkerTracer {
 	public readonly endpoint: string;
 	public readonly apiKey?: string;
 	public readonly spans: WorkerSpan[] = [];
+	public readonly langfuseEndpoint: string;
+	public readonly langfusePublicKey?: string;
+	public readonly langfuseSecretKey?: string;
+	public readonly langfuseEnabled: boolean;
 
 	constructor(config: TracerConfig = {}) {
 		this.traceId = config.traceId || generateTraceId();
@@ -405,10 +419,27 @@ export class WorkerTracer {
 		this.projectName = config.projectName || `maniyy-agent-${this.environment}`;
 		this.endpoint = (config.endpoint || 'https://phoenix.membran.app/v1/traces').replace(/\/+$/, '');
 		this.apiKey = config.apiKey || 'phx_adm_sec_e4b1c2d3f4a5b6c7_sec';
+
+		const rawLangfuseBase = (config.langfuseEndpoint || 'https://us.cloud.langfuse.com').replace(/\/+$/, '');
+		this.langfuseEndpoint = rawLangfuseBase.endsWith('/api/public/otel/v1/traces')
+			? rawLangfuseBase
+			: `${rawLangfuseBase}/api/public/otel/v1/traces`;
+		this.langfusePublicKey = config.langfusePublicKey?.trim();
+		this.langfuseSecretKey = config.langfuseSecretKey?.trim();
+		const enabledFlag = config.langfuseEnabled;
+		this.langfuseEnabled =
+			enabledFlag !== false &&
+			enabledFlag !== 'false' &&
+			Boolean(this.langfusePublicKey) &&
+			Boolean(this.langfuseSecretKey);
 	}
 
 	setActiveParentSpan(spanId?: string): void {
 		this.activeParentSpanId = spanId;
+	}
+
+	isLangfuseEnabled(): boolean {
+		return this.langfuseEnabled;
 	}
 
 	deferFlush(): void {
@@ -519,7 +550,9 @@ export class WorkerTracer {
 				'service.version': this.serviceVersion,
 				'deployment.environment': this.environment,
 				'project.name': this.projectName,
-				'openinference.project.name': this.projectName
+				'openinference.project.name': this.projectName,
+				'langfuse.release': this.serviceVersion,
+				'langfuse.environment': this.environment
 			}
 		};
 		const instrumentationScope = {
@@ -580,33 +613,69 @@ export class WorkerTracer {
 			headers['Authorization'] = `Bearer ${this.apiKey}`;
 		}
 
-		try {
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 3000);
+		const exportPhoenix = async () => {
+			const headers: Record<string, string> = {
+				'Content-Type': 'application/x-protobuf',
+				'x-project-name': this.projectName,
+				'x-phoenix-project': this.projectName
+			};
 
-			const res = await fetch(this.endpoint, {
-				method: 'POST',
-				headers,
-				body: protobufBytes,
-				signal: controller.signal
-			});
-
-			clearTimeout(timeoutId);
-
-			if (!res.ok) {
-				console.warn(`[Tracer] Failed to export traces to Phoenix: ${res.status} ${res.statusText}`);
+			if (this.apiKey) {
+				headers['Authorization'] = `Bearer ${this.apiKey}`;
 			}
-		} catch (err) {
-			console.warn('[Tracer] Network error exporting traces to Phoenix:', err);
-		}
-	}
 
-	flushWithWaitUntil(executionCtx?: { waitUntil: (promise: Promise<unknown>) => void }): void {
-		if (executionCtx && typeof executionCtx.waitUntil === 'function') {
-			executionCtx.waitUntil(this.flush());
-		} else {
-			// Detached background invocation
-			void this.flush();
-		}
+			try {
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+				const res = await fetch(this.endpoint, {
+					method: 'POST',
+					headers,
+					body: protobufBytes,
+					signal: controller.signal
+				});
+
+				clearTimeout(timeoutId);
+
+				if (!res.ok) {
+					console.warn(`[Tracer] Failed to export traces to Phoenix: ${res.status} ${res.statusText}`);
+				}
+			} catch (err) {
+				console.warn('[Tracer] Network error exporting traces to Phoenix:', err);
+			}
+		};
+
+		const exportLangfuse = async () => {
+			if (!this.isLangfuseEnabled()) return;
+
+			const authString = btoa(`${this.langfusePublicKey}:${this.langfuseSecretKey}`);
+			const headers: Record<string, string> = {
+				'Content-Type': 'application/x-protobuf',
+				'Authorization': `Basic ${authString}`,
+				'x-langfuse-ingestion-version': '4'
+			};
+
+			try {
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+				const res = await fetch(this.langfuseEndpoint, {
+					method: 'POST',
+					headers,
+					body: protobufBytes,
+					signal: controller.signal
+				});
+
+				clearTimeout(timeoutId);
+
+				if (!res.ok) {
+					console.warn(`[Tracer] Failed to export traces to Langfuse: ${res.status} ${res.statusText}`);
+				}
+			} catch (err) {
+				console.warn('[Tracer] Network error exporting traces to Langfuse:', err);
+			}
+		};
+
+		await Promise.allSettled([exportPhoenix(), exportLangfuse()]);
 	}
 }

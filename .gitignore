@@ -20,3 +20,4 @@ apps/agent/eval/.promptfoo/
 apps/*/node_modules/
 packages/*/node_modules/
 omp-session-*.html
+.archify/

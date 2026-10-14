@@ -7,6 +7,18 @@
       "skillPath": "skills/use-ai-sdk/SKILL.md",
       "computedHash": "aee5bf7ecb066b54eae76799610fa8a9be9ff1ca9a000ea92d17c14ec862938b"
     },
+    "langfuse": {
+      "source": "langfuse/skills",
+      "sourceType": "github",
+      "skillPath": "skills/langfuse/SKILL.md",
+      "computedHash": "14afde211553546dc280bbdd25feff7d20b64b17f7c5d0976db192f5998b3709"
+    },
+    "migrate-to-langfuse": {
+      "source": "langfuse/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-to-langfuse/SKILL.md",
+      "computedHash": "6c0bc44334e5d5d13afff4ae5b1c6ceb6cf153f006253c81c02524f1c584ca8b"
+    },
     "phoenix-cli": {
       "source": "arize-ai/phoenix",
       "sourceType": "github",

@@ -1,0 +1,11 @@
+# Development Environment Variables Template for apps/agent
+# Copy to .dev.vars (which is gitignored) for local development
+GEMINI_API_KEY=""
+GROQ_API_KEY=""
+OMP_GATEWAY_KEY=""
+
+# Langfuse Observability & Evals (Secondary pair with Phoenix & Promptfoo)
+LANGFUSE_PUBLIC_KEY="pk-lf-placeholder"
+LANGFUSE_SECRET_KEY="sk-lf-placeholder"
+LANGFUSE_BASE_URL="https://us.cloud.langfuse.com"
+LANGFUSE_ENABLED="true"

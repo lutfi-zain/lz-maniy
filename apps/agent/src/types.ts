@@ -16,6 +16,10 @@ export interface Env {
 	PHOENIX_API_KEY?: string;
 	PHOENIX_PROJECT_NAME?: string;
 	ENVIRONMENT?: string;
+	LANGFUSE_PUBLIC_KEY?: string;
+	LANGFUSE_SECRET_KEY?: string;
+	LANGFUSE_BASE_URL?: string;
+	LANGFUSE_ENABLED?: string;
 }
 
 export interface AuthedUser {

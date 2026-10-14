@@ -153,13 +153,17 @@ export default class ManiyAgentProvider {
 		const userPrompt = ((context?.vars?.prompt || context?.vars?.userPrompt) as string) || prompt;
 		const systemPrompt = isMatrixPrompt ? prompt : buildSystemPrompt(pageContext, 'Lutfi Zain');
 
-		// Initialize Arize Phoenix tracer for eval run
+		// Initialize Arize Phoenix & Langfuse tracer for eval run
 		const tracer = new WorkerTracer({
 			endpoint: process.env.PHOENIX_ENDPOINT || 'https://phoenix.membran.app/v1/traces',
 			apiKey: process.env.PHOENIX_API_KEY || 'phx_adm_sec_e4b1c2d3f4a5b6c7_sec',
 			serviceName: 'maniy-agent-eval',
 			environment: 'eval',
-			projectName: process.env.PHOENIX_PROJECT_NAME || 'maniy-agent-evals'
+			projectName: process.env.PHOENIX_PROJECT_NAME || 'maniy-agent-evals',
+			langfuseEndpoint: process.env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com',
+			langfusePublicKey: process.env.LANGFUSE_PUBLIC_KEY,
+			langfuseSecretKey: process.env.LANGFUSE_SECRET_KEY,
+			langfuseEnabled: process.env.LANGFUSE_ENABLED
 		});
 
 		const reqStart = Date.now();

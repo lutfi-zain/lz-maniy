@@ -154,4 +154,101 @@ describe('WorkerTracer and Span Utilities', () => {
 		expect(options.headers['x-phoenix-project']).toBe('maniyy-agent-test');
 		expect(options.headers['Content-Type']).toBe('application/x-protobuf');
 	});
+
+	it('flushes OTLP payload concurrently to Phoenix and Langfuse when Langfuse is enabled', async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			statusText: 'OK'
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const tracer = new WorkerTracer({
+			endpoint: 'https://phoenix.membran.app/v1/traces',
+			apiKey: 'secret-token-123',
+			projectName: 'maniyy-agent-test',
+			langfuseEndpoint: 'https://us.cloud.langfuse.com',
+			langfusePublicKey: 'pk-lf-test-public-key',
+			langfuseSecretKey: 'sk-lf-test-secret-key',
+			langfuseEnabled: 'true'
+		});
+
+		expect(tracer.isLangfuseEnabled()).toBe(true);
+
+		tracer.startSpan('dual-mock-span');
+		await tracer.flush();
+
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		const calls = fetchMock.mock.calls;
+		const urls = calls.map((c: [string, RequestInit]) => c[0]);
+		expect(urls).toContain('https://phoenix.membran.app/v1/traces');
+		expect(urls).toContain('https://us.cloud.langfuse.com/api/public/otel/v1/traces');
+
+		const langfuseCall = calls.find((c: [string, RequestInit]) => c[0] === 'https://us.cloud.langfuse.com/api/public/otel/v1/traces')!;
+		const langfuseHeaders = langfuseCall[1].headers as Record<string, string>;
+		expect(langfuseHeaders['Content-Type']).toBe('application/x-protobuf');
+		expect(langfuseHeaders['x-langfuse-ingestion-version']).toBe('4');
+		const expectedBasic = `Basic ${btoa('pk-lf-test-public-key:sk-lf-test-secret-key')}`;
+		expect(langfuseHeaders['Authorization']).toBe(expectedBasic);
+	});
+
+	it('bypasses Langfuse export when disabled or credentials missing', async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			statusText: 'OK'
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const tracerDisabled = new WorkerTracer({
+			endpoint: 'https://phoenix.membran.app/v1/traces',
+			langfuseEndpoint: 'https://us.cloud.langfuse.com',
+			langfusePublicKey: 'pk-lf-test',
+			langfuseSecretKey: 'sk-lf-test',
+			langfuseEnabled: 'false'
+		});
+		expect(tracerDisabled.isLangfuseEnabled()).toBe(false);
+
+		tracerDisabled.startSpan('disabled-span');
+		await tracerDisabled.flush();
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock.mock.calls[0][0]).toBe('https://phoenix.membran.app/v1/traces');
+	});
+
+	it('isolates Langfuse export errors without throwing or failing Phoenix', async () => {
+		const fetchMock = vi.fn().mockImplementation((url: string) => {
+			if (url.includes('langfuse')) {
+				return Promise.reject(new Error('Langfuse network timeout'));
+			}
+			return Promise.resolve({ ok: true, status: 200, statusText: 'OK' });
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const tracer = new WorkerTracer({
+			endpoint: 'https://phoenix.membran.app/v1/traces',
+			langfuseEndpoint: 'https://us.cloud.langfuse.com',
+			langfusePublicKey: 'pk-lf-test',
+			langfuseSecretKey: 'sk-lf-test',
+			langfuseEnabled: 'true'
+		});
+
+		tracer.startSpan('resilient-span');
+		await expect(tracer.flush()).resolves.not.toThrow();
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('mirrors user.id and conversation.id to Langfuse semantic attributes', () => {
+		const span = new WorkerSpan({
+			traceId: '12345678901234567890123456789012',
+			spanId: '1234567890123456',
+			name: 'chat-turn'
+		});
+
+		span.setAttribute('user.id', 'usr_lutfi_test');
+		span.setAttribute('conversation.id', 'conv_uuid_456');
+
+		expect(span.attributes['langfuse.user.id']).toBe('usr_lutfi_test');
+		expect(span.attributes['langfuse.session.id']).toBe('conv_uuid_456');
+	});
 });

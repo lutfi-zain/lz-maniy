@@ -18,7 +18,11 @@ export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c,
 		projectName,
 		serviceName: 'maniyy-agent',
 		traceId: parsed?.traceId,
-		parentSpanId: parsed?.parentSpanId
+		parentSpanId: parsed?.parentSpanId,
+		langfuseEndpoint: c.env.LANGFUSE_BASE_URL,
+		langfusePublicKey: c.env.LANGFUSE_PUBLIC_KEY,
+		langfuseSecretKey: c.env.LANGFUSE_SECRET_KEY,
+		langfuseEnabled: c.env.LANGFUSE_ENABLED
 	});
 
 	c.set('tracer', tracer);
