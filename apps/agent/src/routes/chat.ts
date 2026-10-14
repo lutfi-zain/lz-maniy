@@ -445,6 +445,31 @@ chatRouter.post('/', async (c) => {
 				inferenceSpan?.setAttribute('llm.output_messages.0.message.content', outText);
 				tracer?.rootSpan?.setAttribute('output.value', outText);
 			}
+			// Populate tool calls on output messages so Langfuse / Phoenix show called tools
+			const allToolCalls = (ev.steps && ev.steps.length > 0)
+				? ev.steps.flatMap((s) => s.toolCalls || [])
+				: (ev.toolCalls || []);
+
+			if (allToolCalls.length > 0) {
+				allToolCalls.forEach((tc, idx) => {
+					const name =
+						'toolName' in tc && typeof tc.toolName === 'string'
+							? tc.toolName
+							: 'name' in tc && typeof tc.name === 'string'
+							? tc.name
+							: `tool_${idx}`;
+					const args = 'args' in tc ? tc.args : {};
+					const argsStr = typeof args === 'string' ? args : JSON.stringify(args ?? {});
+					inferenceSpan?.setAttribute(
+						`llm.output_messages.0.message.tool_calls.${idx}.tool_call.function.name`,
+						name
+					);
+					inferenceSpan?.setAttribute(
+						`llm.output_messages.0.message.tool_calls.${idx}.tool_call.function.arguments`,
+						argsStr
+					);
+				});
+			}
 			inferenceSpan?.setAttribute('ai.finish_reason', ev.finishReason || 'stop');
 			inferenceSpan?.setStatus({ code: 1 });
 			inferenceSpan?.end();

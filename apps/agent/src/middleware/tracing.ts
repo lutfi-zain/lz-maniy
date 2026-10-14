@@ -18,7 +18,7 @@ export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c,
 		projectName,
 		serviceName: 'maniyy-agent',
 		traceId: parsed?.traceId,
-		parentSpanId: parsed?.parentSpanId,
+		parentSpanId: undefined, // Server root span must have parent_id = NULL for Phoenix session firstInput/lastOutput aggregation
 		langfuseEndpoint: c.env.LANGFUSE_BASE_URL,
 		langfusePublicKey: c.env.LANGFUSE_PUBLIC_KEY,
 		langfuseSecretKey: c.env.LANGFUSE_SECRET_KEY,
@@ -37,6 +37,9 @@ export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c,
 			'http.user_agent': c.req.header('user-agent') || 'unknown'
 		}
 	});
+	if (parsed?.parentSpanId) {
+		rootSpan.setAttribute('client.parent_span_id', parsed.parentSpanId);
+	}
 	tracer.rootSpan = rootSpan;
 	tracer.setActiveParentSpan(rootSpan.spanId);
 	try {
