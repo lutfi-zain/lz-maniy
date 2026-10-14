@@ -92,6 +92,7 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				q: z.string().optional().describe('Kata kunci pencarian deskripsi atau catatan transaksi'),
 				search: z.string().optional().describe('Alias untuk q (pencarian teks transaksi)'),
 				type: z.enum(['expense', 'income', 'transfer']).optional().describe('Filter tipe transaksi'),
+				status: z.enum(['realized', 'planned', 'all']).optional().describe('Filter status transaksi'),
 				isPlanned: z.union([z.boolean(), z.number()]).optional().describe('Filter status rencana: true/1 untuk rencana, false/0 untuk riil'),
 				startDate: z.string().optional().describe('Tanggal mulai format YYYY-MM-DD'),
 				endDate: z.string().optional().describe('Tanggal akhir format YYYY-MM-DD'),
@@ -99,7 +100,8 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				targetWalletId: z.string().optional().describe('Filter ID wallet tujuan (untuk transfer)'),
 				categoryId: z.string().optional().describe('Filter ID kategori transaksi'),
 				budgetId: z.string().optional().describe('Filter ID budget yang terikat'),
-				orderBy: z.enum(['date_desc', 'date_asc', 'amount_desc', 'amount_asc']).optional().describe('Urutan pengurutan data transaksi'),
+				orderBy: z.enum(['date', 'amount', 'createdAt', 'description', 'date_desc', 'date_asc', 'amount_desc', 'amount_asc']).optional().describe('Urutan pengurutan data transaksi (date, amount, createdAt, description)'),
+				direction: z.enum(['asc', 'desc']).optional().describe('Arah pengurutan: asc atau desc (default desc)'),
 				limit: z.number().int().min(1).max(100).default(50)
 			}),
 			execute: async (params) => {
@@ -107,18 +109,60 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 				const queryText = params.q || params.search;
 				if (queryText) qs.set('q', queryText);
 				if (params.type) qs.set('type', params.type);
+				if (params.status) qs.set('status', params.status);
 				if (params.isPlanned !== undefined) qs.set('isPlanned', String(params.isPlanned));
-				if (params.startDate) qs.set('startDate', params.startDate);
-				if (params.endDate) qs.set('endDate', params.endDate);
+
+				// Normalize dates if passed as YYYY-MM
+				if (params.startDate) {
+					let s = params.startDate.trim();
+					if (/^\d{4}-\d{2}$/.test(s)) s = `${s}-01`;
+					qs.set('startDate', s);
+				}
+				if (params.endDate) {
+					let e = params.endDate.trim();
+					if (/^\d{4}-\d{2}$/.test(e)) {
+						const [y, m] = e.split('-').map(Number);
+						const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+						e = `${e}-${String(lastDay).padStart(2, '0')}`;
+					}
+					qs.set('endDate', e);
+				}
+
 				if (params.walletId) qs.set('walletId', params.walletId);
 				if (params.targetWalletId) qs.set('targetWalletId', params.targetWalletId);
 				if (params.categoryId) qs.set('categoryId', params.categoryId);
 				if (params.budgetId) qs.set('budgetId', params.budgetId);
-				if (params.orderBy) qs.set('orderBy', params.orderBy);
+
+				// Map compound orderBy (date_desc, amount_desc, etc.) to valid backend orderBy and direction
+				let orderBy = params.orderBy;
+				let direction = params.direction;
+				if (orderBy) {
+					if (orderBy === 'date_desc') {
+						orderBy = 'date';
+						direction = 'desc';
+					} else if (orderBy === 'date_asc') {
+						orderBy = 'date';
+						direction = 'asc';
+					} else if (orderBy === 'amount_desc') {
+						orderBy = 'amount';
+						direction = 'desc';
+					} else if (orderBy === 'amount_asc') {
+						orderBy = 'amount';
+						direction = 'asc';
+					}
+					qs.set('orderBy', orderBy);
+				}
+				if (direction) {
+					qs.set('direction', direction);
+				}
 				qs.set('limit', String(params.limit));
 
 				const res = await request(`/api/v1/transactions?${qs}`);
-				if (!res.ok) throw new Error(`list_transactions failed: ${res.status}`);
+				if (!res.ok) {
+					const errText = await res.text().catch(() => '');
+					console.warn(`[list_transactions] ReedRich returned ${res.status}: ${errText} (query: ${qs.toString()})`);
+					return [];
+				}
 				const raw = await res.json();
 				const items: TransactionRecord[] = Array.isArray(raw)
 					? (raw as TransactionRecord[])

@@ -215,4 +215,28 @@ describe('Reedrich Tool Factories', () => {
 		const singleTx = await tools.get_transaction.execute({ transactionId: 'tx-123' }, { toolCallId: '1', messages: [] });
 		expect(singleTx).toEqual({ transactionId: 'tx-123', transactionAmount: 75000 });
 	});
+
+	it('list_transactions maps compound orderBy and handles non-200 responses gracefully', async () => {
+		mockFetch.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+		const tools = createFinancialTools(baseUrl, token, mockFetcher);
+
+		await tools.list_transactions.execute({
+			orderBy: 'date_desc',
+			startDate: '2026-10'
+		}, { toolCallId: '2', messages: [] });
+
+		const lastCall = mockFetch.mock.calls.at(-1);
+		const rawTarget = lastCall?.[0];
+		const url = rawTarget instanceof Request ? rawTarget.url : String(rawTarget || '');
+		expect(url).toContain('orderBy=date');
+		expect(url).toContain('direction=desc');
+		expect(url).toContain('startDate=2026-10-01');
+
+		// Non-200 graceful fallback
+		mockFetch.mockResolvedValueOnce(new Response('Validation Error', { status: 400 }));
+		const fallbackRes = await tools.list_transactions.execute({
+			q: 'invalid'
+		}, { toolCallId: '3', messages: [] });
+		expect(fallbackRes).toEqual([]);
+	});
 });
