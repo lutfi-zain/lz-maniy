@@ -678,4 +678,13 @@ export class WorkerTracer {
 
 		await Promise.allSettled([exportPhoenix(), exportLangfuse()]);
 	}
+
+	flushWithWaitUntil(executionCtx?: { waitUntil: (promise: Promise<unknown>) => void }): void {
+		if (executionCtx && typeof executionCtx.waitUntil === 'function') {
+			executionCtx.waitUntil(this.flush());
+		} else {
+			// Detached background invocation
+			void this.flush();
+		}
+	}
 }
