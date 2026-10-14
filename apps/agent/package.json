@@ -9,7 +9,8 @@
 		"deploy": "wrangler deploy",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"phoenix:sync": "bun run eval/phoenix-suite.ts"
+		"phoenix:sync": "bun run eval/phoenix-suite.ts",
+		"observability:sync": "bun run eval/observability-sync.ts"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^1.2.22",

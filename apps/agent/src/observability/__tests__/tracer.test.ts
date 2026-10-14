@@ -238,17 +238,33 @@ describe('WorkerTracer and Span Utilities', () => {
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 
-	it('mirrors user.id and conversation.id to Langfuse semantic attributes', () => {
+	it('mirrors user.id and enforces bidirectional session.id/conversation.id parity for Phoenix and Langfuse', () => {
 		const span = new WorkerSpan({
 			traceId: '12345678901234567890123456789012',
 			spanId: '1234567890123456',
 			name: 'chat-turn'
 		});
 
+		// Test user.id mirroring
 		span.setAttribute('user.id', 'usr_lutfi_test');
-		span.setAttribute('conversation.id', 'conv_uuid_456');
-
+		expect(span.attributes['user.id']).toBe('usr_lutfi_test');
 		expect(span.attributes['langfuse.user.id']).toBe('usr_lutfi_test');
+
+		// Test conversation.id -> session.id & langfuse.session.id
+		span.setAttribute('conversation.id', 'conv_uuid_456');
+		expect(span.attributes['session.id']).toBe('conv_uuid_456');
+		expect(span.attributes['conversation.id']).toBe('conv_uuid_456');
 		expect(span.attributes['langfuse.session.id']).toBe('conv_uuid_456');
+
+		// Test session.id -> conversation.id & langfuse.session.id
+		const span2 = new WorkerSpan({
+			traceId: '12345678901234567890123456789012',
+			spanId: 'abcdef0123456789',
+			name: 'root-chat'
+		});
+		span2.setAttribute('session.id', 'session_live_999');
+		expect(span2.attributes['session.id']).toBe('session_live_999');
+		expect(span2.attributes['conversation.id']).toBe('session_live_999');
+		expect(span2.attributes['langfuse.session.id']).toBe('session_live_999');
 	});
 });

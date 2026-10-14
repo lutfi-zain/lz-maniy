@@ -53,6 +53,7 @@ chatRouter.post('/', async (c) => {
 		return c.json({ error: 'bad_request', message: 'Message is required' }, 400);
 	}
 	tracer?.rootSpan?.setAttribute('input.value', body.message);
+	tracer?.rootSpan?.setAttribute('user.id', user.userId);
 
 	// 1. Credit Pre-check
 	const creditSpan = tracer?.startSpan('creditPreCheck', {
@@ -136,6 +137,8 @@ chatRouter.post('/', async (c) => {
 	});
 
 	const activeConvId = conversationId!;
+	tracer?.rootSpan?.setAttribute('session.id', activeConvId);
+	tracer?.rootSpan?.setAttribute('conversation.id', activeConvId);
 
 	// 5. Retrieve conversation history & check for auto-compaction
 	let history = await listMessages(c.env.DB, activeConvId);

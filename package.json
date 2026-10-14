@@ -16,6 +16,7 @@
 		"test:agent": "bun run --cwd apps/agent test",
 		"check:web": "bun run --cwd apps/web check",
 		"check:secrets": "bun scripts/check-secrets.ts",
-		"check:secrets:history": "bun scripts/check-secrets.ts --history"
+		"check:secrets:history": "bun scripts/check-secrets.ts --history",
+		"sync:observability": "bun run --cwd apps/agent observability:sync"
 	}
 }

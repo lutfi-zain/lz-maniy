@@ -338,10 +338,13 @@ export class WorkerSpan {
 	setAttribute(key: string, value: string | number | boolean | undefined): this {
 		if (value !== undefined) {
 			this.attributes[key] = value;
-			if (key === 'user.id' && !this.attributes['langfuse.user.id']) {
+			if (key === 'user.id') {
+				this.attributes['user.id'] = value;
 				this.attributes['langfuse.user.id'] = value;
 			}
-			if ((key === 'session.id' || key === 'conversation.id') && !this.attributes['langfuse.session.id']) {
+			if (key === 'conversation.id' || key === 'session.id') {
+				this.attributes['session.id'] = value;
+				this.attributes['conversation.id'] = value;
 				this.attributes['langfuse.session.id'] = value;
 			}
 		}
