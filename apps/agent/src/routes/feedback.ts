@@ -39,7 +39,7 @@ async function streamToLangfuse(
 		sessionId: string;
 	}
 ): Promise<void> {
-	if (env.LANGFUSE_ENABLED !== 'true' && !env.LANGFUSE_PUBLIC_KEY) return;
+	if (env.LANGFUSE_ENABLED === 'false') return;
 	const pub = env.LANGFUSE_PUBLIC_KEY;
 	const sec = env.LANGFUSE_SECRET_KEY;
 	if (!pub || !sec) return;
@@ -56,11 +56,12 @@ async function streamToLangfuse(
 			},
 			body: JSON.stringify({
 				name: 'user_feedback',
-				value: feedback.score,
+				value: feedback.score >= 1.0 ? 'positive' : 'negative',
 				comment: feedback.reason,
 				traceId: feedback.traceId,
 				sessionId: feedback.sessionId,
-				dataType: 'NUMERIC'
+				dataType: 'CATEGORICAL',
+				configId: env.LANGFUSE_USER_FEEDBACK_CONFIG_ID || undefined
 			})
 		});
 	} catch (err) {

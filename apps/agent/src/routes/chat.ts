@@ -21,7 +21,7 @@ import { createFeedbackTools } from '../agent/tools/feedback.js';
 import { createMemoryTools } from '../agent/tools/memory.js';
 import { createUICommandTools } from '../agent/tools/ui-commands.js';
 import { createStatementTools } from '../agent/tools/statements.js';
-import { evaluateTurn } from '../observability/evaluators.js';
+import { evaluateTurn, type EvaluationResult } from '../observability/evaluators.js';
 import { sendTelegramAlert } from '../observability/alerts.js';
 import {
 	createConversation,
@@ -60,6 +60,54 @@ export async function attemptFallbackSynthesis(
 	} catch (err) {
 		console.warn('[Recovery] Fallback synthesis failed:', err);
 		return null;
+	}
+}
+
+/**
+ * Stream continuous evaluation results to Langfuse Scores API
+ */
+export async function streamScoresToLangfuse(
+	env: Env,
+	evalResults: EvaluationResult[],
+	traceId?: string,
+	sessionId?: string
+): Promise<void> {
+	if (env.LANGFUSE_ENABLED === 'false') return;
+	const pub = env.LANGFUSE_PUBLIC_KEY;
+	const sec = env.LANGFUSE_SECRET_KEY;
+	if (!pub || !sec || !traceId || evalResults.length === 0) return;
+
+	const baseUrl = (env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com').replace(/\/+$/, '');
+	const authHeader = `Basic ${btoa(`${pub}:${sec}`)}`;
+
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+	try {
+		await Promise.allSettled(
+			evalResults.map((r) =>
+				fetch(`${baseUrl}/api/public/scores`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: authHeader
+					},
+					body: JSON.stringify({
+						name: r.name,
+						value: r.score,
+						comment: r.explanation || r.label,
+						traceId,
+						sessionId,
+						dataType: 'NUMERIC'
+					}),
+					signal: controller.signal
+				})
+			)
+		);
+	} catch (err) {
+		console.warn('[Eval] Failed to stream scores to Langfuse:', err);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 }
 
@@ -666,6 +714,12 @@ chatRouter.post('/', async (c) => {
 												tracer?.rootSpan?.setAttribute(`eval.${r.name}.explanation`, r.explanation);
 											}
 										}
+										await streamScoresToLangfuse(
+											c.env,
+											results,
+											tracer?.rootSpan?.traceId,
+											activeConvId
+										);
 
 										if (hasAnomaly) {
 											const failedEval = results.find((r) => r.score < 0.5);

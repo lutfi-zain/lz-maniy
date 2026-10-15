@@ -33,7 +33,15 @@ export async function sendTelegramAlert(
 	const phoenixUrl = env.PHOENIX_ENDPOINT
 		? env.PHOENIX_ENDPOINT.replace(/\/v1\/traces\/?$/, '')
 		: 'https://phoenix.membran.app';
-	const langfuseUrl = env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com';
+	const langfuseUrl = (env.LANGFUSE_BASE_URL || 'https://us.cloud.langfuse.com').replace(/\/+$/, '');
+
+	const phoenixProject = env.PHOENIX_PROJECT_NAME || 'maniyy-agent-evals';
+	const phoenixTraceLink = alert.phoenixTraceId
+		? `${phoenixUrl}/projects/${phoenixProject}/traces/${alert.phoenixTraceId}`
+		: phoenixUrl;
+	const langfuseTraceLink = alert.phoenixTraceId
+		? `${langfuseUrl}/project/default/traces/${alert.phoenixTraceId}`
+		: langfuseUrl;
 
 	const userPromptExcerpt = alert.userMessage ? alert.userMessage.slice(0, 200).replace(/[_*[\]()~`>#+-=|{}.!]/g, '\\$&') : '-';
 	const assistantExcerpt = alert.assistantOutput ? alert.assistantOutput.slice(0, 200).replace(/[_*[\]()~`>#+-=|{}.!]/g, '\\$&') : '-';
@@ -51,8 +59,8 @@ export async function sendTelegramAlert(
 		text += `\n*Output Excerpt*:\n${assistantExcerpt}\n`;
 	}
 	text += `\n*Dashboards*:\n`;
-	text += `• [Arize Phoenix](${phoenixUrl})\n`;
-	text += `• [Langfuse Cloud](${langfuseUrl})\n`;
+	text += `• [Arize Phoenix](${phoenixTraceLink})\n`;
+	text += `• [Langfuse Cloud](${langfuseTraceLink})\n`;
 
 	try {
 		const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

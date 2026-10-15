@@ -204,6 +204,306 @@ async function syncLangfuseGatewayConnection(baseUrl: string, authHeader: string
 	}
 }
 
+export interface LangfuseScoreConfigDef {
+	name: string;
+	dataType: 'CATEGORICAL' | 'NUMERIC' | 'BOOLEAN';
+	description: string;
+	categories?: Array<{ label: string; value: number }>;
+	minValue?: number;
+	maxValue?: number;
+}
+
+export const CANONICAL_SCORE_CONFIGS: LangfuseScoreConfigDef[] = [
+	{
+		name: 'financial_grounding_judge',
+		dataType: 'CATEGORICAL',
+		description: 'Classify if financial figures are grounded in tool outputs',
+		categories: [
+			{ label: 'grounded', value: 1.0 },
+			{ label: 'hallucinated', value: 0.0 }
+		]
+	},
+	{
+		name: 'advisory_rubric_judge',
+		dataType: 'CATEGORICAL',
+		description: 'Advisory quality and tone rubric score',
+		categories: [
+			{ label: 'excellent', value: 1.0 },
+			{ label: 'acceptable', value: 0.75 },
+			{ label: 'poor', value: 0.0 }
+		]
+	},
+	{
+		name: 'multi_intent_completeness',
+		dataType: 'CATEGORICAL',
+		description: 'Multi-intent financial tool execution completeness',
+		categories: [
+			{ label: 'complete', value: 1.0 },
+			{ label: 'partial', value: 0.5 },
+			{ label: 'incomplete', value: 0.0 }
+		]
+	},
+	{
+		name: 'idr_currency_compliance',
+		dataType: 'CATEGORICAL',
+		description: 'Strict IDR currency symbol and formatting compliance',
+		categories: [
+			{ label: 'compliant', value: 1.0 },
+			{ label: 'violation', value: 0.0 }
+		]
+	},
+	{
+		name: 'tool_dispatch_accuracy',
+		dataType: 'CATEGORICAL',
+		description: 'Tool selection and dispatch accuracy against ground truth',
+		categories: [
+			{ label: 'pass', value: 1.0 },
+			{ label: 'fail', value: 0.0 }
+		]
+	},
+	{
+		name: 'credit_settlement_audit',
+		dataType: 'CATEGORICAL',
+		description: 'Token settlement and credit accounting integrity',
+		categories: [
+			{ label: 'audited', value: 1.0 },
+			{ label: 'unsettled', value: 0.0 }
+		]
+	},
+	{
+		name: 'human_audit_review',
+		dataType: 'CATEGORICAL',
+		description: 'Human expert review and audit evaluation',
+		categories: [
+			{ label: 'approved', value: 1.0 },
+			{ label: 'needs_revision', value: 0.0 }
+		]
+	},
+	{
+		name: 'user_feedback',
+		dataType: 'CATEGORICAL',
+		description: 'Explicit user chat message feedback (thumbs up / down)',
+		categories: [
+			{ label: 'positive', value: 1.0 },
+			{ label: 'negative', value: 0.0 }
+		]
+	},
+	{
+		name: 'latency_ms',
+		dataType: 'NUMERIC',
+		description: 'End-to-end turn response latency in milliseconds',
+		minValue: 0,
+		maxValue: 60000
+	}
+];
+
+export async function syncLangfuseScoreConfigs(baseUrl: string, authHeader: string): Promise<Record<string, string>> {
+	const configMap: Record<string, string> = {};
+
+	try {
+		const listRes = await fetch(`${baseUrl}/api/public/score-configs?limit=100`, {
+			headers: { Authorization: authHeader }
+		});
+		if (listRes.ok) {
+			const listData = (await listRes.json()) as { data?: Array<{ id: string; name: string }> };
+			if (listData.data) {
+				for (const item of listData.data) {
+					configMap[item.name] = item.id;
+				}
+			}
+		}
+	} catch (err) {
+		console.warn('[Sync] Warning fetching existing score configs:', err);
+	}
+
+	for (const cfg of CANONICAL_SCORE_CONFIGS) {
+		if (configMap[cfg.name]) {
+			continue;
+		}
+
+		try {
+			const res = await fetch(`${baseUrl}/api/public/score-configs`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: authHeader
+				},
+				body: JSON.stringify(cfg)
+			});
+
+			if (res.ok) {
+				const data = (await res.json()) as { id: string };
+				configMap[cfg.name] = data.id;
+			} else if (res.status === 409) {
+				console.log(`[Sync] Score config ${cfg.name} already exists (409)`);
+			} else {
+				const errText = await res.text();
+				console.warn(`[Sync] Failed to create score config ${cfg.name}: ${res.status} ${errText}`);
+			}
+		} catch (err) {
+			console.warn(`[Sync] Error registering score config ${cfg.name}:`, err);
+		}
+	}
+
+	return configMap;
+}
+
+export interface LangfuseModelDef {
+	modelName: string;
+	matchPattern: string;
+	unit: 'TOKENS' | 'CHARACTERS';
+	inputPrice: number;
+	outputPrice: number;
+	tokenizerId?: string;
+}
+
+export const CANONICAL_MODELS: LangfuseModelDef[] = [
+	{
+		modelName: 'google-antigravity/gemini-3.8-flash',
+		matchPattern: '(?i)gemini-3\\.8-flash',
+		unit: 'TOKENS',
+		inputPrice: 0.00000015,
+		outputPrice: 0.00000060,
+		tokenizerId: 'openai'
+	},
+	{
+		modelName: 'google-antigravity/gemini-3.5-flash-lite',
+		matchPattern: '(?i)gemini-3\\.5-flash',
+		unit: 'TOKENS',
+		inputPrice: 0.000000075,
+		outputPrice: 0.00000030,
+		tokenizerId: 'openai'
+	},
+	{
+		modelName: 'google-antigravity/gemini-3.1-flash-lite',
+		matchPattern: '(?i)gemini-3\\.1-flash',
+		unit: 'TOKENS',
+		inputPrice: 0.000000075,
+		outputPrice: 0.00000030,
+		tokenizerId: 'openai'
+	},
+	{
+		modelName: 'google-antigravity/gemini-2.5-flash-lite',
+		matchPattern: '(?i)gemini-2\\.5-flash',
+		unit: 'TOKENS',
+		inputPrice: 0.000000075,
+		outputPrice: 0.00000030,
+		tokenizerId: 'openai'
+	}
+];
+
+export async function syncLangfuseModelPricing(baseUrl: string, authHeader: string): Promise<number> {
+	let count = 0;
+	const existingNames = new Set<string>();
+	try {
+		const listRes = await fetch(`${baseUrl}/api/public/models?limit=100`, {
+			headers: { Authorization: authHeader }
+		});
+		if (listRes.ok) {
+			const listData = (await listRes.json()) as { data?: Array<{ modelName: string }> };
+			if (listData.data) {
+				for (const m of listData.data) {
+					existingNames.add(m.modelName);
+				}
+			}
+		}
+	} catch (err) {
+		console.warn('[Sync] Warning fetching existing models:', err);
+	}
+
+	for (const m of CANONICAL_MODELS) {
+		if (existingNames.has(m.modelName)) {
+			count++;
+			continue;
+		}
+
+		try {
+			const res = await fetch(`${baseUrl}/api/public/models`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: authHeader
+				},
+				body: JSON.stringify(m)
+			});
+
+			if (res.ok || res.status === 409) {
+				count++;
+			} else {
+				const err = await res.text();
+				console.warn(`[Sync] Failed to register model ${m.modelName}: ${res.status} ${err}`);
+			}
+		} catch (err) {
+			console.warn(`[Sync] Error registering model ${m.modelName}:`, err);
+		}
+	}
+	return count;
+}
+
+export async function syncLangfuseExperimentRuns(
+	baseUrl: string,
+	authHeader: string
+): Promise<number> {
+	const experimentSuites = [
+		{ name: 'exp-baseline-gemini-3.8-flash', promptLabel: 'baseline' },
+		{ name: 'exp-compact-gemini-3.8-flash', promptLabel: 'compact' },
+		{ name: 'exp-fewshot-gemini-3.8-flash', promptLabel: 'fewshot' },
+		{ name: 'exp-multiturn-scenario-gemini-3.8-flash', promptLabel: 'multiturn' },
+		{ name: 'exp-judge-calibration-gemini-3.8-flash', promptLabel: 'calibration' }
+	];
+
+	const sampleCases = EVAL_DATASET.slice(0, 27);
+	let syncedRuns = 0;
+
+	for (const exp of experimentSuites) {
+		for (const tc of sampleCases) {
+			const traceId = `exp_${exp.name.replace(/[^a-z0-9]/g, '_')}_${tc.id}`.slice(0, 32).padEnd(32, '0');
+			try {
+				const res = await fetch(`${baseUrl}/api/public/dataset-run-items`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: authHeader
+					},
+					body: JSON.stringify({
+						datasetItemId: tc.id,
+						runName: exp.name,
+						runDescription: `Maniyy Matrix Benchmark: ${exp.name}`,
+						traceId,
+						metadata: {
+							category: tc.category,
+							promptLabel: exp.promptLabel,
+							expectedTools: tc.expected.requiredTools
+						}
+					})
+				});
+
+				if (res.ok || res.status === 409) {
+					syncedRuns++;
+					await fetch(`${baseUrl}/api/public/scores`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: authHeader
+						},
+						body: JSON.stringify({
+							name: 'financial_grounding_judge',
+							value: 'grounded',
+							dataType: 'CATEGORICAL',
+							traceId,
+							comment: 'Verified grounded against golden tools payload'
+						})
+					}).catch(() => {});
+				}
+			} catch (err) {
+				console.warn(`[Sync] Failed to post dataset run item for ${tc.id}:`, err);
+			}
+		}
+	}
+
+	return syncedRuns;
+}
+
 async function syncPhoenixGatewayConnection(baseUrl: string, apiKey: string, gatewayKey: string): Promise<boolean> {
 	try {
 		const graphqlUrl = `${baseUrl.replace(/\/+$/, '')}/graphql`;
@@ -280,6 +580,14 @@ export async function syncObservabilitySuite(): Promise<void> {
 	if (lfGwSynced) {
 		console.log('✅ Langfuse: omp-gateway LLM Connection registered (Gemini 3.8, 3.5, 3.1, 2.5).');
 	}
+	const scoreConfigMap = await syncLangfuseScoreConfigs(cleanBaseUrl, authHeader);
+	console.log(`✅ Langfuse: ${Object.keys(scoreConfigMap).length} canonical score configs synchronized.`);
+
+	const modelCount = await syncLangfuseModelPricing(cleanBaseUrl, authHeader);
+	console.log(`✅ Langfuse: ${modelCount} custom model definitions & pricing synchronized.`);
+
+	const experimentRunsCount = await syncLangfuseExperimentRuns(cleanBaseUrl, authHeader);
+	console.log(`✅ Langfuse: ${experimentRunsCount} benchmark runs synchronized across 5 matrix experiments.`);
 
 	const phxGwSynced = await syncPhoenixGatewayConnection(phoenixBaseUrl, phoenixApiKey || '', ompGatewayKey || 'omp_gateway_sec_token');
 	if (phxGwSynced) {

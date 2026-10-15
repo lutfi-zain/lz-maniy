@@ -47,6 +47,7 @@ describe('Feedback Router (POST /api/chat/feedback)', () => {
 			LANGFUSE_SECRET_KEY: 'sk-test',
 			LANGFUSE_BASE_URL: 'https://langfuse.test',
 			LANGFUSE_ENABLED: 'true',
+			LANGFUSE_USER_FEEDBACK_CONFIG_ID: 'cfg_feedback_123',
 			PHOENIX_ENDPOINT: 'https://phoenix.test/v1/traces',
 			PHOENIX_API_KEY: 'phx_test',
 			TELEGRAM_BOT_TOKEN: 'test_token',
@@ -110,6 +111,12 @@ describe('Feedback Router (POST /api/chat/feedback)', () => {
 		expect(urls.some((u: string) => u.includes('langfuse.test/api/public/scores'))).toBe(true);
 		expect(urls.some((u: string) => u.includes('phoenix.test/v1/project_session_annotations'))).toBe(true);
 		expect(urls.some((u: string) => u.includes('api.telegram.org'))).toBe(false);
+		const lfCall = mockFetch.mock.calls.find((c: [string]) => c[0].includes('langfuse.test/api/public/scores'));
+		expect(lfCall).toBeDefined();
+		const lfBody = JSON.parse(lfCall[1].body);
+		expect(lfBody.dataType).toBe('CATEGORICAL');
+		expect(lfBody.value).toBe('positive');
+		expect(lfBody.configId).toBe('cfg_feedback_123');
 	});
 
 	it('records negative feedback (score 0) and triggers Telegram alert', async () => {
@@ -149,5 +156,11 @@ describe('Feedback Router (POST /api/chat/feedback)', () => {
 		// Negative feedback triggers Telegram alert
 		const urls = mockFetch.mock.calls.map((c: [string]) => c[0]);
 		expect(urls.some((u: string) => u.includes('api.telegram.org'))).toBe(true);
+		const negLfCall = mockFetch.mock.calls.find((c: [string]) => c[0].includes('langfuse.test/api/public/scores'));
+		expect(negLfCall).toBeDefined();
+		const negLfBody = JSON.parse(negLfCall[1].body);
+		expect(negLfBody.dataType).toBe('CATEGORICAL');
+		expect(negLfBody.value).toBe('negative');
+		expect(negLfBody.configId).toBe('cfg_feedback_123');
 	});
 });

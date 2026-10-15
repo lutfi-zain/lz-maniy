@@ -20,6 +20,7 @@ export interface Env {
 	LANGFUSE_SECRET_KEY?: string;
 	LANGFUSE_BASE_URL?: string;
 	LANGFUSE_ENABLED?: string;
+	LANGFUSE_USER_FEEDBACK_CONFIG_ID?: string;
 	TELEGRAM_BOT_TOKEN?: string;
 	TELEGRAM_ALERT_CHAT_ID?: string;
 }
