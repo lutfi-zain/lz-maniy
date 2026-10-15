@@ -43,6 +43,36 @@ describe('Defensive Stream Recovery', () => {
 
 		expect(res).toContain('DP mobil 50 juta idealnya tercapai di Desember 2027');
 	});
+	it('synthesizes multi-tool results from horizon_projection and wallets', async () => {
+		const multiToolData = [
+			{
+				toolName: 'list_wallets',
+				args: {},
+				result: [{ walletId: 'w-1', name: 'BCA Main', balance: 185543 }]
+			},
+			{
+				toolName: 'horizon_projection',
+				args: { months: 14 },
+				result: {
+					baseCurrency: 'IDR',
+					periods: [
+						{ month: '2026-10', spendableNetWorth: 200000 },
+						{ month: '2027-11', spendableNetWorth: 52000000 }
+					]
+				}
+			}
+		];
+
+		const res = await attemptFallbackSynthesis(
+			dummyModel,
+			'kalau saya mau beli mobil lagi tahun depan dengan DP50 juta bisa di bulan apa idealnya?',
+			multiToolData
+		);
+
+		expect(res).not.toBeNull();
+		expect(res).toContain('DP mobil 50 juta');
+	});
+
 
 	it('catches model errors and returns null gracefully without throwing', async () => {
 		const toolData = [{ data: 'some_data' }];

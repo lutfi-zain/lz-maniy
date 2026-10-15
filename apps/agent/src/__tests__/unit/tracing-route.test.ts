@@ -31,6 +31,38 @@ describe('Tool Tracing Instrumentation & Error Handling', () => {
 		expect(span.attributes['tool.duration_ms']).toBeDefined();
 		expect(span.status.code).toBe(1); // OK
 	});
+	it('notifies onToolResult callback immediately upon tool completion', async () => {
+		const tracer = new WorkerTracer({
+			serviceName: 'maniy-agent',
+			environment: 'test'
+		});
+
+		const rawTools = {
+			get_snapshot: {
+				description: 'Fetch snapshot',
+				execute: async (args: { walletId: string }) => {
+					return { balance: 5000000, walletId: args.walletId };
+				}
+			}
+		};
+
+		const captured: Array<{ toolName: string; args: unknown; result: unknown }> = [];
+		const instrumented = wrapToolsWithTracing(rawTools, tracer, {
+			onToolResult: (toolName, args, result) => {
+				captured.push({ toolName, args, result });
+			}
+		});
+
+		const result = await instrumented.get_snapshot.execute({ walletId: 'w_jago' });
+		expect(result).toEqual({ balance: 5000000, walletId: 'w_jago' });
+		expect(captured).toHaveLength(1);
+		expect(captured[0]).toEqual({
+			toolName: 'get_snapshot',
+			args: { walletId: 'w_jago' },
+			result: { balance: 5000000, walletId: 'w_jago' }
+		});
+	});
+
 
 	it('records exception on tool span when tool execution fails', async () => {
 		const tracer = new WorkerTracer({

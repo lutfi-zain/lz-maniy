@@ -8,6 +8,7 @@ import { streamText, generateText, type LanguageModelV1 } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
 import { authMiddleware } from '../middleware/auth.js';
 import { getModel, AVAILABLE_MODELS } from '../agent/models.js';
+import { sanitizeHistoryForModel } from '../agent/history.js';
 import { buildSystemPrompt } from '../agent/system-prompt.js';
 import { createFinancialTools } from '../agent/tools/financial.js';
 import { createMutationTools } from '../agent/tools/mutations.js';
@@ -181,9 +182,12 @@ chatRouter.post('/', async (c) => {
 
 	const prior = history.filter((m) => m.id !== userMsgId);
 	type CoreMsg = { role: 'user' | 'assistant'; content: string };
-	const priorMessages: CoreMsg[] = prior
+	const rawPriorMessages: CoreMsg[] = prior
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+	const priorMessages: CoreMsg[] = sanitizeHistoryForModel(rawPriorMessages, {
+		ensureEndsWithAssistant: true
+	}) as CoreMsg[];
 
 	// Retrieve agent memory & context with tracing
 	const contextSpan = tracer?.startSpan('contextRetrieval', {
@@ -393,7 +397,12 @@ chatRouter.post('/', async (c) => {
 		...createMemoryTools(c.env.DB, user.userId),
 		...createStatementTools(c.env.CONFIG, user.userId),
 	};
-	const tools = wrapToolsWithTracing(rawTools, tracer, { includeSubSpans: true });
+	const tools = wrapToolsWithTracing(rawTools, tracer, {
+		includeSubSpans: true,
+		onToolResult: (toolName, args, result) => {
+			capturedToolResults.push({ toolName, args, result });
+		}
+	});
 
 	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory, statementSummary);
 
@@ -470,9 +479,11 @@ chatRouter.post('/', async (c) => {
 				? ev.steps.flatMap((s) => s.toolCalls || [])
 				: (ev.toolCalls || []);
 			if (ev.steps && ev.steps.length > 0) {
-				capturedToolResults = ev.steps.flatMap((s) => s.toolResults || []);
+				const stepResults = ev.steps.flatMap((s) => s.toolResults || []);
+				if (stepResults.length > 0 && capturedToolResults.length === 0) {
+					capturedToolResults = stepResults;
+				}
 			}
-
 			if (allToolCalls.length > 0) {
 				allToolCalls.forEach((tc, idx) => {
 					const name =
@@ -537,7 +548,7 @@ chatRouter.post('/', async (c) => {
 					try {
 						const errVal = JSON.parse(line.slice(2).trim());
 						const rawMsg = typeof errVal === 'string' ? errVal : JSON.stringify(errVal);
-						if (rawMsg.includes('MALFORMED_FUNCTION_CALL') && capturedToolResults.length > 0) {
+						if (capturedToolResults.length > 0) {
 							const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
 							if (recovered) {
 								streamedText += recovered;
@@ -582,7 +593,7 @@ chatRouter.post('/', async (c) => {
 			} catch (err) {
 				inferenceSpan?.recordException(err);
 				const rawMsg = (err as Error)?.message || String(err);
-				if (rawMsg.includes('MALFORMED_FUNCTION_CALL') && capturedToolResults.length > 0) {
+				if (capturedToolResults.length > 0 && !streamedText) {
 					const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
 					if (recovered) {
 						streamedText += recovered;
