@@ -39,10 +39,11 @@ describe('buildSystemPrompt - Dynamic Temporal & Accounting Rules', () => {
 		expect(prompt).toContain("byCurrency");
 	});
 
-	it('embeds tool catalog and category breakdown guidance', () => {
+	it('embeds tool routing matrix and category breakdown guidance', () => {
 		const prompt = buildSystemPrompt(sampleContext, 'Lutfi Zain');
-		expect(prompt).toContain("KATALOG LENGKAP TOOLS & SKEMA");
+		expect(prompt).toContain("HEURISTIK PEMILIHAN TOOL FINANSIAL");
 		expect(prompt).toContain("get_snapshot");
+		expect(prompt).toContain("horizon_projection");
 		expect(prompt).toContain("create_transaction");
 		expect(prompt).toContain("create_transfer");
 		expect(prompt).toContain("Analisis Kategori & Pagu Anggaran (Budgeting)");

@@ -280,7 +280,7 @@ The agent service SHALL register every tool available in the AI SDK tool set (fi
 
 ### Requirement: Curiosity-First System Prompt
 
-The agent service SHALL use a system prompt that instructs the model to follow a data-first retrieval pattern: always call at least one financial tool before answering any financial question, verify mutations by calling `get_snapshot` or `financial_summary` after recording transactions, cross-reference planned transactions with actual data when answering planning queries, and proactively surface insights (budget utilization, spending trend, safe-to-spend) from retrieved data.
+The agent service SHALL use a context-engineered system prompt instructing the model to follow a data-first retrieval pattern: always call at least one financial tool before answering financial inquiries, verify mutations by calling `get_snapshot` or `list_wallets` after recording transactions, route multi-period forecasting and milestone attainment inquiries directly to `horizon_projection` without manual LLM arithmetic, and proactively surface actionable insights (budget utilization, spending trajectory, safe-to-spend).
 
 #### Scenario: User asks a financial question
 
@@ -627,3 +627,25 @@ The agent service SHALL sanitize in-memory conversation history (`priorMessages`
 - **WHEN** historical messages loaded from D1 contain consecutive identical roles (e.g. `user` followed immediately by `user`)
 - **THEN** the sanitizer collapses or drops intermediate unresponded user turns in the in-memory array passed to the model runner
 - **AND** the upstream Gemini or Groq model receives a strictly alternating message sequence (`user` $\rightarrow$ `assistant` $\rightarrow$ `user`)
+
+### Requirement: Context-Engineered Intent Routing & Horizon Invariant
+
+The agent system prompt SHALL incorporate a structured Intent-to-Tool Decision Matrix categorizing tools across temporal horizons (T=0 Current, T<0 Historical, T+1 Month Micro-Plan, and T>1 to 24 Months Macro Horizon), mandate invocation of `horizon_projection` for all multi-period trajectory and milestone inquiries, and omit redundant plain-text tool listings from the prompt body to conserve LLM attention budget.
+
+#### Scenario: User asks about multi-month trajectory or savings milestone
+
+- **WHEN** the user asks a multi-period forecasting question (e.g., "apakah kita bisa beli laptop Desember?", "bagaimana tren runway kas 6 bulan ke depan?", or "kapan target DP rumah tembus?")
+- **THEN** the agent SHALL invoke `horizon_projection` with `months` matching the requested horizon (defaulting to 6 months)
+- **AND** the agent SHALL NOT attempt to calculate multi-month balance accumulation manually via repeated `list_transactions` calls
+- **AND** the agent SHALL format the projected trajectory into a structured Markdown table displaying month, income, expense, net spendable cash, spendable net worth, and reached milestone goals.
+
+#### Scenario: System prompt attention budget conservation
+
+- **WHEN** the agent constructs the dynamic system prompt via `buildSystemPrompt`
+- **THEN** the system prompt SHALL NOT contain redundant prose catalogs enumerating tools already declared in the model's function declarations
+- **AND** the total character size of the system prompt (excluding user memory and page context) SHALL not exceed 6,000 characters (~1,200 tokens).
+
+#### Scenario: Discriminative tool description prevents single-transaction misuse
+
+- **WHEN** the agent tool declarations are compiled for LLM consumption
+- **THEN** the `horizon_projection` tool description SHALL explicitly specify that it is intended for forward multi-period roll-forward simulations and savings milestone tracking, and SHALL NOT be called for single-transaction lookups.

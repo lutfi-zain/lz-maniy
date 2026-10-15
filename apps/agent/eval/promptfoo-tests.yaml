@@ -372,8 +372,7 @@
     - type: not-contains
       value: "$"
     - type: javascript
-      value: "output.includes('get_snapshot') || output.includes('horizon_projection')"
-
+      value: "output.includes('horizon_projection')"
 - description: "[TC-36] Payment method reconciliation"
   vars:
     prompt: "150+35 =185.000 883073156 BCA/esti Jahit sama beli kopi di Mama Ayya Ini bayar pake apa ya?"

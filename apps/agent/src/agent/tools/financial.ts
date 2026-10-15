@@ -68,11 +68,27 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 		}),
 
 		horizon_projection: tool({
-			description: 'Ambil proyeksi papan horizon multi-periode masa depan (roll-forward cashflow, akumulasi saldo dompet, dan capaian target tabungan).',
+			description:
+				'Ambil proyeksi papan horizon masa depan multi-bulan (roll-forward cashflow deterministik, akumulasi saldo dompet, dan capaian target tabungan). Gunakan tool ini untuk pertanyaan tren 2-24 bulan ke depan, simulasi runway tabungan, atau perkiraan waktu capaian milestone target. JANGAN gunakan untuk mencari transaksi tunggal atau mutasi spesifik.',
 			parameters: z.object({
-				months: z.number().int().min(1).max(24).default(6).describe('Jumlah bulan ke depan (1 s/d 24)'),
-				filter: z.enum(['realized', 'planned', 'all']).default('all').describe('Filter mutasi'),
-				baseCurrency: z.string().optional().default('IDR')
+				months: z
+					.number()
+					.int()
+					.min(1)
+					.max(24)
+					.default(6)
+					.describe('Jumlah bulan ke depan untuk proyeksi (1 s/d 24 bulan, default 6)'),
+				filter: z
+					.enum(['realized', 'planned', 'all'])
+					.default('all')
+					.describe(
+						'Filter mutasi: all (default, komitmen riil + rencana), planned (hanya rencana), realized (hanya riil)'
+					),
+				baseCurrency: z
+					.string()
+					.optional()
+					.default('IDR')
+					.describe('Mata uang dasar untuk konsolidasi nilai (default: IDR)')
 			}),
 			execute: async (params) => {
 				const qs = new URLSearchParams({

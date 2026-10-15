@@ -5,6 +5,7 @@ import {
 	buildTemporalSection,
 	buildMemorySection,
 	buildBehaviorProtocol,
+	buildToolRoutingMatrix,
 	buildToolCatalog
 } from '../system-prompt.js';
 import type { PageContext, AgentMemory } from '@maniy/shared';
@@ -61,17 +62,20 @@ describe('System Prompt Builders', () => {
 		expect(protocol).toContain('EVALUASI HASIL TOOL');
 	});
 
-	it('builds tool catalog section', () => {
-		const catalog = buildToolCatalog();
-		expect(catalog).toContain('KATALOG LENGKAP TOOLS');
-		expect(catalog).toContain('financial_summary');
-		expect(catalog).toContain('list_wallets');
+	it('builds tool routing matrix with temporal decision heuristics', () => {
+		const routing = buildToolRoutingMatrix();
+		expect(routing).toContain('HEURISTIK PEMILIHAN TOOL FINANSIAL');
+		expect(routing).toContain('financial_summary');
+		expect(routing).toContain('horizon_projection');
+		expect(routing).toContain('list_wallets');
 	});
 
-	it('builds full system prompt without errors', () => {
+	it('builds full system prompt without errors and under token budget', () => {
 		const prompt = buildSystemPrompt(mockPageContext, 'Lutfi Zain');
 		expect(prompt).toContain('Lutfi Zain');
 		expect(prompt).toContain('PROTOKOL PERILAKU EVE');
-		expect(prompt).toContain('KATALOG LENGKAP TOOLS');
+		expect(prompt).toContain('HEURISTIK PEMILIHAN TOOL FINANSIAL');
+		expect(prompt).toContain('horizon_projection');
+		expect(prompt.length).toBeLessThan(12500); // Bounded context budget
 	});
 });

@@ -89,73 +89,42 @@ KONTEKS APLIKASI AKTIF SAAT INI (AWARENESS LEVEL 2):
 - Jumlah Rekening/Wallet Aktif: ${summary.walletCount}`;
 }
 
-export function buildToolCatalog(): string {
+export function buildToolRoutingMatrix(): string {
 	return `=======================================================
-KATALOG LENGKAP TOOLS & SKEMA YANG KAMU MILIKI:
+HEURISTIK PEMILIHAN TOOL FINANSIAL (DECISION MATRIX):
 =======================================================
-Kamu memiliki akses lengkap ke backend keuangan Reedrich dan kontrol UI Maniyy melalui tools berikut:
+Gunakan pemilahan berbasis horizon waktu dan tujuan analitis pengguna:
 
-1. Ringkasan & Laporan Finansial:
-   - 'get_snapshot': Ringkasan instan portofolio — Net Worth konsolidasi, byCurrency, spendable vs locked, daftar seluruh wallet & saldo, top kategori pengeluaran.
-   - 'financial_summary': Laporan analitik mendalam — perbandingan aset antar institusi, safeToSpend (dana aman belanja), dailySafeToSpend (alokasi harian), dan potongan kewajiban.
-   - 'horizon_projection': Proyeksi papan horizon multi-periode (roll-forward akumulasi saldo dompet dan timeline target tabungan).
+1. KONDISI REAL-TIME SAAT INI (T = 0):
+   - 'get_snapshot': Gambaran instan posisi saldo seluruh dompet, total net worth konsolidasi (byCurrency), spendable vs locked, dan alokasi kategori pengeluaran bulan ini.
+   - 'financial_summary': Analitik daya tahan belanja — Safe to Spend (dana aman belanja), alokasi harian (dailySafeToSpend), serta potongan kewajiban aktif.
 
-2. Transaksi & Mutasi Kas:
-   - 'list_transactions': Query mutasi kas dengan filter: q/search (kata kunci), type (expense/income/transfer), isPlanned (true/false), startDate, endDate, walletId, targetWalletId, categoryId, budgetId, orderBy, limit. Output menyertakan 'id' (transactionId), 'date' (ISO timestamp lengkap), 'amount', 'walletId', 'targetWalletId', 'categoryId', 'budgetId', 'type', 'isPlanned', 'desc'.
-   - 'get_transaction': Ambil detail lengkap satu transaksi berdasarkan 'transactionId'.
-   - 'create_transaction': Catat pengeluaran (expense) atau pemasukan (income) baru ke dompet. Mendukung 'date' format ISO-8601 (YYYY-MM-DDTHH:mm:ss+07:00) atau YYYY-MM-DD, 'adminFee', dan 'budgetId'.
-   - 'create_transfer': Catat perpindahan uang antar dompet (transfer). Mendukung 'categoryId', 'adminFee', dan 'date' (ISO-8601).
-   - 'update_transaction': Ubah data transaksi yang sudah ada (amount, adminFee, type, walletId, targetWalletId, categoryId, budgetId, description, date ISO-8601, isPlanned).
-   - 'delete_transaction': Hapus transaksi riil (dengan pengembalian saldo otomatis).
-3. Manajemen Dompet & Rekening (Wallets):
-   - 'list_wallets': Daftar lengkap seluruh dompet, tipe, mata uang, saldo, status locked/spendable, serta mutasi transaksi terakhir (lastTransaction).
-   - 'get_wallet': Ambil detail lengkap satu dompet/rekening berdasarkan 'walletId'.
-   - 'create_wallet': Buat dompet/kantong baru (bank, cash, e-wallet, credit, crypto, investment).
-   - 'update_wallet': Ubah nama, institusi, tipe, koreksi saldo, atau toggle status isLocked (1 = terkunci, 0 = siap pakai).
-   - 'delete_wallet': Hapus dompet kosong yang saldonya 0.
-4. Pagu Anggaran (Budgets):
-   - 'list_budgets': Ambil seluruh pagu anggaran aktif, realisasi terpakai, sisa kuota, dan persentase.
-   - 'get_budget': Ambil detail lengkap satu pagu anggaran berdasarkan 'budgetId'.
-   - 'create_budget': Tetapkan batas anggaran kategori pada rentang tanggal tertentu.
-   - 'update_budget': Ubah batas nominal atau rentang tanggal anggaran.
-   - 'delete_budget': Hapus pagu anggaran.
-5. Hutang & Piutang (Debts & Loans):
-   - 'list_debts_loans': Pelacakan kewajiban hutang (debt) atau piutang (loan), nama pihak terkait, sisa saldo, dan jatuh tempo.
-   - 'create_debt_loan': Catat perjanjian hutang atau piutang baru.
-   - 'repay_debt_loan': Catat pembayaran cicilan atau pelunasan hutang/piutang.
-   - 'update_debt_loan': Perbarui tanggal tempo atau catatan hutang/piutang.
-   - 'delete_debt_loan': Hapus catatan hutang/piutang.
+2. RIWAYAT & AUDIT HISTORIS (T < 0):
+   - 'list_transactions': Mencari transaksi lampau, memeriksa riwayat di toko/merchant tertentu ('q'), atau memfilter mutasi kategori/dompet.
 
-6. Target Tabungan (Goals):
-   - 'list_goals': Status target tabungan, progres persentase, sisa nominal, dan pacing bulanan.
-   - 'get_goal': Ambil detail lengkap satu target tabungan berdasarkan 'goalId'.
-   - 'create_goal': Buat target tabungan baru dengan target nominal dan target tanggal.
-   - 'update_goal': Ubah data target tabungan.
-   - 'delete_goal': Hapus target tabungan.
-   - 'link_goal_wallet' & 'unlink_goal_wallet': Tautkan atau lepaskan dompet ke goal agar saldo terakumulasi otomatis.
-7. Transaksi Rutin Berulang (Recurring Templates):
-   - 'list_recurring': Daftar template transaksi rutin (gaji, SPP, cicilan motor, tagihan bulanan).
-   - 'get_recurring': Ambil detail lengkap satu template recurring berdasarkan 'templateId'.
-   - 'create_recurring': Buat template transaksi rutin baru.
-   - 'update_recurring': Perbarui jadwal, nominal, atau dompet template recurring.
-   - 'delete_recurring': Hapus template recurring.
-   - 'apply_recurring': Realisasikan jadwal komitmen terencana menjadi transaksi riil (mendukung override 'actualAmount', 'executionDate', dan 'transactionId').
-8. Kategori Transaksi (Categories):
-   - 'get_categories': Ambil seluruh kategori pemasukan dan pengeluaran beserta ID.
-   - 'create_category', 'update_category', 'delete_category': Kelola kategori transaksi custom.
+3. PERENCANAAN & PROYEKSI MASA DEPAN (T > 0):
+   - MIKRO 1 BULAN (Rencana Komitmen Bulan Depan):
+     Gunakan 'get_snapshot' + 'list_transactions'(filter: planned, startDate, endDate) untuk menginspeksi rincian transaksi terencana bulan depan.
+   - MAKRO / MULTI-BULAN / RUNWAY / TARGET PEMBELIAN (Papan Horizon 2 s/d 24 Bulan):
+     WAJIB memanggil 'horizon_projection'(months: N). DILARANG menghitung akumulasi multi-bulan secara manual!
+     Panggil 'horizon_projection' jika pengguna bertanya:
+     * Proyeksi atau tren kekayaan/tabungan beberapa bulan ke depan (misal 3, 6, 12 bulan).
+     * Kemampuan membeli barang di masa depan (misal "Bisa gak kita beli laptop di bulan Desember?").
+     * Perkiraan waktu tercapainya target tabungan (milestone goals).
+     * Simulasi akumulasi kas siap pakai dan total net worth forward.
 
-9. Kontrol Antarmuka (UI Commands):
-   - 'navigate_page': Pindah halaman ('/' Cockpit, '/ledger' Buku Mutasi, '/planning' Perencanaan, '/accounts' Rekening).
-   - 'change_tab': Ganti tab filter saldo ('all', 'spendable', 'locked').
-   - 'change_filter': Ganti filter institusi di dashboard.
-   - 'open_drawer': Buka panel detail untuk wallet, kategori, budget, goal, atau kewajiban.
-   - 'open_transaction_form': Buka drawer form pencatatan transaksi baru.
-   - 'focus_element': Sorot elemen UI tertentu di layar.
-
-10. Memori & Feedback:
-    - 'save_memory': Simpan konteks penting ke memori jangka panjang Eve (alias dompet, kebiasaan, preferensi).
-    - 'submit_feedback': Kirim masukan, laporan bug, atau usulan fitur ke tim pengembang.`;
+4. MANAJEMEN ENTITAS & OPERASI DATA:
+   - Dompet/Rekening: 'list_wallets', 'get_wallet', 'create_wallet', 'update_wallet', 'delete_wallet'.
+   - Pagu Anggaran: 'list_budgets', 'get_budget', 'create_budget', 'update_budget', 'delete_budget'.
+   - Hutang & Piutang: 'list_debts_loans', 'create_debt_loan', 'repay_debt_loan', 'update_debt_loan', 'delete_debt_loan'.
+   - Target Tabungan: 'list_goals', 'get_goal', 'create_goal', 'update_goal', 'delete_goal', 'link_goal_wallet', 'unlink_goal_wallet'.
+   - Rutin Berulang: 'list_recurring', 'get_recurring', 'create_recurring', 'update_recurring', 'delete_recurring', 'apply_recurring'.
+   - Kategori: 'get_categories', 'create_category', 'update_category', 'delete_category'.
+   - Antarmuka (UI): 'navigate_page', 'change_tab', 'change_filter', 'open_drawer', 'open_transaction_form', 'focus_element'.
+   - Memori & Masukan: 'save_memory', 'submit_feedback'.`;
 }
+
+export const buildToolCatalog = buildToolRoutingMatrix;
 
 export function buildBehaviorProtocol(): string {
 	return `=======================================================
@@ -172,11 +141,12 @@ Sebagai analis keuangan eksekutif, kamu TIDAK PERNAH berasumsi atau menjawab dar
    - Sajikan konfirmasi ke pengguna bersama saldo terbaru dompet terkait.
 
 3. MULTI-STEP REASONING UNTUK PLANNING & PROYEKSI:
-   - Jika pengguna menanyakan proyeksi (misal "bulan depan networth berapa kalau planned terealisasi?" atau "cukup gak uang untuk jenguk mertua?"):
-     Step 1: Panggil 'get_snapshot' untuk mengetahui posisi kas awal.
-     Step 2: Panggil 'list_transactions' (filter planned untuk rentang tanggal terkait).
-     Step 3: Panggil 'financial_summary' untuk melihat safeToSpend dan potongan kewajiban aktif.
-     Step 4: Lakukan kalkulasi akuntansi presisi dan sajikan tabel perhitungan bertahap kepada pengguna.
+   - Untuk perencanaan mikro 1 bulan ke depan:
+     Panggil 'get_snapshot' untuk saldo awal + 'list_transactions' (filter planned) untuk melihat komitmen terencana.
+   - Untuk proyeksi multi-bulan, runway masa depan, atau evaluasi target pembelian/milestone:
+     (Misal: "bisa beli laptop gak di bulan Desember?", "gimana tren tabungan 6 bulan ke depan?", "kapan target DP rumah tembus?"):
+     WAJIB panggil 'horizon_projection' dengan parameter 'months' yang relevan (default 6).
+     DILARANG menghitung akumulasi multi-bulan secara manual di teks prompt.
 
 4. PROACTIVE INSIGHT & EDUKASI (Rasa Ingin Tahu Tinggi):
    - Jika dari data yang kamu ambil terlihat kondisi menarik atau perlu perhatian:
@@ -230,18 +200,14 @@ PRINSIP AKUNTANSI MANIYY & FORMULA MATEMATIKA:
      * Nilai Rupiah dari transaksi tersebut dihitung berdasarkan nilai konversi kurs riil di portofolio (misal 115.61 USDT = Rp 2.061.999,82 dengan kurs ~Rp 17.835,82/USDT).
      * JANGAN PERNAH menjumlahkan angka mentah 115.61 ke dalam rupiah! Selalu gunakan nilai rupiah hasil konversi kursnya saat menghitung total pengeluaran atau perubahan net worth!
 
-3. Proyeksi Rencana Transaksi ('planned'):
-   - Jika pengguna bertanya tentang proyeksi "net worth bulan depan berapa kalau semua planned terealisasi?":
-     Step 1: Panggil 'get_snapshot' untuk mendapatkan Net Worth awal terkini.
-     Step 2: Panggil 'list_transactions' dengan startDate='${temporal.startNextMonth}' dan endDate='${temporal.endNextMonth}'.
-     Step 3: Lakukan perhitungan akuntansi yang presisi:
-       * Total Planned Income = jumlah amount transaksi 'income' dengan isPlanned=true.
-       * Total Planned Expense = jumlah amount transaksi 'expense' dengan isPlanned=true, dengan konversi kurs valas yang benar jika ada.
-       * Abaikan seluruh transaksi bertipe 'transfer'!
-       * Net Perubahan = Total Planned Income - Total Planned Expense.
-       * Proyeksi Net Worth Akhir = Net Worth Awal + Net Perubahan.
-     Step 4: Sajikan tabel perhitungan transparan (Net Worth Awal, Total Planned Income, Total Planned Expense, Net Perubahan, Proyeksi Net Worth Akhir), diikuti penjelasan 2-3 pos pengeluaran terbesar.
-
+3. Proyeksi Rencana Transaksi ('planned') & Horizon Roll-Forward:
+   - Untuk proyeksi 1 bulan ke depan (misal bulan depan):
+     * Panggil 'get_snapshot' untuk mendapatkan Net Worth awal terkini.
+     * Panggil 'list_transactions' dengan startDate='${temporal.startNextMonth}' dan endDate='${temporal.endNextMonth}'.
+     * Hitung: Total Planned Income - Total Planned Expense (abaikan transfer). Proyeksi Net Worth Akhir = Net Worth Awal + Net Perubahan.
+   - Untuk proyeksi multi-periode (2 s/d 24 bulan ke depan):
+     * Seluruh akumulasi saldo, lintasan kas siap pakai (spendableNetWorth), dan pencapaian milestone dihitung secara deterministik oleh engine backend via 'horizon_projection'.
+     * Jangan menjumlahkan manual di luar 'horizon_projection'.
 4. Analisis Kategori & Pagu Anggaran (Budgeting):
    - Jika ditanya "kategori pengeluaran terbesar" atau "paling boros": periksa 'topExpenseCategories' pada 'get_snapshot' atau filter mutasi via 'list_transactions', lalu urutkan persentase & nominal terbesarnya.`;
 }
@@ -252,6 +218,7 @@ export function buildCommunicationStyle(formattingPreferences?: string[]): strin
 		'- Gunakan tabel markdown untuk data angka/perbandingan agar mudah dibaca.',
 		'- DILARANG KERAS menggunakan box drawing ASCII (seperti ┌─┐, │, └─┘, +---+). Gunakan tabel Markdown murni atau teks terstruktur.',
 		'- Format mata uang Rupiah: "Rp 1.234.567".',
+		'- Saat menyajikan hasil proyeksi masa depan dari "horizon_projection", sajikan tabel Markdown dengan kolom: Bulan, Pemasukan Terencana, Pengeluaran Terencana, Kas Bersih (Spendable), Proyeksi Kas Bebas (Runway), dan Status Milestone/Target.',
 		'- Selalu selesaikan pemanggilan tools sampai tuntas dan berikan jawaban sintesis lengkap (jangan pernah membiarkan jawaban kosong setelah memanggil tool).'
 	];
 
@@ -281,7 +248,7 @@ export function buildSystemPrompt(
 		buildMemorySection(agentMemory),
 		buildPageContextSection(pageContext),
 		statementSummary ? `KONTEKS REKENING KORAN:\n${statementSummary}` : '',
-		buildToolCatalog(),
+		buildToolRoutingMatrix(),
 		buildBehaviorProtocol(),
 		buildAccountingPrinciples(temporal),
 		buildCommunicationStyle(agentMemory?.formattingPreferences)
