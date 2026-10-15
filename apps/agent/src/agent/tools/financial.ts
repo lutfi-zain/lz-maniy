@@ -81,8 +81,59 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 					baseCurrency: params.baseCurrency
 				});
 				const res = await request(`/api/v1/analytics/horizon?${qs}`);
-				if (!res.ok) throw new Error(`horizon_projection failed: ${res.status}`);
-				return await res.json();
+				if (!res.ok) {
+					const errText = await res.text().catch(() => '');
+					console.warn(`[horizon_projection] ReedRich returned ${res.status}: ${errText}`);
+					return { error: `horizon_projection failed: ${res.status}`, periods: [] };
+				}
+				const raw = (await res.json()) as {
+					baseCurrency?: string;
+					startingNetWorth?: { total?: number; spendable?: number; locked?: number };
+					periods?: Array<{
+						periodKey?: string;
+						startDate?: string;
+						endDate?: string;
+						cashflow?: {
+							income?: number;
+							expense?: number;
+							net?: number;
+							netSpendable?: number;
+							netLocked?: number;
+						};
+						netWorth?: {
+							total?: number;
+							spendable?: number;
+							locked?: number;
+						};
+						goals?: Array<{
+							goalName?: string;
+							targetAmount?: number;
+							currentAmount?: number;
+							milestoneStatus?: string;
+							isCompleted?: boolean;
+						}>;
+					}>;
+				};
+
+				return {
+					baseCurrency: raw.baseCurrency || 'IDR',
+					startingNetWorth: raw.startingNetWorth,
+					periods: (raw.periods || []).map((p) => {
+						const milestones = (p.goals || [])
+							.filter((g) => g.milestoneStatus === 'reached' || g.isCompleted)
+							.map((g) => ({ name: g.goalName, target: Math.round(g.targetAmount || 0) }));
+
+						return {
+							month: p.periodKey,
+							income: Math.round(p.cashflow?.income ?? 0),
+							expense: Math.round(p.cashflow?.expense ?? 0),
+							netSpendable: Math.round(p.cashflow?.netSpendable ?? 0),
+							spendableNetWorth: Math.round(p.netWorth?.spendable ?? 0),
+							totalNetWorth: Math.round(p.netWorth?.total ?? 0),
+							...(milestones.length > 0 ? { milestones } : {})
+						};
+					})
+				};
 			}
 		}),
 

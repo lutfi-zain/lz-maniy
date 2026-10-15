@@ -121,6 +121,48 @@ describe('Reedrich Tool Factories', () => {
 
 		const res = await tools.financial_summary.execute({ baseCurrency: 'IDR' }, { toolCallId: '1', messages: [] });
 		expect(res).toEqual({ safeToSpend: 4500000 });
+
+		// Test horizon_projection compact trajectory DTO and payload budget (<3KB)
+		const mockPeriods = Array.from({ length: 14 }, (_, i) => ({
+			periodKey: `2027-${String(i + 1).padStart(2, '0')}`,
+			startDate: `2027-${String(i + 1).padStart(2, '0')}-01T00:00:00Z`,
+			endDate: `2027-${String(i + 1).padStart(2, '0')}-28T23:59:59Z`,
+			cashflow: { income: 20000000, expense: 15000000, net: 5000000, netSpendable: 3000000, netLocked: 2000000 },
+			netWorth: { total: 50000000 + i * 5000000, spendable: 20000000 + i * 3000000, locked: 30000000 + i * 2000000 },
+			walletBalances: Array.from({ length: 8 }, (_, w) => ({ walletId: `w-${w}`, balance: 5000000 })),
+			goals: [{ goalName: 'DP Mobil', targetAmount: 50000000, currentAmount: 30000000 + i * 3000000, milestoneStatus: i >= 10 ? 'reached' : 'in_progress' }]
+		}));
+
+		mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({
+			baseCurrency: 'IDR',
+			startingNetWorth: { total: 50000000, spendable: 20000000, locked: 30000000 },
+			periods: mockPeriods
+		}), { status: 200 }));
+
+		interface CompactHorizonResult {
+			baseCurrency: string;
+			startingNetWorth: { total: number; spendable: number; locked: number };
+			periods: Array<{
+				month: string;
+				income: number;
+				expense: number;
+				netSpendable: number;
+				spendableNetWorth: number;
+				totalNetWorth: number;
+				milestones?: Array<{ name: string; target: number }>;
+				walletBalances?: unknown;
+			}>;
+		}
+
+		const horizonRes = (await tools.horizon_projection.execute({ months: 14, filter: 'all', baseCurrency: 'IDR' }, { toolCallId: '1', messages: [] })) as unknown as CompactHorizonResult;
+		expect(horizonRes.periods).toHaveLength(14);
+		expect(horizonRes.periods[0].month).toBe('2027-01');
+		expect(horizonRes.periods[0].spendableNetWorth).toBe(20000000);
+		expect(horizonRes.periods[10].milestones).toEqual([{ name: 'DP Mobil', target: 50000000 }]);
+		expect(horizonRes.periods[0].walletBalances).toBeUndefined(); // Raw wallet array omitted
+
+		const serializedSize = JSON.stringify(horizonRes).length;
+		expect(serializedSize).toBeLessThan(3072); // Under 3KB budget
 	});
 
 	it('creates mutation tools with full ISO-8601 date, budgetId, and categoryId', async () => {

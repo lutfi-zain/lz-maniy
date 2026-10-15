@@ -4,7 +4,7 @@ import {
 	buildOpenInferenceRetrieverAttributes
 } from '../observability/tracer.js';
 import { Hono } from 'hono';
-import { streamText, type LanguageModelV1 } from 'ai';
+import { streamText, generateText, type LanguageModelV1 } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
 import { authMiddleware } from '../middleware/auth.js';
 import { getModel, AVAILABLE_MODELS } from '../agent/models.js';
@@ -41,6 +41,26 @@ import { estimateTokens, shouldCompact } from '../agent/compaction.js';
 import { compactConversation } from '../agent/compaction-worker.js';
 import type { Env } from '../types.js';
 import type { ChatStreamRequest } from '@maniy/shared';
+
+export async function attemptFallbackSynthesis(
+	aiModel: LanguageModelV1,
+	userPrompt: string,
+	toolData: unknown[]
+): Promise<string | null> {
+	if (!toolData || toolData.length === 0) return null;
+	try {
+		const res = await generateText({
+			model: aiModel,
+			system:
+				'Anda adalah Eve, asisten keuangan pribadi cerdas di Maniy. Jawab pertanyaan user secara akurat, ringkas, dan solutif berdasarkan data keuangan yang telah berhasil diambil berikut. Dilarang menggunakan simbol dollar ($), gunakan format Rupiah Rp X.XXX.XXX.',
+			prompt: `Pertanyaan User: ${userPrompt}\n\nData Keuangan dari Sistem:\n${JSON.stringify(toolData).slice(0, 10000)}`
+		});
+		return res.text?.trim() || null;
+	} catch (err) {
+		console.warn('[Recovery] Fallback synthesis failed:', err);
+		return null;
+	}
+}
 
 const chatRouter = new Hono<{ Bindings: Env }>();
 
@@ -517,8 +537,18 @@ chatRouter.post('/', async (c) => {
 					try {
 						const errVal = JSON.parse(line.slice(2).trim());
 						const rawMsg = typeof errVal === 'string' ? errVal : JSON.stringify(errVal);
+						if (rawMsg.includes('MALFORMED_FUNCTION_CALL') && capturedToolResults.length > 0) {
+							const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
+							if (recovered) {
+								streamedText += recovered;
+								yield `0:${JSON.stringify(recovered)}\n`;
+								continue;
+							}
+						}
 						const cleanMsg = rawMsg.includes('Unknown model')
 							? 'Model yang dipilih tidak tersedia di gateway upstream. Silakan ganti model atau muat ulang.'
+							: rawMsg.includes('MALFORMED_FUNCTION_CALL')
+							? 'Model mengalami kendala pemrosesan konteks fungsi. Silakan klik Coba Lagi untuk mengulang jawaban.'
 							: rawMsg;
 						yield `3:${JSON.stringify(cleanMsg)}\n`;
 						continue;
@@ -552,8 +582,18 @@ chatRouter.post('/', async (c) => {
 			} catch (err) {
 				inferenceSpan?.recordException(err);
 				const rawMsg = (err as Error)?.message || String(err);
+				if (rawMsg.includes('MALFORMED_FUNCTION_CALL') && capturedToolResults.length > 0) {
+					const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
+					if (recovered) {
+						streamedText += recovered;
+						controller.enqueue(encoder.encode(`0:${JSON.stringify(recovered)}\n`));
+						return;
+					}
+				}
 				const cleanMsg = rawMsg.includes('Unknown model')
 					? 'Model yang dipilih tidak tersedia di gateway upstream. Silakan ganti model atau muat ulang.'
+					: rawMsg.includes('MALFORMED_FUNCTION_CALL')
+					? 'Model mengalami kendala pemrosesan konteks fungsi. Silakan klik Coba Lagi untuk mengulang jawaban.'
 					: rawMsg;
 				controller.enqueue(encoder.encode(`3:${JSON.stringify(cleanMsg)}\n`));
 			} finally {
