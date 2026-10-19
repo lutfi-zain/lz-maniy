@@ -17,6 +17,7 @@ import {
 	WorkerTracer
 } from '../src/observability/tracer.js';
 import { wrapToolsWithTracing } from '../src/observability/instrument-tools.js';
+import { createResilientReedrichFetcher } from './mock-reedrich.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import type { PageContext } from '@maniy/shared';
@@ -306,15 +307,17 @@ export default class ManiyAgentProvider {
 		// Set orchestratorSpan as active parent so all tool:* and reedrich.rpc:* nest inside it
 		tracer.setActiveParentSpan(orchestratorSpan.spanId);
 
+		const resilientFetcher = createResilientReedrichFetcher() as unknown as Fetcher;
+
 		const rawTools = sandboxMutationTools({
-			...createFinancialTools(reedrichUrl, reedrichToken),
-			...createMutationTools(reedrichUrl, reedrichToken),
-			...createWalletTools(reedrichUrl, reedrichToken),
-			...createBudgetTools(reedrichUrl, reedrichToken),
-			...createDebtLoanTools(reedrichUrl, reedrichToken),
-			...createGoalTools(reedrichUrl, reedrichToken),
-			...createRecurringTools(reedrichUrl, reedrichToken),
-			...createFeedbackTools(reedrichUrl, reedrichToken),
+			...createFinancialTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createMutationTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createWalletTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createBudgetTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createDebtLoanTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createGoalTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createRecurringTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createFeedbackTools(reedrichUrl, reedrichToken, resilientFetcher),
 			...createUICommandTools()
 		});
 
