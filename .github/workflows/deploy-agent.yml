@@ -10,7 +10,44 @@ on:
   workflow_dispatch:
 
 jobs:
+  eval-gate:
+    name: Evaluate Reasoning, Accuracy & Quality Gate
+    runs-on: ubuntu-latest
+    env:
+      OMP_GATEWAY_URL: https://ai.membran.app/v1
+      OMP_GATEWAY_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
+      OPENAI_BASE_URL: https://ai.membran.app/v1
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      REEDRICH_TEST_API_TOKEN: ${{ secrets.REEDRICH_TEST_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Secret hygiene scan
+        run: bun scripts/check-secrets.ts
+
+      - name: Typecheck Workspace
+        run: bun run check:web
+
+      - name: Run Agent unit & invariant tests
+        run: bun run --cwd apps/agent test
+
+      - name: Run Promptfoo Evaluation Benchmark
+        if: env.OMP_GATEWAY_KEY != ''
+        working-directory: apps/agent/eval
+        run: |
+          bunx promptfoo eval --no-progress-bar --max-concurrency 2
+
   deploy:
+    name: Deploy to Cloudflare Workers
+    needs: [eval-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

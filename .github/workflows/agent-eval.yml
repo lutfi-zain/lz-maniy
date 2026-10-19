@@ -36,10 +36,14 @@ jobs:
       - name: Secret hygiene scan
         run: bun scripts/check-secrets.ts
 
-      - name: Run Agent unit tests
+      - name: Typecheck Workspace
+        run: bun run check:web
+
+      - name: Run Agent unit & invariant tests
         run: bun run --cwd apps/agent test
 
       - name: Run Promptfoo Evaluation Benchmark
+        if: env.OMP_GATEWAY_KEY != ''
         working-directory: apps/agent/eval
         run: |
           bunx promptfoo eval --no-progress-bar --max-concurrency 2
