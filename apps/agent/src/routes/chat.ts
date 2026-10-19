@@ -40,6 +40,8 @@ import {
 	calculateCreditsUsed
 } from '../db/credits.js';
 import { estimateTokens, shouldCompact } from '../agent/compaction.js';
+import { classifyStepBudget, ToolCycleBreaker } from '../agent/iteration-budget.js';
+import { validateInputPrompt, fenceUntrustedData } from '../agent/guardrails/input-guard.js';
 import { compactConversation } from '../agent/compaction-worker.js';
 import type { Env } from '../types.js';
 import type { ChatStreamRequest } from '@maniy/shared';
@@ -190,6 +192,28 @@ chatRouter.post('/', async (c) => {
 		isGroqVisionFallback = true;
 	}
 
+	// Input Guardrail: Prompt Injection & Jailbreak Defense
+	const inputGuardResult = validateInputPrompt(body.message);
+	if (!inputGuardResult.allowed) {
+		tracer?.rootSpan?.setAttribute('guardrail.blocked', true);
+		tracer?.rootSpan?.setAttribute('guardrail.violation', inputGuardResult.violationType || 'unknown');
+		c.executionCtx.waitUntil(
+			enqueueEvalJob(c.env.DB, {
+				traceId: tracer?.traceId || crypto.randomUUID(),
+				sessionId: body.conversationId || 'untracked',
+				userId: user.userId,
+				priority: 'high',
+				userMessage: body.message,
+				assistantOutput: inputGuardResult.refusalMessage || 'Refused',
+				triggerReason: 'guardrail_trip'
+			})
+		);
+		const refusal = inputGuardResult.refusalMessage || 'Maaf, permintaan ini tidak dapat diproses karena melanggar kebijakan keamanan.';
+		return new Response(`0:${JSON.stringify(refusal)}\n`, {
+			headers: { 'Content-Type': 'text/event-stream; charset=utf-8' }
+		});
+	}
+
 	// 3. Resolve or create conversation
 	let conversationId = body.conversationId;
 	let isNewConversation = false;
@@ -287,7 +311,10 @@ chatRouter.post('/', async (c) => {
 				const fileBits = manifest.files
 					.map((f) => `${f.fileName} (${f.rowCount ?? 0} baris${f.bank ? `, ${f.bank}` : ''})`)
 					.join('; ');
-				statementSummary = `Konteks Rekening Koran: sesi ${body.statementSessionId} memuat ${manifest.totalRows} baris dari ${manifest.totalPages} halaman [${fileBits}]. Gunakan tool get_statement_rows untuk membaca baris bila perlu.`;
+				statementSummary = fenceUntrustedData(
+					`Konteks Rekening Koran: sesi ${body.statementSessionId} memuat ${manifest.totalRows} baris dari ${manifest.totalPages} halaman [${fileBits}]. Gunakan tool get_statement_rows untuk membaca baris bila perlu.`,
+					'bank_statement'
+				);
 			} catch {
 				statementSummary = null;
 			}
@@ -465,7 +492,8 @@ chatRouter.post('/', async (c) => {
 		}
 	});
 
-	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory, statementSummary);
+	const compactionSummary = history.find((m) => m.id?.startsWith('summary-') || m.role === 'system')?.content || null;
+	const systemPrompt = buildSystemPrompt(body.pageContext, user.fullName, agentMemory, statementSummary, compactionSummary);
 
 	const providerOptions =
 		modelConfig.capabilities.thinking && body.thinkingLevel && body.thinkingLevel !== 'off'
@@ -485,13 +513,19 @@ chatRouter.post('/', async (c) => {
 		});
 	}
 
+	const { budget: dynamicMaxSteps, complexity: taskComplexity } = classifyStepBudget(
+		body.message,
+		{ hasStatementSession: !!statementSummary, route: body.pageContext?.currentRoute }
+	);
+	const cycleBreaker = new ToolCycleBreaker();
+
 	const inferenceSpan = tracer?.startSpan('ai.streamText', {
 		attributes: {
 			...buildOpenInferenceLlmAttributes({
 				modelName: modelConfig.model,
 				provider: modelConfig.provider,
 				invocationParameters: {
-					max_steps: 10,
+					max_steps: dynamicMaxSteps,
 					thinking_level: body.thinkingLevel || 'off'
 				},
 				inputMessages: [
@@ -502,7 +536,8 @@ chatRouter.post('/', async (c) => {
 			}),
 			'ai.model': modelConfig.model,
 			'ai.provider': modelConfig.provider,
-			'ai.max_steps': 10,
+			'ai.max_steps': dynamicMaxSteps,
+			'ai.task_complexity': taskComplexity,
 			'ai.thinking_level': body.thinkingLevel || 'off',
 			'input.value': body.message
 		}
@@ -519,7 +554,7 @@ chatRouter.post('/', async (c) => {
 			{ role: 'user', content: userMessageContent }
 		],
 		tools,
-		maxSteps: 10,
+		maxSteps: dynamicMaxSteps,
 		...(providerOptions ? { providerOptions } : {}),
 		onFinish: (ev) => {
 			const promptTok = ev.usage?.promptTokens || estimateTokens(history);
@@ -575,6 +610,7 @@ chatRouter.post('/', async (c) => {
 		const reader = sourceStream.getReader();
 		const decoder = new TextDecoder();
 		let buffer = '';
+		let stepCount = 0;
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
@@ -582,6 +618,28 @@ chatRouter.post('/', async (c) => {
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
 			for (const line of lines) {
+				if (line.startsWith('9:')) {
+					try {
+						stepCount++;
+						const tc = JSON.parse(line.slice(2));
+						const name = tc.toolName || tc.name || 'tool';
+						const args = tc.args || {};
+						const breakerRes = cycleBreaker.record(name, args);
+						if (stepCount >= 2) {
+							yield `2:${JSON.stringify([{ type: 'progress', step: stepCount, action: `Mengeksekusi ${name}...` }])}\n`;
+						}
+						if (breakerRes.tripped && capturedToolResults.length > 0 && !streamedText) {
+							const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
+							if (recovered) {
+								streamedText += recovered;
+								yield `0:${JSON.stringify(recovered)}\n`;
+								continue;
+							}
+						}
+					} catch {
+						/* ignore */
+					}
+				}
 				if (line.startsWith('0:')) {
 					try {
 						const textDelta = JSON.parse(line.slice(2).trim());
@@ -629,6 +687,13 @@ chatRouter.post('/', async (c) => {
 					}
 				}
 				yield line + '\n';
+			}
+		}
+		if (!streamedText && capturedToolResults.length > 0) {
+			const recovered = await attemptFallbackSynthesis(aiModel, body.message, capturedToolResults);
+			if (recovered) {
+				streamedText += recovered;
+				yield `0:${JSON.stringify(recovered)}\n`;
 			}
 		}
 		if (buffer) yield buffer;
