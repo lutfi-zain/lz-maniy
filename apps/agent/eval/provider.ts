@@ -339,8 +339,10 @@ export default class ManiyAgentProvider {
 			for await (const _ of result.textStream) {}
 			const steps = await result.steps;
 			const usage = await result.usage;
-			const finalText = steps.map((s) => s.text).filter(Boolean).join('\n');
-
+			let finalText = steps.map((s) => s.text).filter(Boolean).join('\n').trim();
+			if (!finalText && capturedToolResults.length > 0) {
+				finalText = (await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults)) || '';
+			}
 			const cleanModelName = modelName.replace(/^[^/]+\//, '');
 			const calledTools: string[] = [];
 			let totalPromptTok = 0;
