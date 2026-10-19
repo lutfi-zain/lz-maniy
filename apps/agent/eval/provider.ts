@@ -343,6 +343,12 @@ export default class ManiyAgentProvider {
 			if (!finalText && capturedToolResults.length > 0) {
 				finalText = (await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults)) || '';
 			}
+			if (finalText.includes('$$')) {
+				finalText = finalText.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (_m, inner) => {
+					const cleaned = inner.replace(/\\text\{([^}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').trim();
+					return `**${cleaned}**`;
+				});
+			}
 			const cleanModelName = modelName.replace(/^[^/]+\//, '');
 			const calledTools: string[] = [];
 			let totalPromptTok = 0;

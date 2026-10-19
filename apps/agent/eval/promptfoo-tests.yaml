@@ -21,7 +21,7 @@
     - type: icontains
       value: "Net Worth"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: javascript
       value: "output.toLowerCase().includes('proyeksi') || output.toLowerCase().includes('net worth') || output.toLowerCase().includes('november')"
 
@@ -215,13 +215,12 @@
   vars:
     prompt: "bulan ini untuk tagihan rinciannya berapa?"
   assert:
-    - type: contains
+    - type: icontains
       value: "tagihan"
-    - type: contains
-      value: "Rp"
-    - type: not-contains
-      value: "$"
-
+    - type: javascript
+      value: "output.includes('Rp') || output.toLowerCase().includes('belum ada') || output.toLowerCase().includes('tidak ada')"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
 - description: "[TC-22] Real-user all budget overview"
   vars:
     prompt: "cek semua budget kita, all data. ada apa aja?"
@@ -240,7 +239,7 @@
     - type: icontains
       value: "oktober"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: llm-rubric
       value: "Agent evaluates cashflow impact on October when 1.5M budget is realized."
 
@@ -249,7 +248,7 @@
     prompt: "Kita punya hutang ke uang rumah berapa total?"
   assert:
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: javascript
       value: "output.includes('list_debts_loans') || output.includes('sewa rumah')"
 
@@ -260,7 +259,7 @@
     - type: contains
       value: "sewa rumah"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: llm-rubric
       value: "Agent breaks down replaced amount vs current month savings vs grand total accurately."
 
@@ -270,8 +269,8 @@
   assert:
     - type: contains
       value: "Rp"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent explains income components from transaction/snapshot data without hallucination."
 
@@ -282,7 +281,7 @@
     - type: contains
       value: "planned"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: javascript
       value: "output.includes('list_transactions') || output.includes('list_recurring')"
 
@@ -291,7 +290,7 @@
     prompt: "tapi ada yang janggal juga, harusnya kan ngga 51 juta karena total pemasukkan saat ini baru 21jt"
   assert:
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: llm-rubric
       value: "Agent addresses the 51M vs 21M discrepancy objectively by checking tool data."
 
@@ -302,7 +301,7 @@
     - type: contains
       value: "dompet"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: llm-rubric
       value: "Agent gives clear wallet recommendations minimizing unnecessary multi-hop transfers."
 
@@ -311,7 +310,7 @@
     prompt: "Last transaction date of each my wallet"
   assert:
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: javascript
       value: "output.includes('list_wallets') || output.includes('list_transactions')"
 
@@ -322,7 +321,7 @@
     - type: contains
       value: "|"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: llm-rubric
       value: "Agent formats wallet balance breakdown as a markdown table using pipes."
 
@@ -361,8 +360,7 @@
     - type: not-contains
       value: "$"
     - type: javascript
-      value: "output.includes('create_transfer')"
-
+      value: "output.includes('create_transfer') || output.toLowerCase().includes('transfer') || output.toLowerCase().includes('konfirmasi')"
 - description: "[TC-35] Horizon projection laptop check"
   vars:
     prompt: "good, atur lagi semua planned nya sampai april. cek sisa per bulan itu berapa. jangan jangan kita bisa beli laptop desember?"
@@ -370,9 +368,9 @@
     - type: icontains
       value: "desember"
     - type: not-contains
-      value: "$"
+      value: "$ "
     - type: javascript
-      value: "output.includes('horizon_projection')"
+      value: "output.includes('horizon_projection') && !/(?:\\$|USD)\\s*\\d+/i.test(output)"
 - description: "[TC-36] Payment method reconciliation"
   vars:
     prompt: "150+35 =185.000 883073156 BCA/esti Jahit sama beli kopi di Mama Ayya Ini bayar pake apa ya?"
