@@ -189,7 +189,7 @@
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
-      value: "Agent summarizes current month planning status and planned transactions concisely."
+      value: "Agent summarizes current month planning status and planned transactions or outlook clearly."
 
 - description: "[TC-19] Real-user planning projection setup"
   vars:
