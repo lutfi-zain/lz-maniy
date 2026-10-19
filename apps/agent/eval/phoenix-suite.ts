@@ -291,7 +291,7 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 			versions: [
 				{
 					versionTag: 'baseline',
-					description: 'v1: Baseline Verbose System Prompt (Full accounting instructions)',
+					description: 'v1.15.0: Baseline Canonical System Prompt (Intent-to-Tool Decision Matrix & Horizon Engine)',
 					modelProvider: 'GOOGLE',
 					modelName: 'gemini-3.7-flash',
 					templateType: 'CHAT',
@@ -320,11 +320,11 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 						}
 					},
 					tools: { type: 'tools', tools: FINANCIAL_TOOL_SCHEMAS },
-					metadata: { version: '1.0.0', variant: 'baseline', avgPromptTokens: 1450 }
+					metadata: { version: '1.15.0', variant: 'baseline', features: ['decision-matrix', 'horizon-aware', 'markdown-tables'] }
 				},
 				{
 					versionTag: 'staging',
-					description: 'v2: Compact Token-Optimized System Prompt (-44% prompt tokens)',
+					description: 'v1.15.0: Compact Token-Optimized System Prompt (Condensed Decision Matrix & Horizon Engine)',
 					modelProvider: 'GOOGLE',
 					modelName: 'gemini-3.8-flash',
 					templateType: 'CHAT',
@@ -354,16 +354,16 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 					},
 					tools: { type: 'tools', tools: FINANCIAL_TOOL_SCHEMAS },
 					metadata: {
-						version: '2.0.0',
+						version: '1.15.0',
 						variant: 'compact',
-						avgPromptTokens: 820,
+						features: ['decision-matrix', 'horizon-aware'],
 						tokenSavingsPct: 43.4
 					}
 				},
 				{
 					versionTag: 'production',
 					description:
-						'v3: Few-Shot Telegram Golden System Prompt (100% tool & multi-intent accuracy)',
+						'v1.15.0: Few-Shot Telegram Golden System Prompt (Multi-intent & Horizon Planning examples)',
 					modelProvider: 'GOOGLE',
 					modelName: 'gemini-3.8-flash',
 					templateType: 'CHAT',
@@ -393,9 +393,9 @@ export function buildPromptRepositories(): PhoenixPromptRepositorySpec[] {
 					},
 					tools: { type: 'tools', tools: FINANCIAL_TOOL_SCHEMAS },
 					metadata: {
-						version: '3.0.0',
+						version: '1.15.0',
 						variant: 'fewshot',
-						avgPromptTokens: 1120,
+						features: ['fewshot-golden', 'horizon-planning'],
 						accuracyRate: 1.0
 					}
 				}

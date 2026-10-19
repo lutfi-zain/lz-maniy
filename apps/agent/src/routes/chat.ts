@@ -29,7 +29,8 @@ import {
 	listMessages,
 	insertMessage,
 	touchConversation,
-	getAgentMemory
+	getAgentMemory,
+	enqueueEvalJob
 } from '../db/queries.js';
 import {
 	getOrCreateUserCredits,
@@ -722,7 +723,7 @@ chatRouter.post('/', async (c) => {
 										);
 
 										if (hasAnomaly) {
-											const failedEval = results.find((r) => r.score < 0.5);
+											const failedEval: EvaluationResult | undefined = results.find((r: EvaluationResult) => r.score < 0.5);
 											await sendTelegramAlert(c.env, {
 												title: `Automated Eval Alert: ${failedEval?.name || 'Anomaly Detected'}`,
 												sessionId: activeConvId,
@@ -735,8 +736,36 @@ chatRouter.post('/', async (c) => {
 												latencyMs: turnDurationMs
 											});
 										}
+
+										// Enqueue to asynchronous evaluation queue (high priority on anomaly)
+										await enqueueEvalJob(c.env.DB, {
+											traceId: tracer?.rootSpan?.traceId || crypto.randomUUID(),
+											sessionId: activeConvId,
+											userId: user.userId,
+											priority: hasAnomaly || hasIssue ? 'high' : 'normal',
+											userMessage: body.message,
+											assistantOutput: streamedText,
+											toolResultsJson: capturedToolResults.length > 0 ? JSON.stringify(capturedToolResults) : null,
+											triggerReason: hasAnomaly ? 'code_eval_failure' : (hasIssue ? 'model_issue' : 'random_sample')
+										});
 									} catch (evalErr) {
 										console.warn('[Eval] Post-production evaluation error:', evalErr);
+									}
+								} else if (turnDurationMs > 25000 && streamedText) {
+									// Enqueue SLA breach turns for async evaluation
+									try {
+										await enqueueEvalJob(c.env.DB, {
+											traceId: tracer?.rootSpan?.traceId || crypto.randomUUID(),
+											sessionId: activeConvId,
+											userId: user.userId,
+											priority: 'high',
+											userMessage: body.message,
+											assistantOutput: streamedText,
+											toolResultsJson: capturedToolResults.length > 0 ? JSON.stringify(capturedToolResults) : null,
+											triggerReason: 'sla_breach'
+										});
+									} catch (queueErr) {
+										console.warn('[Eval] Failed to enqueue SLA breach turn:', queueErr);
 									}
 								}
 							}

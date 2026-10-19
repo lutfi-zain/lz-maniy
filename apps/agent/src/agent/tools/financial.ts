@@ -273,7 +273,11 @@ export function createFinancialTools(reedrichUrl: string, token: string, fetcher
 			parameters: z.object({}),
 			execute: async () => {
 				const res = await request('/api/v1/categories');
-				if (!res.ok) throw new Error(`get_categories failed: ${res.status}`);
+				if (!res.ok) {
+					const errText = await res.text().catch(() => '');
+					console.warn(`[get_categories] ReedRich returned ${res.status}: ${errText}`);
+					return [];
+				}
 				const data = (await res.json()) as CategoryRecord[];
 				return data.map((c) => ({ id: c.categoryId, name: c.categoryName, type: c.categoryType, icon: c.categoryIcon }));
 			}

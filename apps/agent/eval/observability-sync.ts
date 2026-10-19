@@ -64,22 +64,25 @@ async function syncLangfusePrompts(baseUrl: string, authHeader: string): Promise
 			name: 'system-baseline',
 			prompt: readPromptText('system-baseline.txt', 'Anda adalah Maniy Financial Intelligence Agent (Baseline Verbose).'),
 			labels: ['baseline', 'production'],
-			tags: ['financial-governance', 'maniy-agent'],
-			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2 }
+			tags: ['financial-governance', 'maniy-agent', 'decision-matrix-v115', 'horizon-aware'],
+			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2, version: '1.15.0' },
+			commitMessage: 'Sync canonical system-baseline with Intent-to-Tool Decision Matrix & Horizon v1.15.0'
 		},
 		{
 			name: 'system-compact',
 			prompt: readPromptText('system-compact.txt', 'Maniy Agent (Compact Token-Optimized).'),
 			labels: ['compact', 'staging'],
-			tags: ['token-optimized', 'maniy-agent'],
-			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2 }
+			tags: ['token-optimized', 'maniy-agent', 'decision-matrix-v115', 'horizon-aware'],
+			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2, version: '1.15.0' },
+			commitMessage: 'Sync token-compact prompt with condensed Decision Matrix & Horizon v1.15.0'
 		},
 		{
 			name: 'system-fewshot',
 			prompt: readPromptText('system-fewshot.txt', 'Maniy Agent (Few-Shot Telegram Golden).'),
 			labels: ['fewshot', 'experimental'],
-			tags: ['fewshot-golden', 'maniy-agent'],
-			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2 }
+			tags: ['fewshot-golden', 'maniy-agent', 'horizon-planning'],
+			config: { model: 'google-antigravity/gemini-3.8-flash', temperature: 0.2, version: '1.15.0' },
+			commitMessage: 'Sync few-shot prompt with Horizon multi-month planning scenario v1.15.0'
 		}
 	];
 
@@ -98,7 +101,7 @@ async function syncLangfusePrompts(baseUrl: string, authHeader: string): Promise
 				labels: p.labels,
 				tags: p.tags,
 				config: p.config,
-				commitMessage: `Sync prompt ${p.name} from Maniy LLMOps suite`
+				commitMessage: p.commitMessage || `Sync prompt ${p.name} from Maniy LLMOps suite`
 			})
 		});
 

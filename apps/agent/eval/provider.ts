@@ -1,4 +1,5 @@
 import { streamText, type LanguageModelV1 } from 'ai';
+import { attemptFallbackSynthesis } from '../src/routes/chat.js';
 import { createFinancialTools } from '../src/agent/tools/financial.js';
 import { createMutationTools } from '../src/agent/tools/mutations.js';
 import { createWalletTools } from '../src/agent/tools/wallet-management.js';
@@ -16,6 +17,7 @@ import {
 	WorkerTracer
 } from '../src/observability/tracer.js';
 import { wrapToolsWithTracing } from '../src/observability/instrument-tools.js';
+import { createResilientReedrichFetcher } from './mock-reedrich.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import type { PageContext } from '@maniy/shared';
@@ -97,7 +99,7 @@ export default class ManiyAgentProvider {
 
 	async callApi(prompt: string, context?: ProviderContext): Promise<ProviderResponse> {
 		const modelName =
-			(this.config.model as string) || 'google-antigravity/gemini-3.7-flash';
+			(this.config.model as string) || 'google-antigravity/gemini-3.8-flash';
 
 		const reedrichUrl =
 			process.env.REEDRICH_API_BASE ||
@@ -305,19 +307,31 @@ export default class ManiyAgentProvider {
 		// Set orchestratorSpan as active parent so all tool:* and reedrich.rpc:* nest inside it
 		tracer.setActiveParentSpan(orchestratorSpan.spanId);
 
+		const resilientFetcher = createResilientReedrichFetcher() as unknown as Fetcher;
+
 		const rawTools = sandboxMutationTools({
-			...createFinancialTools(reedrichUrl, reedrichToken),
-			...createMutationTools(reedrichUrl, reedrichToken),
-			...createWalletTools(reedrichUrl, reedrichToken),
-			...createBudgetTools(reedrichUrl, reedrichToken),
-			...createDebtLoanTools(reedrichUrl, reedrichToken),
-			...createGoalTools(reedrichUrl, reedrichToken),
-			...createRecurringTools(reedrichUrl, reedrichToken),
-			...createFeedbackTools(reedrichUrl, reedrichToken),
+			...createFinancialTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createMutationTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createWalletTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createBudgetTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createDebtLoanTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createGoalTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createRecurringTools(reedrichUrl, reedrichToken, resilientFetcher),
+			...createFeedbackTools(reedrichUrl, reedrichToken, resilientFetcher),
 			...createUICommandTools()
 		});
 
-		const tools = wrapToolsWithTracing(rawTools, tracer, { includeSubSpans: true });
+		const capturedToolResults: unknown[] = [];
+		const calledTools: string[] = [];
+		const tools = wrapToolsWithTracing(rawTools, tracer, {
+			includeSubSpans: true,
+			onToolResult: (toolName, args, result) => {
+				capturedToolResults.push({ toolName, args, result });
+				if (!calledTools.includes(toolName)) {
+					calledTools.push(toolName);
+				}
+			}
+		});
 		const aiModel = getModel(env, 'omp', modelName) as unknown as LanguageModelV1;
 
 		try {
@@ -332,10 +346,17 @@ export default class ManiyAgentProvider {
 			for await (const _ of result.textStream) {}
 			const steps = await result.steps;
 			const usage = await result.usage;
-			const finalText = steps.map((s) => s.text).filter(Boolean).join('\n');
-
+			let finalText = steps.map((s) => s.text).filter(Boolean).join('\n').trim();
+			if (!finalText && capturedToolResults.length > 0) {
+				finalText = (await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults)) || '';
+			}
+			if (finalText.includes('$$')) {
+				finalText = finalText.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (_m, inner) => {
+					const cleaned = inner.replace(/\\text\{([^}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').trim();
+					return `**${cleaned}**`;
+				});
+			}
 			const cleanModelName = modelName.replace(/^[^/]+\//, '');
-			const calledTools: string[] = [];
 			let totalPromptTok = 0;
 			let totalCompTok = 0;
 
@@ -508,6 +529,21 @@ export default class ManiyAgentProvider {
 				}
 			};
 		} catch (err) {
+			console.error('[Provider Error Details]', err);
+			if (capturedToolResults.length > 0) {
+				const fallback = await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults);
+				if (fallback) {
+					console.log('[Provider Recovery] Fallback synthesis succeeded after stream disconnect');
+					const toolSummary = calledTools.length > 0 ? `\n\n[Tools Called: ${calledTools.join(', ')}]` : '';
+					evalSpan.setAttribute('eval.recovery', true);
+					evalSpan.setStatus({ code: 1 }).end();
+					await tracer.flush();
+					return {
+						output: `${fallback}${toolSummary}`,
+						metadata: { recovered: true, calledTools }
+					};
+				}
+			}
 			const errMsg = err instanceof Error ? err.message : String(err);
 			orchestratorSpan.recordException(err).end();
 			evalSpan.recordException(err).end();

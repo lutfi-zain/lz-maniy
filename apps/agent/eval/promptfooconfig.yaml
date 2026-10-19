@@ -14,20 +14,19 @@ prompts:
 
 providers:
   - id: "file://provider.ts"
-    label: "Gemini 3.7 Flash (Default)"
-    config:
-      model: "google-antigravity/gemini-3.7-flash"
-
-  - id: "file://provider.ts"
-    label: "Gemini 3.8 Flash (High Tier)"
+    label: "Gemini 3.8 Flash (Primary)"
     config:
       model: "google-antigravity/gemini-3.8-flash"
 
+  - id: "file://provider.ts"
+    label: "Gemini 3.1 Flash Lite (Fast)"
+    config:
+      model: "google-antigravity/gemini-3.1-flash-lite"
 defaultTest:
   options:
+    timeoutMs: 180000
     provider:
       id: "file://grader.ts"
-
 tests: "file://promptfoo-tests.yaml"
 
 evaluateOptions:

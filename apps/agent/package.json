@@ -10,7 +10,9 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"phoenix:sync": "bun run eval/phoenix-suite.ts",
-		"observability:sync": "bun run eval/observability-sync.ts"
+		"observability:sync": "bun run eval/observability-sync.ts",
+		"eval:export-candidates": "bun run eval/flywheel-sync.ts export",
+		"flywheel:sync": "bun run eval/flywheel-sync.ts all"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^1.2.22",

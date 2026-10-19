@@ -3,7 +3,7 @@ import os from 'node:os';
 
 export default class OmpGraderProvider {
 	id(): string {
-		return 'omp-grader-gemini-3.7-flash';
+		return 'omp-grader-gemini-3.8-flash';
 	}
 
 	async callApi(prompt: string): Promise<{ output: string }> {
@@ -25,7 +25,7 @@ export default class OmpGraderProvider {
 				Authorization: `Bearer ${ompKey}`
 			},
 			body: JSON.stringify({
-				model: 'google-antigravity/gemini-3.7-flash',
+				model: 'google-antigravity/gemini-3.8-flash',
 				messages: [
 					{
 						role: 'system',

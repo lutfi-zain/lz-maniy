@@ -4,6 +4,9 @@ compatibility_date = "2024-09-23"
 
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
+[triggers]
+crons = ["*/5 * * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "maniyy-agent-db"
@@ -30,3 +33,4 @@ LANGFUSE_ENABLED = "true"
 # OMP_GATEWAY_KEY
 # LANGFUSE_PUBLIC_KEY
 # LANGFUSE_SECRET_KEY
+# EVAL_ADMIN_KEY
