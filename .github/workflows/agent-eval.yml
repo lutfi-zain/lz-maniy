@@ -14,6 +14,8 @@ jobs:
     name: Evaluate Reasoning & Tool Accuracy
     runs-on: ubuntu-latest
     env:
+      PUBLIC_API_URL: https://reedrich-mcp.lutfidmz.workers.dev
+      PUBLIC_AGENT_URL: https://maniyy-agent.lutfidmz.workers.dev
       OMP_GATEWAY_URL: https://ai.membran.app/v1
       OMP_GATEWAY_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
       OPENAI_API_KEY: ${{ secrets.OMP_GATEWAY_KEY }}

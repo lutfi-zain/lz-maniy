@@ -14,14 +14,14 @@ jobs:
     name: Evaluate Reasoning, Accuracy & Quality Gate
     runs-on: ubuntu-latest
     env:
+      PUBLIC_API_URL: https://reedrich-mcp.lutfidmz.workers.dev
+      PUBLIC_AGENT_URL: https://maniyy-agent.lutfidmz.workers.dev
       OMP_GATEWAY_URL: https://ai.membran.app/v1
       OMP_GATEWAY_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
       OPENAI_API_KEY: ${{ secrets.OMP_GATEWAY_KEY }}
       OPENAI_BASE_URL: https://ai.membran.app/v1
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       REEDRICH_TEST_API_TOKEN: ${{ secrets.REEDRICH_TEST_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
 
       - uses: oven-sh/setup-bun@v2
         with:
