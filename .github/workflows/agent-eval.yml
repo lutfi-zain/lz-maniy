@@ -13,6 +13,7 @@ jobs:
   eval-gate:
     name: Evaluate Reasoning & Tool Accuracy
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       PUBLIC_API_URL: https://reedrich-mcp.lutfidmz.workers.dev
       PUBLIC_AGENT_URL: https://maniyy-agent.lutfidmz.workers.dev

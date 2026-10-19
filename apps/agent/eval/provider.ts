@@ -97,7 +97,7 @@ export default class ManiyAgentProvider {
 
 	async callApi(prompt: string, context?: ProviderContext): Promise<ProviderResponse> {
 		const modelName =
-			(this.config.model as string) || 'google-antigravity/gemini-3.7-flash';
+			(this.config.model as string) || 'google-antigravity/gemini-3.8-flash';
 
 		const reedrichUrl =
 			process.env.REEDRICH_API_BASE ||
