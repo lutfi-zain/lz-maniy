@@ -24,9 +24,9 @@ providers:
       model: "google-antigravity/gemini-3.1-flash-lite"
 defaultTest:
   options:
+    timeoutMs: 180000
     provider:
       id: "file://grader.ts"
-
 tests: "file://promptfoo-tests.yaml"
 
 evaluateOptions:

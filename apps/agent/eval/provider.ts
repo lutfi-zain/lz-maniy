@@ -1,4 +1,5 @@
 import { streamText, type LanguageModelV1 } from 'ai';
+import { attemptFallbackSynthesis } from '../src/routes/chat.js';
 import { createFinancialTools } from '../src/agent/tools/financial.js';
 import { createMutationTools } from '../src/agent/tools/mutations.js';
 import { createWalletTools } from '../src/agent/tools/wallet-management.js';
@@ -317,7 +318,13 @@ export default class ManiyAgentProvider {
 			...createUICommandTools()
 		});
 
-		const tools = wrapToolsWithTracing(rawTools, tracer, { includeSubSpans: true });
+		const capturedToolResults: unknown[] = [];
+		const tools = wrapToolsWithTracing(rawTools, tracer, {
+			includeSubSpans: true,
+			onToolResult: (toolName, args, result) => {
+				capturedToolResults.push({ toolName, args, result });
+			}
+		});
 		const aiModel = getModel(env, 'omp', modelName) as unknown as LanguageModelV1;
 
 		try {
@@ -508,6 +515,21 @@ export default class ManiyAgentProvider {
 				}
 			};
 		} catch (err) {
+			console.error('[Provider Error Details]', err);
+			if (capturedToolResults.length > 0) {
+				const fallback = await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults);
+				if (fallback) {
+					console.log('[Provider Recovery] Fallback synthesis succeeded after stream disconnect');
+					const toolSummary = calledTools.length > 0 ? `\n\n[Tools Called: ${calledTools.join(', ')}]` : '';
+					evalSpan.setAttribute('eval.recovery', true);
+					evalSpan.setStatus({ code: 1 }).end();
+					await tracer.flush();
+					return {
+						output: `${fallback}${toolSummary}`,
+						metadata: { recovered: true, calledTools }
+					};
+				}
+			}
 			const errMsg = err instanceof Error ? err.message : String(err);
 			orchestratorSpan.recordException(err).end();
 			evalSpan.recordException(err).end();

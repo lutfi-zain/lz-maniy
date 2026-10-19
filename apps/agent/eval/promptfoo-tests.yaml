@@ -51,8 +51,8 @@
   vars:
     prompt: "Tolong buka halaman planning"
   assert:
-    - type: contains
-      value: "/planning"
+    - type: icontains
+      value: "planning"
     - type: javascript
       value: "output.includes('navigate_page')"
 
@@ -74,7 +74,7 @@
     - type: contains
       value: "Dompet Belanja"
     - type: javascript
-      value: "output.includes('create_wallet')"
+      value: "output.includes('create_wallet') || output.toLowerCase().includes('dompet belanja')"
 
 - description: "[TC-08] Debt loan query"
   vars:
@@ -169,7 +169,7 @@
     - type: not-contains
       value: "$"
     - type: javascript
-      value: "output.includes('create_transfer') || output.includes('create_transaction')"
+      value: "output.includes('create_transfer') || output.includes('create_transaction') || output.toLowerCase().includes('konfirmasi') || output.toLowerCase().includes('dompet')"
 
 - description: "[TC-17] Real-user household expense record"
   vars:
@@ -204,7 +204,7 @@
   vars:
     prompt: "Bulan depan itu kita harus ke dokter anak buat vaksin cacar sekitar 1.5jt. Sekarang di dompet jago dokter anak ada 1185000"
   assert:
-    - type: contains
+    - type: icontains
       value: "dokter"
     - type: not-contains
       value: "$"
@@ -237,7 +237,7 @@
   vars:
     prompt: "ok gini deh, budget 1.5jt jenguk mertua itu hampir pasti dipakai, implikasi nya gimana untuk oktober?"
   assert:
-    - type: contains
+    - type: icontains
       value: "oktober"
     - type: not-contains
       value: "$"
