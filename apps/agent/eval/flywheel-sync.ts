@@ -113,7 +113,9 @@ export function exportCandidatesToDataset(candidates: DBEvalCandidate[], dataset
 				const parsed = JSON.parse(candidate.sanitized_tool_calls_json);
 				if (Array.isArray(parsed)) {
 					requiredTools = parsed
-						.map((t: Record<string, unknown>) => (typeof t.name === 'string' ? t.name : ''))
+						.map((t: Record<string, unknown>) =>
+							typeof t.toolName === 'string' ? t.toolName : typeof t.name === 'string' ? t.name : ''
+						)
 						.filter(Boolean);
 				}
 			} catch {

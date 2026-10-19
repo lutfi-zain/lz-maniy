@@ -31,7 +31,7 @@ export async function compactConversation(
 		const result = await generateText({
 			model: summarizerModel as unknown as LanguageModelV1,
 			system:
-				'You are a concise financial assistant summarizer. Summarize the following past conversation history into 1-2 dense paragraphs. Preserve all key financial figures, wallet names, transaction amounts, user preferences, and any unfinished commitments or actions. Do not add commentary.',
+				'You are a concise financial assistant summarizer. Summarize the following past conversation history into an extractive financial ledger snapshot followed by a brief dialogue recap.\nStructure your output as:\n### Financial Snapshot\n- Latest Known Balances: [List by wallet name/ID]\n- Active Commitments / Planned Transactions: [List any upcoming commitments, target goals, or pending actions]\n- User Preferences & Directives: [List specific formatting or budgeting constraints]\n### Dialogue Summary\n[1-2 dense paragraphs of conversational context]. Preserve all exact figures (Rp X.XXX.XXX) without commentary.',
 			prompt: `Past conversation:\n\n${conversationText}`
 		});
 

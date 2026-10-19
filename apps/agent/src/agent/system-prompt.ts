@@ -244,13 +244,15 @@ export function buildSystemPrompt(
 	pageContext: PageContext,
 	userFullName: string,
 	agentMemory?: AgentMemory,
-	statementSummary?: string | null
+	statementSummary?: string | null,
+	compactionSummary?: string | null
 ) {
 	const temporal = buildTemporalSection();
 
 	return [
 		buildIdentitySection(userFullName),
 		temporal.section,
+		compactionSummary ? `RINGKASAN SESI LAMPAU (COMPACTION):\n${compactionSummary}` : '',
 		buildMemorySection(agentMemory),
 		buildPageContextSection(pageContext),
 		statementSummary ? `KONTEKS REKENING KORAN:\n${statementSummary}` : '',
@@ -258,5 +260,5 @@ export function buildSystemPrompt(
 		buildBehaviorProtocol(),
 		buildAccountingPrinciples(temporal),
 		buildCommunicationStyle(agentMemory?.formattingPreferences)
-	].join('\n\n');
+	].filter(Boolean).join('\n\n');
 }

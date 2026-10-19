@@ -124,7 +124,7 @@ describe('Tiered Evaluators Suite', () => {
 				[{ balance: '5.000.000' }]
 			);
 			expect(cleanTurn.hasAnomaly).toBe(false);
-			expect(cleanTurn.results.length).toBe(4);
+			expect(cleanTurn.results.length).toBe(5);
 
 			const badTurn = evaluateTurn(
 				'Berapa saldo saya?',
@@ -132,6 +132,19 @@ describe('Tiered Evaluators Suite', () => {
 				[]
 			);
 			expect(badTurn.hasAnomaly).toBe(true);
+		});
+
+		it('incorporates telemetry for iteration efficiency evaluation', () => {
+			const turnWithLoop = evaluateTurn(
+				'Berapa saldo?',
+				'Saldo Rp 10.000',
+				[{ balance: '10.000' }],
+				{ stepCount: 5, circuitBreakerTripped: true }
+			);
+			expect(turnWithLoop.hasAnomaly).toBe(true);
+			const iterResult = turnWithLoop.results.find((r) => r.name === 'iteration_efficiency');
+			expect(iterResult?.score).toBe(0.0);
+			expect(iterResult?.label).toBe('fail');
 		});
 	});
 });

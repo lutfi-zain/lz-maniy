@@ -5,7 +5,7 @@ The evaluation flywheel provides an asynchronous out-of-band evaluation queue an
 ## Requirements
 
 ### Requirement: Asynchronous Evaluation Queue
-The agent backend SHALL enqueue conversational turns into a persistent evaluation queue without blocking user streaming response time or consuming user-facing Worker CPU quotas.
+The agent backend SHALL enqueue conversational turns into a persistent evaluation queue without blocking user streaming response time or consuming user-facing Worker CPU quotas, supporting trigger classifications for guardrail trips and iteration exhaustion.
 
 #### Scenario: Enqueuing high-priority flagged turns
 - **WHEN** a chat turn triggers an anomaly (`score < 0.5` in deterministic code evals, response latency > 25 seconds, or explicit negative feedback thumbs-down)
@@ -30,6 +30,14 @@ The agent backend SHALL enqueue conversational turns into a persistent evaluatio
 #### Scenario: Reaping stalled processing jobs
 - **WHEN** a queue drain cycle begins
 - **THEN** the system automatically resets any job with `status = 'processing'` whose `locked_at` timestamp is older than 600 seconds back to `status = 'pending'`, incrementing `attempts`.
+
+#### Scenario: Guardrail trip enqueuing
+- **WHEN** an input prompt injection attempt is blocked or an in-band numeric ungrounded output is detected
+- **THEN** the turn is asynchronously enqueued with `trigger_reason` set to `'guardrail_trip'` for out-of-band analysis.
+
+#### Scenario: Iteration exhaustion enqueuing
+- **WHEN** an agent execution hits the maximum step limit or trips the loop breaker circuit
+- **THEN** the turn is asynchronously enqueued with `trigger_reason` set to `'iteration_exhaustion'` for trajectory evaluation.
 
 ### Requirement: Semantic LLM-as-a-Judge Evaluation
 The evaluation pipeline SHALL execute calibrated model-graded evaluations against enqueued turns using a zero-temperature judge model via the OMP AI Gateway, producing structured evaluations with Chain-of-Thought reasoning.
@@ -66,7 +74,7 @@ The evaluation flywheel SHALL scrub all Personally Identifiable Information (PII
 - **THEN** the system recursively traverses `tool_results_json`, masks all bank accounts, phone numbers, and recipient names, and serializes the result into `sanitized_tool_calls_json`.
 
 ### Requirement: Production-to-Dataset Curation Flywheel
-The system SHALL curate failing production traces into structured dataset candidates and synchronize them across local and remote evaluation registries.
+The system SHALL curate failing production traces into structured dataset candidates with expanded domain categories for safety and compaction retention, synchronizing them into CI regression suites.
 
 #### Scenario: Staging failed traces as dataset candidates
 - **WHEN** an evaluated turn receives an overall LLM judge score below 0.5 or explicit negative feedback thumbs-down
@@ -80,6 +88,14 @@ The system SHALL curate failing production traces into structured dataset candid
 - **WHEN** an engineer runs `bun run eval:export-candidates`
 - **THEN** the system serializes staged failure cases into `EvalTestCase` objects formatted for `apps/agent/eval/dataset.ts`, discarding real session/user identifiers and emitting synthetic `TC-PROD-XXX` test cases for Promptfoo CI gates.
 
+#### Scenario: Guardrail failure classification
+- **WHEN** an enqueued turn fails guardrail compliance or exhibits injection vulnerability during judge evaluation
+- **THEN** the candidate is staged with domain category `'guardrail_safety'` and rubric `'guardrail_compliance'` for export to Promptfoo and Phoenix datasets.
+
+#### Scenario: Compaction retention failure classification
+- **WHEN** an enqueued turn demonstrates lost entity awareness or financial figures distorted by compaction
+- **THEN** the candidate is staged with domain category `'compaction_retention'` and rubric `'context_retention'`.
+
 ### Requirement: Telemetry and Alerting Parity
 The asynchronous evaluation system SHALL propagate judge scores and incident alerts to observability platforms with trace correlation.
 
@@ -90,3 +106,10 @@ The asynchronous evaluation system SHALL propagate judge scores and incident ale
 #### Scenario: Triggering Telegram alerts on critical semantic regressions
 - **WHEN** an evaluated turn exhibits a severe failure (hallucinated balance or unauthorized locked cash liquidation)
 - **THEN** the system dispatches an alert message to Telegram via the configured incident bot detailing the trace ID, score, failure explanation, and user message snippet.
+
+### Requirement: Dual-Track Evaluation Rubric for Guardrail and Memory Fidelity
+The asynchronous evaluation judge SHALL evaluate enqueued traces against dedicated rubrics for guardrail attack resistance and post-compaction memory fidelity in addition to financial soundness.
+
+#### Scenario: Judge evaluates multi-turn trace post-compaction
+- **WHEN** evaluating a conversation that underwent compaction
+- **THEN** the judge checks whether active wallet balances and historical commitments mentioned in earlier turns remain consistent in the assistant's post-compaction advice.

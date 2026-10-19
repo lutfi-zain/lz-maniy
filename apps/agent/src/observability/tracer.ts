@@ -298,6 +298,31 @@ export function buildOpenInferenceToolAttributes(params: {
 	};
 }
 
+export function buildIterationSpanAttributes(params: {
+	stepCount: number;
+	maxSteps: number;
+	taskComplexity?: string;
+	loopBreakerTripped?: boolean;
+}): SpanAttributes {
+	return {
+		'agent.iteration.count': params.stepCount,
+		'agent.iteration.max_steps': params.maxSteps,
+		'agent.iteration.complexity': params.taskComplexity || 'standard',
+		'agent.iteration.loop_breaker_tripped': params.loopBreakerTripped ?? false
+	};
+}
+
+export function buildGuardrailSpanAttributes(params: {
+	tier: number;
+	action: 'allow' | 'block' | 'sanitize';
+	violationType?: string;
+}): SpanAttributes {
+	return {
+		'guardrail.tier': params.tier,
+		'guardrail.action': params.action,
+		'guardrail.violation_type': params.violationType || 'none'
+	};
+}
 export class WorkerSpan {
 	public readonly traceId: string;
 	public readonly spanId: string;
