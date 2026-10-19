@@ -11,6 +11,12 @@ import { statementsRouter } from './routes/statements.js';
 import { feedbackRouter } from './routes/feedback.js';
 import { evalRouter, drainEvalQueue } from './routes/eval.js';
 import type { Env } from './types.js';
+/**
+ * @walkthrough 01.03:hono-routing-layer
+ * @topic Edge HTTP & Middleware Layer
+ * @ref https://hono.dev/getting-started/cloudflare-workers | okf://knowledge/vps-infra/concepts/hyperdrive-edge.md
+ * @notes Routing REST/SSE berperforma tinggi menggunakan Hono dengan middleware autentikasi Bearer dan distributed tracing propagation.
+ */
 const app = new Hono<{ Bindings: Env }>();
 
 // Global error handler to surface exact stack trace in JSON response
@@ -67,6 +73,12 @@ app.route('/api/eval', evalRouter);
 // Health check
 app.get('/', (c) => c.json({ status: 'ok', service: 'maniyy-agent' }));
 
+/**
+ * @walkthrough 01.01:worker-entrypoint
+ * @topic Edge Runtime & Lifecycle
+ * @ref https://developers.cloudflare.com/workers/ | okf://knowledge/vps-infra/concepts/hyperdrive-edge.md
+ * @notes Menginisialisasi runtime V8 isolate Cloudflare Worker yang mengekspor handler fetch (HTTP streaming) dan scheduled (cron queue draining).
+ */
 export default {
 	fetch: app.fetch,
 	async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {

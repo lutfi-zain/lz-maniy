@@ -1285,9 +1285,10 @@ function runPsql(sql: string): string {
 }
 
 /**
- * Synchronizes Prompts Hub, Evaluators, Datasets, Splits, Experiments, Judge Calibration,
- * Multi-Source Annotations (CODE, LLM, HUMAN, Axial Coding Notes, Document Annotations),
- * and Deep OpenInference Span Attributes into the self-hosted Arize Phoenix instance.
+ * @walkthrough 05.04:eval-phoenix-suite
+ * @topic Level 3: Offline Benchmarks & Golden Datasets
+ * @ref https://arize.com/docs/phoenix/datasets | okf://knowledge/ai-evals-course/fase-4-dataset-engineering-dan-synthetic-curation.md
+ * @notes Sinkronisasi taksonomi 14 kategori bug ke Arize Phoenix dataset dan prompt version repository untuk eksperimen regresi offline mendalam.
  */
 export async function syncPhoenixFullSuite(): Promise<void> {
 	console.log('🚀 Synchronizing Arize Phoenix LLMOps Suite (Prompts, Evaluators, Datasets, Experiments, & 6 Enhancements)...');

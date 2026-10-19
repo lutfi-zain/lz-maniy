@@ -10,6 +10,12 @@ function sleep(ms: number): Promise<void> {
 	return promise;
 }
 
+/**
+ * @walkthrough 05.03:eval-promptfoo-gate
+ * @topic Level 2: Pre-Deploy CI Grader
+ * @ref https://promptfoo.dev/docs/configuration/custom-providers/ | okf://knowledge/ai-evals-course/fase-6-pre-deployment-cicd-dan-matrix-optimization.md
+ * @notes Provider LLM Grader khusus untuk Promptfoo yang memanggil OMP AI Gateway dengan rubrik CoT berformat JSON.
+ */
 export default class OmpGraderProvider {
 	id(): string {
 		return 'omp-grader-gemini-3.8-flash';

@@ -3,6 +3,12 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { upsertAgentMemory } from '../../db/queries.js';
 
+/**
+ * @walkthrough 04.03:long-term-memory
+ * @topic Persistent Semantic Memory
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/vps-infra/concepts/hindsight-memory.md
+ * @notes Ekstraksi dan penyimpanan preferensi penting pengguna secara terstruktur ke SQLite D1 untuk disuntikkan kembali pada sesi berikutnya.
+ */
 export function createMemoryTools(db: D1Database, userId: string) {
 	return {
 		save_memory: tool({

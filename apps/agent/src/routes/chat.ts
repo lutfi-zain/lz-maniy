@@ -44,6 +44,12 @@ import { compactConversation } from '../agent/compaction-worker.js';
 import type { Env } from '../types.js';
 import type { ChatStreamRequest } from '@maniy/shared';
 
+/**
+ * @walkthrough 02.03:resilient-fallback
+ * @topic Error Recovery & Synthesis
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/ai-evals-course/fase-1-fondasi-dan-stochastic-shift.md
+ * @notes Pola pemulihan attemptFallbackSynthesis untuk merangkum hasil eksekusi tools ketika model utama gagal atau terkena timeout streaming.
+ */
 export async function attemptFallbackSynthesis(
 	aiModel: LanguageModelV1,
 	userPrompt: string,
@@ -116,6 +122,12 @@ const chatRouter = new Hono<{ Bindings: Env }>();
 
 chatRouter.use('*', authMiddleware);
 
+/**
+ * @walkthrough 02.02:edge-sse-streaming
+ * @topic Real-Time SSE Protocol
+ * @ref https://sdk.vercel.ai/docs/ai-sdk-core/streaming | okf://knowledge/langfuse-vercel-ai-sdk/fase-2-agentic-loops-tool-calls-dan-multimodal.md
+ * @notes Streaming token LLM real-time ke klien browser menggunakan Server-Sent Events (SSE) via streamText.toDataStreamResponse().
+ */
 chatRouter.post('/', async (c) => {
 	const user = c.get('user');
 	const tracer = c.get('tracer');

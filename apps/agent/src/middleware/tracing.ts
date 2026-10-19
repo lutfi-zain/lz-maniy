@@ -2,6 +2,12 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '../types.js';
 import { WorkerTracer, parseTraceParent, formatTraceParent } from '../observability/tracer.js';
 
+/**
+ * @walkthrough 05.05:eval-otel-tracing
+ * @topic Level 4: W3C Traceparent Propagation
+ * @ref https://www.w3.org/TR/trace-context/ | okf://knowledge/ai-evals-course/fase-7-post-production-observability-dan-drift.md
+ * @notes Middleware Hono untuk mengekstrak dan mempropagasi traceparent W3C context ke downstream worker spans.
+ */
 export const tracingMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
 	const rawTraceParent = c.req.header('traceparent');
 	const parsed = parseTraceParent(rawTraceParent);

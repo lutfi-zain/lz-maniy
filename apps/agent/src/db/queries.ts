@@ -513,6 +513,12 @@ export async function updateEvalJobStatus(
 		.run();
 }
 
+/**
+ * @walkthrough 05.07:dataset-flywheel
+ * @topic Closed-Loop Dataset Persistence Queries
+ * @ref https://developers.cloudflare.com/d1/ | okf://knowledge/ai-evals-course/fase-4-dataset-engineering-dan-synthetic-curation.md
+ * @notes Helper query D1 untuk leasing antrean evaluasi dan staging kandidat dataset evaluasi.
+ */
 export async function stageEvalCandidate(
 	db: D1Database,
 	candidate: {

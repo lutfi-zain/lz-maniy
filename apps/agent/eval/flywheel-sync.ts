@@ -74,7 +74,10 @@ export function fetchStagedCandidates(fixturePath?: string): DBEvalCandidate[] {
 }
 
 /**
- * Serialize candidates into EvalTestCase format and append to eval/dataset.ts
+ * @walkthrough 05.07:dataset-flywheel
+ * @topic Closed-Loop CI Regression Exporter
+ * @ref https://hamel.dev/evals/ | okf://knowledge/ai-evals-course/fase-1-fondasi-dan-stochastic-shift.md
+ * @notes CLI export utility untuk mengekspor kandidat kegagalan dari D1 ke eval/dataset.ts dan menyinkronkannya ke Phoenix & Langfuse dataset.
  */
 export function exportCandidatesToDataset(candidates: DBEvalCandidate[], datasetPath?: string): number {
 	if (candidates.length === 0) return 0;
