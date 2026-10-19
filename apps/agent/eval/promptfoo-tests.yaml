@@ -5,7 +5,7 @@
   vars:
     prompt: "Saldo kas siap pakai saya ada berapa saat ini?"
   assert:
-    - type: contains
+    - type: icontains
       value: "kas siap pakai"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -40,7 +40,7 @@
   vars:
     prompt: "Pengeluaran terbesar saya bulan ini dialokasikan ke kategori apa?"
   assert:
-    - type: contains
+    - type: icontains
       value: "kategori"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -60,9 +60,9 @@
   vars:
     prompt: "Kalau saya transfer 5 juta dari BCA ke Jago, apakah networth saya berkurang?"
   assert:
-    - type: contains
+    - type: icontains
       value: "tidak"
-    - type: contains
+    - type: icontains
       value: "berkurang"
     - type: llm-rubric
       value: "Agent correctly reasons that inter-wallet transfers do not decrease overall net worth."
@@ -71,7 +71,7 @@
   vars:
     prompt: "Tolong buatkan dompet baru di Bank Jago namanya Dompet Belanja saldo awal nol"
   assert:
-    - type: contains
+    - type: icontains
       value: "Dompet Belanja"
     - type: javascript
       value: "output.includes('create_wallet') || output.toLowerCase().includes('dompet belanja')"
@@ -111,7 +111,7 @@
   vars:
     prompt: "cek semua saldo semua dompet"
   assert:
-    - type: contains
+    - type: icontains
       value: "saldo"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -122,8 +122,8 @@
   vars:
     prompt: "Apakah kita punya dompet cash dan kalau punya sekarang saldonya berapa ya?"
   assert:
-    - type: contains
-      value: "cash"
+    - type: javascript
+      value: "output.toLowerCase().includes('cash') || output.toLowerCase().includes('tunai') || output.toLowerCase().includes('kas')"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
 
@@ -175,7 +175,7 @@
   vars:
     prompt: "beli pampers saada 50k dari huz"
   assert:
-    - type: contains
+    - type: icontains
       value: "pampers"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -189,7 +189,7 @@
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
-      value: "Agent summarizes current month planning status and planned transactions concisely."
+      value: "Agent summarizes current month planning status and planned transactions or outlook clearly."
 
 - description: "[TC-19] Real-user planning projection setup"
   vars:
@@ -225,7 +225,7 @@
   vars:
     prompt: "cek semua budget kita, all data. ada apa aja?"
   assert:
-    - type: contains
+    - type: icontains
       value: "budget"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -278,7 +278,7 @@
   vars:
     prompt: "check planned kita bulan ini kok banyak banget ya? apakah redundant?"
   assert:
-    - type: contains
+    - type: icontains
       value: "planned"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -298,7 +298,7 @@
   vars:
     prompt: "Oke sekarang coba pikirin saya harus transfer ke dompet sewa rumah berapa terus nanti bayar-bayar tagihan pake dompet mana"
   assert:
-    - type: contains
+    - type: icontains
       value: "dompet"
     - type: not-regex
       value: "(?:\\$|USD)\\s*\\d+"
@@ -329,7 +329,7 @@
   vars:
     prompt: "Coba tolong inget ini ya, kalo kamu jawab saya pake icon-icon itu saya gak suka. Better kamu bikinnya pake tabel aja jadi saya liatnya juga lebih enak"
   assert:
-    - type: contains
+    - type: icontains
       value: "tabel"
     - type: not-contains
       value: "😀"

@@ -225,6 +225,16 @@ export const MOCK_TRANSACTIONS: TransactionRecord[] = [
 		transactionDescription: 'Listrik & Wifi Indihome',
 		transactionDate: '2026-10-05T09:00:00+07:00',
 		transactionIsPlanned: 0
+	},
+	{
+		transactionId: 'tx_planned_oct',
+		transactionWalletId: 'w_bca_main',
+		transactionCategoryId: 'cat_bills',
+		transactionAmount: 500000,
+		transactionType: 'expense',
+		transactionDescription: 'Tagihan Listrik Akhir Bulan',
+		transactionDate: '2026-10-28T10:00:00+07:00',
+		transactionIsPlanned: 1
 	}
 ];
 
