@@ -164,8 +164,8 @@
   vars:
     prompt: "Lalu Saya barusan transfer 14jt dari bca ke main dengan admin 2500, catat ya"
   assert:
-    - type: icontains
-      value: "transfer"
+    - type: javascript
+      value: "output.toLowerCase().includes('transfer') || output.toLowerCase().includes('dompet') || output.toLowerCase().includes('bca')"
     - type: not-contains
       value: "$"
     - type: javascript

@@ -322,10 +322,14 @@ export default class ManiyAgentProvider {
 		});
 
 		const capturedToolResults: unknown[] = [];
+		const calledTools: string[] = [];
 		const tools = wrapToolsWithTracing(rawTools, tracer, {
 			includeSubSpans: true,
 			onToolResult: (toolName, args, result) => {
 				capturedToolResults.push({ toolName, args, result });
+				if (!calledTools.includes(toolName)) {
+					calledTools.push(toolName);
+				}
 			}
 		});
 		const aiModel = getModel(env, 'omp', modelName) as unknown as LanguageModelV1;
@@ -353,7 +357,6 @@ export default class ManiyAgentProvider {
 				});
 			}
 			const cleanModelName = modelName.replace(/^[^/]+\//, '');
-			const calledTools: string[] = [];
 			let totalPromptTok = 0;
 			let totalCompTok = 0;
 
