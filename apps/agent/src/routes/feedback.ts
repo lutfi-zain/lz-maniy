@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from '../types.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { sendTelegramAlert } from '../observability/alerts.js';
+import { enqueueEvalJob } from '../db/queries.js';
 
 export const feedbackRouter = new Hono<{ Bindings: Env }>();
 
@@ -145,7 +146,27 @@ feedbackRouter.post('/', async (c) => {
 	const feedbackId = `fb_${crypto.randomUUID()}`;
 	const now = Date.now();
 
-	// 1. Persist to D1
+	// 1. Verify tenant ownership of the message
+	let messageRow: { content: string | null; role: string; tool_results: string | null } | null = null;
+	try {
+		messageRow = await c.env.DB.prepare(
+			`SELECT m.content, m.role, m.tool_results
+			 FROM messages m
+			 JOIN conversations c ON m.conversation_id = c.id
+			 WHERE m.id = ? AND c.id = ? AND c.user_id = ?`
+		)
+			.bind(body.messageId, body.conversationId, user.userId)
+			.first<{ content: string | null; role: string; tool_results: string | null }>();
+
+		if (!messageRow) {
+			return c.json({ error: 'Message not found or unauthorized' }, 403);
+		}
+	} catch (err) {
+		console.error('[Feedback] Ownership verification error:', err);
+		return c.json({ error: 'Failed to verify message ownership' }, 500);
+	}
+
+	// 2. Persist to D1
 	try {
 		await ensureFeedbackTable(c.env.DB);
 		await c.env.DB.prepare(
@@ -177,6 +198,7 @@ feedbackRouter.post('/', async (c) => {
 		]);
 
 		// Alert trigger on negative feedback
+		// Alert and queue trigger on negative feedback
 		if (body.score < 0.5) {
 			await sendTelegramAlert(c.env, {
 				title: 'User Negative Feedback (👎)',
@@ -186,6 +208,33 @@ feedbackRouter.post('/', async (c) => {
 				reason: body.reason || 'User marked message with Thumbs Down',
 				phoenixTraceId: body.traceId
 			});
+
+			try {
+				let userPrompt = 'Negative feedback turn';
+				const prevMsg = await c.env.DB.prepare(
+					`SELECT content FROM messages
+					 WHERE conversation_id = ? AND role = 'user'
+					 ORDER BY created_at DESC LIMIT 1`
+				)
+					.bind(body.conversationId)
+					.first<{ content: string }>();
+				if (prevMsg?.content) {
+					userPrompt = prevMsg.content;
+				}
+
+				await enqueueEvalJob(c.env.DB, {
+					traceId: body.traceId || crypto.randomUUID(),
+					sessionId: body.conversationId,
+					userId: user.userId,
+					priority: 'high',
+					userMessage: userPrompt,
+					assistantOutput: messageRow?.content || '',
+					toolResultsJson: messageRow?.tool_results,
+					triggerReason: 'negative_feedback'
+				});
+			} catch (queueErr) {
+				console.warn('[Feedback] Failed to enqueue negative feedback for async eval:', queueErr);
+			}
 		}
 	})();
 

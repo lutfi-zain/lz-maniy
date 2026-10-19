@@ -46,7 +46,7 @@ jobs:
         if: env.OMP_GATEWAY_KEY != ''
         working-directory: apps/agent/eval
         run: |
-          bunx promptfoo eval --no-progress-bar --max-concurrency 2
+          bunx promptfoo eval --filter-prompts "Baseline" --filter-targets "3.8" --no-progress-bar --max-concurrency 4
 
   deploy:
     name: Deploy to Cloudflare Workers

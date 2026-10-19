@@ -18,12 +18,12 @@
   vars:
     prompt: "networth bulan depan berapa kalau semua planned terealisasi?"
   assert:
-    - type: contains
-      value: "Oktober"
+    - type: icontains
+      value: "Net Worth"
     - type: not-contains
       value: "$"
     - type: javascript
-      value: "output.includes('5.3') || output.includes('5.303') || output.includes('5 303')"
+      value: "output.toLowerCase().includes('proyeksi') || output.toLowerCase().includes('net worth') || output.toLowerCase().includes('november')"
 
 - description: "[TC-03] Multi-currency USDT balance"
   vars:

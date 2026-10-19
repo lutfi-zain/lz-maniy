@@ -338,3 +338,256 @@ export async function upsertAgentMemory(
 
 	return merged;
 }
+
+export interface DBEvalQueueJob {
+	id: string;
+	trace_id: string;
+	session_id: string;
+	user_id: string;
+	priority: 'high' | 'normal';
+	status: 'pending' | 'processing' | 'completed' | 'failed';
+	user_message: string;
+	assistant_output: string;
+	tool_results_json: string | null;
+	trigger_reason: string;
+	attempts: number;
+	last_error: string | null;
+	locked_at: number | null;
+	created_at: number;
+	processed_at: number | null;
+}
+
+export interface DBEvalCandidate {
+	id: string;
+	source_trace_id: string;
+	source_session_id: string;
+	evaluator_rubric: string;
+	domain_category: string;
+	sanitized_prompt: string;
+	sanitized_output: string;
+	sanitized_tool_calls_json: string | null;
+	judge_score: number;
+	judge_reasoning: string;
+	status: 'staged' | 'synced_remote' | 'exported_ci' | 'rejected';
+	created_at: number;
+}
+
+export async function enqueueEvalJob(
+	db: D1Database,
+	params: {
+		traceId: string;
+		sessionId: string;
+		userId: string;
+		priority?: 'high' | 'normal';
+		userMessage: string;
+		assistantOutput: string;
+		toolResultsJson?: string | null;
+		triggerReason: string;
+	}
+): Promise<DBEvalQueueJob> {
+	const id = crypto.randomUUID();
+	const now = Date.now();
+	const priority = params.priority || 'normal';
+	const toolResultsJson = params.toolResultsJson ?? null;
+
+	await db
+		.prepare(
+			`INSERT INTO eval_queue (
+				id, trace_id, session_id, user_id, priority, status,
+				user_message, assistant_output, tool_results_json, trigger_reason,
+				attempts, created_at
+			) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, 0, ?)`
+		)
+		.bind(
+			id,
+			params.traceId,
+			params.sessionId,
+			params.userId,
+			priority,
+			params.userMessage,
+			params.assistantOutput,
+			toolResultsJson,
+			params.triggerReason,
+			now
+		)
+		.run();
+
+	return {
+		id,
+		trace_id: params.traceId,
+		session_id: params.sessionId,
+		user_id: params.userId,
+		priority,
+		status: 'pending',
+		user_message: params.userMessage,
+		assistant_output: params.assistantOutput,
+		tool_results_json: toolResultsJson,
+		trigger_reason: params.triggerReason,
+		attempts: 0,
+		last_error: null,
+		locked_at: null,
+		created_at: now,
+		processed_at: null
+	};
+}
+
+export async function reapStaleProcessingJobs(
+	db: D1Database,
+	maxStaleSeconds: number = 600
+): Promise<number> {
+	const staleThreshold = Math.floor(Date.now() / 1000) - maxStaleSeconds;
+	const result = await db
+		.prepare(
+			`UPDATE eval_queue
+			 SET status = 'pending', locked_at = NULL, attempts = attempts + 1
+			 WHERE status = 'processing' AND locked_at IS NOT NULL AND locked_at < ?`
+		)
+		.bind(staleThreshold)
+		.run();
+	return result.meta?.changes ?? 0;
+}
+
+export async function leasePendingEvalJobs(
+	db: D1Database,
+	batchSize: number = 5,
+	priorityFilter?: 'high' | 'normal'
+): Promise<DBEvalQueueJob[]> {
+	await reapStaleProcessingJobs(db);
+
+	const nowEpoch = Math.floor(Date.now() / 1000);
+	let query = `SELECT * FROM eval_queue WHERE status = 'pending'`;
+	const bindings: (string | number)[] = [];
+
+	if (priorityFilter) {
+		query += ` AND priority = ?`;
+		bindings.push(priorityFilter);
+	}
+
+	query += ` ORDER BY CASE priority WHEN 'high' THEN 1 ELSE 2 END ASC, created_at ASC LIMIT ?`;
+	bindings.push(batchSize);
+
+	const candidateRows = await db.prepare(query).bind(...bindings).all<DBEvalQueueJob>();
+	const jobs = candidateRows.results ?? [];
+
+	if (jobs.length === 0) return [];
+
+	const leasedJobs: DBEvalQueueJob[] = [];
+	for (const job of jobs) {
+		const originalAttempts = job.attempts;
+		const updateResult = await db
+			.prepare(
+				`UPDATE eval_queue
+				 SET status = 'processing', locked_at = ?, attempts = attempts + 1
+				 WHERE id = ? AND status = 'pending'`
+			)
+			.bind(nowEpoch, job.id)
+			.run();
+
+		if ((updateResult.meta?.changes ?? 0) > 0) {
+			leasedJobs.push({
+				...job,
+				status: 'processing',
+				locked_at: nowEpoch,
+				attempts: originalAttempts + 1
+			});
+		}
+	}
+
+	return leasedJobs;
+}
+
+export async function updateEvalJobStatus(
+	db: D1Database,
+	id: string,
+	status: 'completed' | 'failed',
+	lastError?: string
+): Promise<void> {
+	const now = Date.now();
+	await db
+		.prepare(
+			`UPDATE eval_queue
+			 SET status = ?, processed_at = ?, last_error = ?, locked_at = NULL
+			 WHERE id = ?`
+		)
+		.bind(status, now, lastError ?? null, id)
+		.run();
+}
+
+export async function stageEvalCandidate(
+	db: D1Database,
+	candidate: {
+		sourceTraceId: string;
+		sourceSessionId: string;
+		evaluatorRubric: string;
+		domainCategory: string;
+		sanitizedPrompt: string;
+		sanitizedOutput: string;
+		sanitizedToolCallsJson?: string | null;
+		judgeScore: number;
+		judgeReasoning: string;
+	}
+): Promise<DBEvalCandidate> {
+	const id = crypto.randomUUID();
+	const now = Date.now();
+	const toolCallsJson = candidate.sanitizedToolCallsJson ?? null;
+
+	await db
+		.prepare(
+			`INSERT INTO eval_dataset_candidates (
+				id, source_trace_id, source_session_id, evaluator_rubric, domain_category,
+				sanitized_prompt, sanitized_output, sanitized_tool_calls_json,
+				judge_score, judge_reasoning, status, created_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'staged', ?)`
+		)
+		.bind(
+			id,
+			candidate.sourceTraceId,
+			candidate.sourceSessionId,
+			candidate.evaluatorRubric,
+			candidate.domainCategory,
+			candidate.sanitizedPrompt,
+			candidate.sanitizedOutput,
+			toolCallsJson,
+			candidate.judgeScore,
+			candidate.judgeReasoning,
+			now
+		)
+		.run();
+
+	return {
+		id,
+		source_trace_id: candidate.sourceTraceId,
+		source_session_id: candidate.sourceSessionId,
+		evaluator_rubric: candidate.evaluatorRubric,
+		domain_category: candidate.domainCategory,
+		sanitized_prompt: candidate.sanitizedPrompt,
+		sanitized_output: candidate.sanitizedOutput,
+		sanitized_tool_calls_json: toolCallsJson,
+		judge_score: candidate.judgeScore,
+		judge_reasoning: candidate.judgeReasoning,
+		status: 'staged',
+		created_at: now
+	};
+}
+
+export async function listStagedEvalCandidates(
+	db: D1Database,
+	limit: number = 50
+): Promise<DBEvalCandidate[]> {
+	const res = await db
+		.prepare(`SELECT * FROM eval_dataset_candidates WHERE status = 'staged' ORDER BY created_at ASC LIMIT ?`)
+		.bind(limit)
+		.all<DBEvalCandidate>();
+	return res.results ?? [];
+}
+
+export async function updateCandidateStatus(
+	db: D1Database,
+	id: string,
+	status: 'staged' | 'synced_remote' | 'exported_ci' | 'rejected'
+): Promise<void> {
+	await db
+		.prepare(`UPDATE eval_dataset_candidates SET status = ? WHERE id = ?`)
+		.bind(status, id)
+		.run();
+}

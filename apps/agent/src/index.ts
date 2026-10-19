@@ -9,7 +9,8 @@ import { settingsRouter } from './routes/settings.js';
 import { creditsRouter } from './routes/credits.js';
 import { statementsRouter } from './routes/statements.js';
 import { feedbackRouter } from './routes/feedback.js';
-
+import { evalRouter, drainEvalQueue } from './routes/eval.js';
+import type { Env } from './types.js';
 const app = new Hono<{ Bindings: Env }>();
 
 // Global error handler to surface exact stack trace in JSON response
@@ -61,8 +62,14 @@ app.route('/api/settings', settingsRouter);
 app.route('/api/credits', creditsRouter);
 app.route('/api/statements', statementsRouter);
 app.route('/api/chat/feedback', feedbackRouter);
+app.route('/api/eval', evalRouter);
 
 // Health check
 app.get('/', (c) => c.json({ status: 'ok', service: 'maniyy-agent' }));
 
-export default app;
+export default {
+	fetch: app.fetch,
+	async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+		ctx.waitUntil(drainEvalQueue(env, { batchSize: 5 }));
+	}
+};

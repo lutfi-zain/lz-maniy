@@ -228,17 +228,20 @@ The evaluation framework SHALL execute deterministic code evaluators and calibra
 - **WHEN** evaluating nuanced financial logic (`locked_cash_guard`, `plan_feasibility`, `tool_relevance`)
 - **THEN** the evaluation SHALL use binary (`pass`/`fail`) scoring with rationales calibrated against human ground truth with TPR $\ge$ 90% and TNR $\ge$ 90%.
 
-### Requirement: Adaptive Sampling for Continuous Production Evaluation
-The agent backend SHALL execute continuous evaluations asynchronously in `c.executionCtx.waitUntil()` without blocking user streaming response time, using an adaptive sampling strategy to respect Worker resource quotas.
+### Requirement: Continuous Evaluation and Decoupled Job Dispatch
+The agent backend SHALL execute continuous evaluations without blocking user streaming response time, performing fast deterministic assertions in `c.executionCtx.waitUntil()` and enqueuing semantic evaluation tasks into a decoupled persistent queue for scheduled execution.
+
+#### Scenario: Hybrid evaluation lifecycle
+- **WHEN** a streaming chat response completes
+- **THEN** the system executes deterministic code evaluators in `c.executionCtx.waitUntil()`, streams preliminary scores to Langfuse, and enqueues the turn into `eval_queue` for asynchronous LLM-as-a-judge evaluation if the turn meets sampling criteria or triggers an anomaly.
 
 #### Scenario: 100% Negative Signal Sampling
 - **WHEN** a turn receives negative user feedback (👎) or encounters a tool execution error
-- **THEN** the turn SHALL be evaluated at 100% sample rate.
+- **THEN** the turn SHALL be evaluated at 100% sample rate and enqueued with high priority.
 
-#### Scenario: 15% Baseline Passing Sampling
+#### Scenario: Baseline Passing Sampling
 - **WHEN** a turn completes without errors or negative feedback
-- **THEN** the turn SHALL be evaluated at a 15% random sample rate to conserve subrequest and token budgets.
-
+- **THEN** the turn SHALL be evaluated and enqueued at a 5% to 10% random sample rate to conserve subrequest and token budgets.
 ### Requirement: Telegram Incident Alert Webhook Hook
 The observability framework SHALL transmit structured incident alerts to Telegram via `@developer_ai_guweh_bot` on critical anomalies.
 
@@ -278,3 +281,10 @@ The observability synchronization suite SHALL register custom model pricing for 
 - **WHEN** the synchronization runner executes with Langfuse credentials configured
 - **THEN** model entries for `google-antigravity/gemini-3.8-flash`, `google-antigravity/gemini-3.5-flash-lite`, `google-antigravity/gemini-3.1-flash-lite`, and `google-antigravity/gemini-2.5-flash-lite` SHALL be created or updated with input and output token unit prices
 - **AND** subsequent traces ingested by Langfuse matching these model names SHALL compute non-zero estimated token costs.
+
+### Requirement: Observability Correlation for Curated Dataset Candidates
+The observability framework SHALL preserve and link original OpenTelemetry trace identifiers (`traceId`, `spanId`) and Langfuse observation IDs across curated dataset candidates and subsequent regression experiment runs.
+
+#### Scenario: Tracing dataset candidate lineage
+- **WHEN** a failed production trace is staged in `eval_dataset_candidates` and synced to Phoenix or Langfuse
+- **THEN** the metadata of the dataset example SHALL retain `source_trace_id`, `source_session_id`, and `original_anomaly_label` to enable one-click navigation from dataset items back to the historical production trace.

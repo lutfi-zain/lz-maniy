@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { streamScoresToLangfuse } from '../../routes/chat.js';
+import { enqueueEvalJob } from '../../db/queries.js';
 import type { EvaluationResult } from '../../observability/evaluators.js';
 import type { Env } from '../../types.js';
-
 describe('Chat Continuous Evaluation Scores Streaming', () => {
 	let mockFetch: Mock;
 
@@ -78,5 +78,43 @@ describe('Chat Continuous Evaluation Scores Streaming', () => {
 		await expect(
 			streamScoresToLangfuse(env, results, 'trace-123', 'conv-456')
 		).resolves.toBeUndefined();
+	});
+
+	it('verifies that enqueueEvalJob inserts into D1 queue without blocking', async () => {
+		const enqueued: Array<Record<string, unknown>> = [];
+		const mockDb = {
+			prepare(sql: string) {
+				let boundArgs: unknown[] = [];
+				return {
+					bind(...args: unknown[]) {
+						boundArgs = args;
+						return this;
+					},
+					async run() {
+						if (sql.includes('INSERT INTO eval_queue')) {
+							const [id, trace_id, session_id, user_id, priority, user_message, assistant_output, tool_results_json, trigger_reason, created_at] = boundArgs;
+							enqueued.push({ id, trace_id, session_id, user_id, priority, user_message, assistant_output, tool_results_json, trigger_reason, created_at });
+							return { meta: { changes: 1 } };
+						}
+						return { meta: { changes: 0 } };
+					}
+				};
+			}
+		} as unknown as D1Database;
+
+		await enqueueEvalJob(mockDb, {
+			traceId: 'tr-chat-999',
+			sessionId: 'sess-chat-999',
+			userId: 'user-chat-1',
+			priority: 'high',
+			userMessage: 'Test prompt',
+			assistantOutput: 'Test response',
+			triggerReason: 'code_eval_failure'
+		});
+
+		expect(enqueued.length).toBe(1);
+		expect(enqueued[0].priority).toBe('high');
+		expect(enqueued[0].trigger_reason).toBe('code_eval_failure');
+		expect(enqueued[0].trace_id).toBe('tr-chat-999');
 	});
 });
