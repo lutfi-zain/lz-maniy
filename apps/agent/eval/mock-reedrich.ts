@@ -228,25 +228,26 @@ export const MOCK_TRANSACTIONS: TransactionRecord[] = [
 	}
 ];
 
-let isLiveHealthy: boolean | null = null;
-
 /**
  * Creates an intelligent fetcher that calls live ReedRich API first,
  * but seamlessly falls back to canonical mock data if live API returns 401/403/500
  * or fails due to expired CI tokens.
  */
-export function createResilientReedrichFetcher(): { fetch: (req: Request) => Promise<Response> } {
+export function createResilientReedrichFetcher(token?: string): { fetch: (req: Request) => Promise<Response> } {
+	let isLiveHealthy: boolean =
+		!process.env.CI && Boolean(token && (token.startsWith('rd_live_') || token.startsWith('fp_live_')));
+
 	return {
 		fetch: async (req: Request): Promise<Response> => {
 			const url = new URL(req.url);
 			const path = url.pathname;
 
-			// If live API already failed (e.g. 401 or offline), bypass network immediately
-			if (isLiveHealthy !== false) {
+			// If live API is potentially healthy, probe carefully
+			if (isLiveHealthy) {
 				try {
-					const liveRes = await fetch(req, { signal: AbortSignal.timeout(2000) });
+					const clonedReq = req.clone();
+					const liveRes = await fetch(clonedReq, { signal: AbortSignal.timeout(2000) });
 					if (liveRes.ok) {
-						isLiveHealthy = true;
 						return liveRes;
 					}
 					console.warn(`[ResilientFetcher] Live API returned ${liveRes.status} for ${path}. Activating canonical mock data fallback.`);

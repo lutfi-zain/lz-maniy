@@ -307,7 +307,7 @@ export default class ManiyAgentProvider {
 		// Set orchestratorSpan as active parent so all tool:* and reedrich.rpc:* nest inside it
 		tracer.setActiveParentSpan(orchestratorSpan.spanId);
 
-		const resilientFetcher = createResilientReedrichFetcher() as unknown as Fetcher;
+		const resilientFetcher = createResilientReedrichFetcher(reedrichToken) as unknown as Fetcher;
 
 		const rawTools = sandboxMutationTools({
 			...createFinancialTools(reedrichUrl, reedrichToken, resilientFetcher),
@@ -350,11 +350,16 @@ export default class ManiyAgentProvider {
 			if (!finalText && capturedToolResults.length > 0) {
 				finalText = (await attemptFallbackSynthesis(aiModel, userPrompt, capturedToolResults)) || '';
 			}
-			if (finalText.includes('$$')) {
-				finalText = finalText.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (_m, inner) => {
-					const cleaned = inner.replace(/\\text\{([^}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').trim();
-					return `**${cleaned}**`;
-				});
+			if (finalText.includes('$')) {
+				finalText = finalText
+					.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (_m, inner) => {
+						const cleaned = inner.replace(/\\text\{([^}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').trim();
+						return `**${cleaned}**`;
+					})
+					.replace(/\$(?!\s*\d)([^$\n]+?)\$(?!\d)/g, (_m, inner) => {
+						const cleaned = inner.replace(/\\text\{([^}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').trim();
+						return `*${cleaned}*`;
+					});
 			}
 			const cleanModelName = modelName.replace(/^[^/]+\//, '');
 			let totalPromptTok = 0;

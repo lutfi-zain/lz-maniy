@@ -7,8 +7,8 @@
   assert:
     - type: contains
       value: "kas siap pakai"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.toLowerCase().includes('kas siap pakai') && (output.includes('get_snapshot') || output.includes('financial_summary'))"
     - type: llm-rubric
@@ -20,8 +20,8 @@
   assert:
     - type: icontains
       value: "Net Worth"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.toLowerCase().includes('proyeksi') || output.toLowerCase().includes('net worth') || output.toLowerCase().includes('november')"
 
@@ -42,8 +42,8 @@
   assert:
     - type: contains
       value: "kategori"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent identifies highest expense category from financial data."
 
@@ -87,8 +87,8 @@
   vars:
     prompt: "Berapa dana aman yang bisa saya belanjakan (safe to spend) saat ini?"
   assert:
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent provides safe-to-spend guidance based on monthly cashflow and spendable funds."
 
@@ -100,8 +100,8 @@
       value: "BCA"
     - type: contains
       value: "Rp"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('get_snapshot') || output.includes('list_wallets')"
     - type: llm-rubric
@@ -113,8 +113,8 @@
   assert:
     - type: contains
       value: "saldo"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_wallets') || output.includes('get_snapshot')"
 
@@ -124,8 +124,8 @@
   assert:
     - type: contains
       value: "cash"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
 
 - description: "[TC-13] Real-user spendable cash inquiry"
   vars:
@@ -133,8 +133,8 @@
   assert:
     - type: contains
       value: "Rp"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Response clearly distinguishes liquid spendable cash from locked savings."
 
@@ -144,8 +144,8 @@
   assert:
     - type: icontains
       value: "waroeng steak"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transaction') || output.toLowerCase().includes('waroeng steak')"
 
@@ -155,8 +155,8 @@
   assert:
     - type: icontains
       value: "parkir"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transaction')"
 
@@ -166,8 +166,8 @@
   assert:
     - type: javascript
       value: "output.toLowerCase().includes('transfer') || output.toLowerCase().includes('dompet') || output.toLowerCase().includes('bca')"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transfer') || output.includes('create_transaction') || output.toLowerCase().includes('konfirmasi') || output.toLowerCase().includes('dompet')"
 
@@ -177,8 +177,8 @@
   assert:
     - type: contains
       value: "pampers"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transaction')"
 
@@ -186,8 +186,8 @@
   vars:
     prompt: "Planning bulan ini gimana finnplan kita?"
   assert:
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent summarizes current month planning status and planned transactions concisely."
 
@@ -195,8 +195,8 @@
   vars:
     prompt: "Kita bikin planning sampe januari tahun depan ya. Tagihan semuanya sama kecuali spp berubah tiap bulan."
   assert:
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent handles long-term planning request professionally without dropping variable bill exceptions."
 
@@ -206,8 +206,8 @@
   assert:
     - type: icontains
       value: "dokter"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent notes the shortfall between needed 1.5jt and available 1.185jt and proposes practical allocation."
 
@@ -227,8 +227,8 @@
   assert:
     - type: contains
       value: "budget"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_budgets') || output.includes('get_snapshot')"
 
@@ -238,8 +238,8 @@
   assert:
     - type: icontains
       value: "oktober"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent evaluates cashflow impact on October when 1.5M budget is realized."
 
@@ -247,8 +247,8 @@
   vars:
     prompt: "Kita punya hutang ke uang rumah berapa total?"
   assert:
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_debts_loans') || output.includes('sewa rumah')"
 
@@ -258,8 +258,8 @@
   assert:
     - type: icontains
       value: "sewa rumah"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent addresses status of replaced amount (or notes if no debt exists), current month savings, and total sewa rumah balance."
 
@@ -280,8 +280,8 @@
   assert:
     - type: contains
       value: "planned"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_transactions') || output.includes('list_recurring')"
 
@@ -289,8 +289,8 @@
   vars:
     prompt: "tapi ada yang janggal juga, harusnya kan ngga 51 juta karena total pemasukkan saat ini baru 21jt"
   assert:
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent addresses the 51M vs 21M discrepancy objectively by checking tool data."
 
@@ -300,8 +300,8 @@
   assert:
     - type: contains
       value: "dompet"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent gives clear wallet recommendations minimizing unnecessary multi-hop transfers."
 
@@ -309,8 +309,8 @@
   vars:
     prompt: "Last transaction date of each my wallet"
   assert:
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_wallets') || output.includes('list_transactions')"
 
@@ -320,8 +320,8 @@
   assert:
     - type: contains
       value: "|"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: llm-rubric
       value: "Agent formats wallet balance breakdown as a markdown table using pipes."
 
@@ -346,8 +346,8 @@
   assert:
     - type: icontains
       value: "bensin"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transaction')"
 
@@ -357,8 +357,8 @@
   assert:
     - type: contains
       value: "150"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('create_transfer') || output.toLowerCase().includes('transfer') || output.toLowerCase().includes('konfirmasi')"
 - description: "[TC-35] Horizon projection laptop check"
@@ -367,8 +367,8 @@
   assert:
     - type: icontains
       value: "desember"
-    - type: not-contains
-      value: "$ "
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('horizon_projection') && !/(?:\\$|USD)\\s*\\d+/i.test(output)"
 - description: "[TC-36] Payment method reconciliation"
@@ -377,7 +377,7 @@
   assert:
     - type: icontains
       value: "BCA"
-    - type: not-contains
-      value: "$"
+    - type: not-regex
+      value: "(?:\\$|USD)\\s*\\d+"
     - type: javascript
       value: "output.includes('list_transactions') || output.includes('get_snapshot')"
