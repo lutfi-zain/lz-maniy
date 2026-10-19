@@ -48,6 +48,12 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
 	}
 ];
 
+/**
+ * @walkthrough 02.01:multi-provider-model
+ * @topic Provider Abstraction & Routing
+ * @ref https://sdk.vercel.ai/docs/foundations/providers-and-models | okf://knowledge/langfuse-vercel-ai-sdk/fase-2-agentic-loops-tool-calls-dan-multimodal.md
+ * @notes Factory multi-model Vercel AI SDK yang mengabstraksi Gemini 3.8 Flash, Groq Llama, dan OpenAI dengan parameter temperature terstandarisasi.
+ */
 export function getModel(
 	env: Env,
 	provider: ModelProvider,

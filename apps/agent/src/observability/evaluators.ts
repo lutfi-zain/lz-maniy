@@ -16,9 +16,10 @@ export function extractMonetaryNumbers(text: string): string[] {
 }
 
 /**
- * 1. Code Evaluator: Numeric Grounding
- * Validates that every significant number in assistant output originates from either
- * the user prompt or tool execution payloads.
+ * @walkthrough 05.01:eval-code-grounding
+ * @topic Level 0: Deterministic Evals
+ * @ref https://arize.com/docs/phoenix/evaluation/code-evaluators | okf://knowledge/ai-evals-course/fase-3-multi-tier-evaluator-dan-rubric-engineering.md
+ * @notes Evaluasi kode instan ($0 token cost) untuk numeric grounding (angka harus berasal dari prompt/tool), validasi Rupiah, dan larangan emoji.
  */
 export function evalNumericGrounding(
 	assistantOutput: string,

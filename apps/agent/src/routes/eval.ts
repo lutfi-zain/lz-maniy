@@ -51,8 +51,10 @@ async function streamJudgeScoreToLangfuse(
 }
 
 /**
- * Core queue processor: leases pending jobs, runs async judge, streams telemetry,
- * and stages candidates into the dataset flywheel on failure.
+ * @walkthrough 05.02:async-llm-judge
+ * @topic Level 1: Semantic CoT Judge Queue Consumer
+ * @ref https://arize.com/docs/phoenix/evaluation/llm-evaluators | okf://knowledge/ai-evals-course/fase-3-multi-tier-evaluator-dan-rubric-engineering.md
+ * @notes Consumer antrean D1 eval_queue dengan limit subrequest batch processing dan ekspor skor ke Langfuse dan Phoenix.
  */
 export async function drainEvalQueue(
 	env: Env,

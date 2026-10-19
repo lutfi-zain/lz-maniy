@@ -1,3 +1,8 @@
+-- @walkthrough 05.02:async-llm-judge
+-- @topic Level 1: Semantic CoT Judge D1 Queue Schema
+-- @ref https://developers.cloudflare.com/d1/ | okf://knowledge/ai-evals-course/fase-4-dataset-engineering-dan-synthetic-curation.md
+-- @notes Skema D1 untuk antrean evaluasi asynchronous (eval_queue) dan kurasi kegagalan produksi (eval_dataset_candidates).
+--
 -- Migration: 0006_eval_flywheel
 -- Asynchronous Evaluation Queue & Production-to-Dataset Flywheel Tables
 

@@ -4,6 +4,12 @@ import { z } from 'zod';
 import type { AccountDetail, TransactionRecord, CategoryRecord, UserProfileDTO } from '@maniy/shared';
 import { createApiClient, extractErrorMessage } from './http.js';
 
+/**
+ * @walkthrough 03.02:zod-tool-definition
+ * @topic Type-Safe Tool Calling
+ * @ref https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling | okf://knowledge/ai-evals-course/fase-5-agentic-evaluation-trajectory-dan-state.md
+ * @notes Mendefinisikan signature function calling dengan skema Zod ketat yang memvalidasi parameter input sebelum fungsi domain dieksekusi.
+ */
 export function createFinancialTools(reedrichUrl: string, token: string, fetcher?: Fetcher) {
 	const { request } = createApiClient(reedrichUrl, token, fetcher);
 

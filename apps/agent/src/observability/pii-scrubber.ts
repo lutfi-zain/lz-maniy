@@ -5,10 +5,10 @@ export interface ScrubberContext {
 }
 
 /**
- * 4-Pass Deterministic PII Scrubber
- * Scrubs credentials, NIK, phone numbers, and bank accounts while
- * strictly preserving financial quantities (e.g. Rp 1.000.000.000)
- * and Unix millisecond timestamps.
+ * @walkthrough 05.06:pii-scrubber
+ * @topic Data Governance: PII Sanitizer
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/ai-evals-course/fase-4-dataset-engineering-dan-synthetic-curation.md
+ * @notes Algoritma sanitasi 4-pass deterministik yang menghapus token, NIK, nomor rekening, dan email namun tetap menjaga integritas angka nominal rupiah.
  */
 export function scrubPII(text: string, context?: ScrubberContext): string {
 	if (!text) return text;
