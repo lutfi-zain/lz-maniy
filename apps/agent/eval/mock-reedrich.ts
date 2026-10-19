@@ -217,16 +217,6 @@ export const MOCK_TRANSACTIONS: TransactionRecord[] = [
 		transactionIsPlanned: 1
 	},
 	{
-		transactionId: 'tx_food_waroeng',
-		transactionWalletId: 'w_jago_huz',
-		transactionCategoryId: 'cat_food',
-		transactionAmount: 85000,
-		transactionType: 'expense',
-		transactionDescription: "Makan 'waroeng steak' take away with anak istri",
-		transactionDate: '2026-10-18T10:00:00+07:00',
-		transactionIsPlanned: 0
-	},
-	{
 		transactionId: 'tx_bills_1',
 		transactionWalletId: 'w_jago_huz',
 		transactionCategoryId: 'cat_bills',
@@ -237,6 +227,8 @@ export const MOCK_TRANSACTIONS: TransactionRecord[] = [
 		transactionIsPlanned: 0
 	}
 ];
+
+let isLiveHealthy: boolean | null = null;
 
 /**
  * Creates an intelligent fetcher that calls live ReedRich API first,
@@ -249,18 +241,23 @@ export function createResilientReedrichFetcher(): { fetch: (req: Request) => Pro
 			const url = new URL(req.url);
 			const path = url.pathname;
 
-			try {
-				// Try live network request first
-				const liveRes = await fetch(req);
-				if (liveRes.ok) {
-					return liveRes;
+			// If live API already failed (e.g. 401 or offline), bypass network immediately
+			if (isLiveHealthy !== false) {
+				try {
+					const liveRes = await fetch(req, { signal: AbortSignal.timeout(2000) });
+					if (liveRes.ok) {
+						isLiveHealthy = true;
+						return liveRes;
+					}
+					console.warn(`[ResilientFetcher] Live API returned ${liveRes.status} for ${path}. Activating canonical mock data fallback.`);
+					if (liveRes.status === 401 || liveRes.status === 403) {
+						isLiveHealthy = false;
+					}
+				} catch (err) {
+					console.warn(`[ResilientFetcher] Live API unreachable (${(err as Error)?.message || String(err)}). Activating mock fallback.`);
+					isLiveHealthy = false;
 				}
-				// If 401/403/500, log informational notice and fall back
-				console.warn(`[ResilientFetcher] Live API returned ${liveRes.status} for ${path}. Activating canonical mock data fallback.`);
-			} catch (err) {
-				console.warn(`[ResilientFetcher] Live API unreachable (${(err as Error)?.message || String(err)}). Activating mock fallback.`);
 			}
-
 			// Route mock responses
 			if (path.includes('/api/v1/account-detail')) {
 				return new Response(JSON.stringify(MOCK_SNAPSHOT), {

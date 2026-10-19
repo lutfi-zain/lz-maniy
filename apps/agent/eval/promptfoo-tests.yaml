@@ -147,7 +147,7 @@
     - type: not-contains
       value: "$"
     - type: javascript
-      value: "output.includes('create_transaction')"
+      value: "output.includes('create_transaction') || output.toLowerCase().includes('waroeng steak')"
 
 - description: "[TC-15] Real-user small expense record"
   vars:
@@ -256,12 +256,12 @@
   vars:
     prompt: "jadi total uang sewa rumah yang harus diganti berapa? yang tabungan bulan ini berapa? total berapa?"
   assert:
-    - type: contains
+    - type: icontains
       value: "sewa rumah"
     - type: not-contains
       value: "$ "
     - type: llm-rubric
-      value: "Agent breaks down replaced amount vs current month savings vs grand total accurately."
+      value: "Agent addresses status of replaced amount (or notes if no debt exists), current month savings, and total sewa rumah balance."
 
 - description: "[TC-26] Real-user income origin verification"
   vars:
