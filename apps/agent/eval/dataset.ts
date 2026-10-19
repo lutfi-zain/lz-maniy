@@ -32,6 +32,12 @@ export interface EvalTestCase {
 	};
 }
 
+/**
+ * @walkthrough 05.04:eval-phoenix-suite
+ * @topic Level 3: Golden Domain Dataset
+ * @ref https://arize.com/docs/phoenix/datasets | okf://knowledge/ai-evals-course/fase-4-dataset-engineering-dan-synthetic-curation.md
+ * @notes Kumpulan test case emas (golden dataset) dengan taksonomi 14 kategori domain keuangan untuk benchmark Promptfoo dan Phoenix.
+ */
 export const EVAL_DATASET: EvalTestCase[] = [
 	{
 		id: 'TC-01',

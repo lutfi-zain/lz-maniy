@@ -15,6 +15,12 @@ export interface HistoryMessage<TContent = unknown> {
  *    resulting sequence strictly alternates: user -> assistant -> user.
  * 4. Cloudflare D1 database records remain 100% untouched for user history fidelity.
  */
+/**
+ * @walkthrough 04.01:history-sanitization
+ * @topic Multi-Turn Conversation State
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/ai-evals-course/fase-2-taksonomi-kegagalan-dan-error-analysis.md
+ * @notes Membersihkan urutan role percakapan agar mematuhi aturan strict alternation (user/assistant) dan mencegah format payload ditolak oleh Gemini/Claude.
+ */
 export function sanitizeHistoryForModel<T extends HistoryMessage>(
 	history: T[],
 	options?: {

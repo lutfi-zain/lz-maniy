@@ -395,6 +395,12 @@ export class WorkerSpan {
 	}
 }
 
+/**
+ * @walkthrough 05.05:eval-otel-tracing
+ * @topic Level 4: Live Tracing & Telemetry
+ * @ref https://github.com/Arize-ai/openinference | okf://knowledge/ai-evals-course/fase-7-post-production-observability-dan-drift.md
+ * @notes Ekspor distributed trace OTLP Protobuf ke Phoenix dan Langfuse Scores API secara non-blocking dengan semantic conventions OpenInference.
+ */
 export class WorkerTracer {
 	public readonly traceId: string;
 	public readonly rootParentSpanId?: string;

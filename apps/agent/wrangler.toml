@@ -1,3 +1,8 @@
+# @walkthrough 01.02:environment-bindings
+# @topic Secrets & Typed Bindings
+# @ref https://developers.cloudflare.com/workers/configuration/secrets/ | okf://knowledge/vps-infra/concepts/omp-gateway.md
+# @notes Mendeklarasikan type-safe environment variables, database D1 bindings, KV namespace, dan interval cron trigger tanpa hardcode secrets.
+
 name = "maniy-agent"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"

@@ -234,6 +234,12 @@ GAYA KOMUNIKASI & OUTPUT:
 ${defaultRules.join('\n')}`;
 }
 
+/**
+ * @walkthrough 03.01:system-prompt-ssot
+ * @topic Single Source of Truth Prompts
+ * @ref https://www.promptingguide.ai/ | okf://knowledge/langfuse-vercel-ai-sdk/fase-3-centralized-prompt-management.md
+ * @notes Mengonstruksi system prompt dinamis secara modular (persona, format mata uang, temporal anchors, user memories) yang sinkron dengan benchmark promptfoo.
+ */
 export function buildSystemPrompt(
 	pageContext: PageContext,
 	userFullName: string,

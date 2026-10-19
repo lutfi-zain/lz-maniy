@@ -80,8 +80,10 @@ export function classifyFailureCategory(
 }
 
 /**
- * Stages a failing production trace into eval_dataset_candidates
- * after executing full 4-pass PII sanitization.
+ * @walkthrough 05.07:dataset-flywheel
+ * @topic Closed-Loop CI Regression Sync
+ * @ref https://hamel.dev/evals/ | okf://knowledge/ai-evals-course/fase-1-fondasi-dan-stochastic-shift.md
+ * @notes Men-triage kegagalan produksi (skor < 0.5 atau thumbs down) dan men-stage ke tabel eval_dataset_candidates setelah di-scrub PII.
  */
 export async function stageFailedTrace(
 	db: D1Database,

@@ -1,3 +1,8 @@
+# @walkthrough 05.03:eval-promptfoo-gate
+# @topic Level 2: Pre-Deploy CI Gate
+# @ref https://promptfoo.dev/docs/intro | okf://knowledge/ai-evals-course/fase-6-pre-deployment-cicd-dan-matrix-optimization.md
+# @notes Matrix benchmarking otomatis menguji varian prompt (baseline/compact/fewshot) lintas model di CI dengan syarat kelulusan >= 95% sebelum deploy.
+#
 # Promptfoo Evaluation Suite for Maniy Financial Agent
 description: "Maniy Financial Agent Multi-Prompt Matrix & Reasoning Benchmark Across Models"
 

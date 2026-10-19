@@ -4,6 +4,12 @@ import { z } from 'zod';
 import type { TransactionRecord } from '@maniy/shared';
 import { createApiClient, extractErrorMessage } from './http.js';
 
+/**
+ * @walkthrough 03.03:tool-execution-guard
+ * @topic Tenant Isolation & Security
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/ai-evals-course/fase-5-agentic-evaluation-trajectory-dan-state.md
+ * @notes Boundary keamanan eksekusi mutasi finansial yang mengisolasi userId dan mencegah modifikasi data lintas pengguna (cross-tenant safety).
+ */
 export function createMutationTools(reedrichUrl: string, token: string, fetcher?: Fetcher) {
 	const { request } = createApiClient(reedrichUrl, token, fetcher);
 

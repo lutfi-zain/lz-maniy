@@ -27,6 +27,12 @@ export function estimateTokens(
 	return Math.round(words * 1.3) + images * 2048;
 }
 
+/**
+ * @walkthrough 04.02:token-compaction
+ * @topic Context Window Optimization
+ * @ref https://roadmap.sh/ai-engineer | okf://knowledge/ai-evals-course/fase-2-taksonomi-kegagalan-dan-error-analysis.md
+ * @notes Mengestimasi konsumsi token dan memicu peringkasan percakapan secara asinkron saat context window melewati batas ambang 70%.
+ */
 export function shouldCompact(estimatedTokens: number, contextWindow: number): boolean {
 	if (!contextWindow || contextWindow <= 0) return false;
 	return estimatedTokens >= contextWindow * COMPACTION_THRESHOLD_PERCENT;

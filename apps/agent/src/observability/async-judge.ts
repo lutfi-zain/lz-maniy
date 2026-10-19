@@ -111,6 +111,12 @@ export function parseJudgeResponse(rawText: string): ConsolidatedJudgeOutput {
 	return ConsolidatedJudgeOutputSchema.parse(parsed);
 }
 
+/**
+ * @walkthrough 05.02:async-llm-judge
+ * @topic Level 1: Semantic CoT Judge
+ * @ref https://arize.com/docs/phoenix/evaluation/llm-evaluators | okf://knowledge/ai-evals-course/fase-3-multi-tier-evaluator-dan-rubric-engineering.md
+ * @notes Evaluasi semantik model-graded (Financial Soundness & Persona) menggunakan Gemini 3.8 Flash temp 0.0 out-of-band via D1 queue dan cron worker.
+ */
 export async function runAsyncJudge(
 	input: AsyncJudgeTurnInput,
 	env: Env,
