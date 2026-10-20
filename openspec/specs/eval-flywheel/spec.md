@@ -20,8 +20,12 @@ The agent backend SHALL enqueue conversational turns into a persistent evaluatio
 - **THEN** the system samples the turn at a configurable rate (5% to 10%) and enqueues it with `priority = 'normal'`.
 
 #### Scenario: Subrequest budget enforcement during scheduled queue draining
-- **WHEN** the scheduled worker executes `scheduled()`
-- **THEN** the batch query leases at most 5 pending jobs (`LIMIT 5`) to guarantee that total external subrequests stay strictly below Cloudflare Worker's 50-subrequest quota limit.
+- **WHEN** the scheduled worker executes `scheduled()` on the 2-day cadence (`0 23 */2 * *` / 06:00 WIB)
+- **THEN** the batch query leases at most 7 pending jobs (`LIMIT 7`) to maximize backlog clearance while guaranteeing that total external subrequests stay strictly below Cloudflare Worker's 50-subrequest quota limit ($7 \times 6 = 42 \le 50$).
+
+#### Scenario: Zero-cost fast exit on empty scheduled queue
+- **WHEN** the scheduled worker executes `scheduled()` and zero pending jobs exist in `eval_queue`
+- **THEN** the drain routine returns immediately with zero processed jobs without dispatching requests to external LLM gateways, Langfuse, Phoenix, or Telegram.
 
 #### Scenario: Processing pending queue jobs via authenticated HTTP drain endpoint
 - **WHEN** an authorized client invokes `POST /api/eval/drain-queue` with a valid `Authorization: Bearer <EVAL_ADMIN_KEY>`

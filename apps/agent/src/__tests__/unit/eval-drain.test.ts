@@ -113,7 +113,11 @@ describe('Dual-Trigger Evaluation Queue Draining & Router', () => {
 					},
 					async all() {
 						if (sql.includes("SELECT * FROM eval_queue WHERE status = 'pending'")) {
-							return { results: [...mockJobs.filter((j) => j.status === 'pending')] };
+							const limit = typeof boundArgs[boundArgs.length - 1] === 'number'
+								? (boundArgs[boundArgs.length - 1] as number)
+								: undefined;
+							const pending = mockJobs.filter((j) => j.status === 'pending');
+							return { results: limit !== undefined ? pending.slice(0, limit) : [...pending] };
 						}
 						return { results: [] };
 					}
@@ -270,5 +274,55 @@ describe('Dual-Trigger Evaluation Queue Draining & Router', () => {
 		const json = (await authRes.json()) as { success: boolean; processed: number };
 		expect(json.success).toBe(true);
 		expect(typeof json.processed).toBe('number');
+	});
+
+	it('leases up to 7 jobs with batchSize: 7 and caps subrequests under 50', async () => {
+		for (let i = 1; i <= 10; i++) {
+			mockJobs.push({
+				id: `job-batch-${i}`,
+				trace_id: `tr-batch-${i}`,
+				session_id: `sess-batch-${i}`,
+				user_id: `u-batch-${i}`,
+				priority: 'normal',
+				status: 'pending',
+				user_message: `Berapa saldo dompet ${i}?`,
+				assistant_output: `Saldo dompet ${i} Rp 1.000.000.`,
+				tool_results_json: null,
+				trigger_reason: 'random_sample',
+				attempts: 0,
+				last_error: null,
+				locked_at: null,
+				created_at: Date.now() + i,
+				processed_at: null
+			});
+		}
+
+		const env = createMockEnv();
+		const summary = await drainEvalQueue(env, { batchSize: 7 });
+
+		expect(summary.processed).toBe(7);
+		expect(summary.failed).toBe(0);
+
+		// Remaining jobs in queue should be exactly 3 pending
+		const remainingPending = mockJobs.filter((j) => j.status === 'pending');
+		expect(remainingPending.length).toBe(3);
+
+		// Subrequests check: 1 Gemini + 4 Langfuse calls per job = 35 subrequests (strictly <= 42 and <= 50)
+		const totalSubrequests = mockFetch.mock.calls.length;
+		expect(totalSubrequests).toBeLessThanOrEqual(42);
+		expect(totalSubrequests).toBe(35);
+	});
+
+	it('exits with zero cost and zero external subrequests when queue is empty', async () => {
+		mockJobs = [];
+		mockFetch.mockClear();
+
+		const env = createMockEnv();
+		const summary = await drainEvalQueue(env, { batchSize: 7 });
+
+		expect(summary.processed).toBe(0);
+		expect(summary.failed).toBe(0);
+		expect(summary.stagedCandidates).toBe(0);
+		expect(mockFetch.mock.calls.length).toBe(0);
 	});
 });
