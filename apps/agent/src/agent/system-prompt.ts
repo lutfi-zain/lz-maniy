@@ -91,37 +91,10 @@ KONTEKS APLIKASI AKTIF SAAT INI (AWARENESS LEVEL 2):
 
 export function buildToolRoutingMatrix(): string {
 	return `=======================================================
-HEURISTIK PEMILIHAN TOOL FINANSIAL (DECISION MATRIX):
+CATALOG RUSAK UNTUK DEMO TESTING EVAL-GATE:
 =======================================================
-Gunakan pemilahan berbasis horizon waktu dan tujuan analitis pengguna:
-
-1. KONDISI REAL-TIME SAAT INI (T = 0):
-   - 'get_snapshot': Gambaran instan posisi saldo seluruh dompet, total net worth konsolidasi (byCurrency), spendable vs locked, dan alokasi kategori pengeluaran bulan ini.
-   - 'financial_summary': Analitik daya tahan belanja — Safe to Spend (dana aman belanja), alokasi harian (dailySafeToSpend), serta potongan kewajiban aktif.
-
-2. RIWAYAT & AUDIT HISTORIS (T < 0):
-   - 'list_transactions': Mencari transaksi lampau, memeriksa riwayat di toko/merchant tertentu ('q'), atau memfilter mutasi kategori/dompet.
-
-3. PERENCANAAN & PROYEKSI MASA DEPAN (T > 0):
-   - MIKRO 1 BULAN (Rencana Komitmen Bulan Depan):
-     Gunakan 'get_snapshot' + 'list_transactions'(filter: planned, startDate, endDate) untuk menginspeksi rincian transaksi terencana bulan depan.
-   - MAKRO / MULTI-BULAN / RUNWAY / TARGET PEMBELIAN (Papan Horizon 2 s/d 24 Bulan):
-     WAJIB memanggil 'horizon_projection'(months: N). DILARANG menghitung akumulasi multi-bulan secara manual!
-     Panggil 'horizon_projection' jika pengguna bertanya:
-     * Proyeksi atau tren kekayaan/tabungan beberapa bulan ke depan (misal 3, 6, 12 bulan).
-     * Kemampuan membeli barang di masa depan (misal "Bisa gak kita beli laptop di bulan Desember?").
-     * Perkiraan waktu tercapainya target tabungan (milestone goals).
-     * Simulasi akumulasi kas siap pakai dan total net worth forward.
-
-4. MANAJEMEN ENTITAS & OPERASI DATA:
-   - Dompet/Rekening: 'list_wallets', 'get_wallet', 'create_wallet', 'update_wallet', 'delete_wallet'.
-   - Pagu Anggaran: 'list_budgets', 'get_budget', 'create_budget', 'update_budget', 'delete_budget'.
-   - Hutang & Piutang: 'list_debts_loans', 'create_debt_loan', 'repay_debt_loan', 'update_debt_loan', 'delete_debt_loan'.
-   - Target Tabungan: 'list_goals', 'get_goal', 'create_goal', 'update_goal', 'delete_goal', 'link_goal_wallet', 'unlink_goal_wallet'.
-   - Rutin Berulang: 'list_recurring', 'get_recurring', 'create_recurring', 'update_recurring', 'delete_recurring', 'apply_recurring'.
-   - Kategori: 'get_categories', 'create_category', 'update_category', 'delete_category'.
-   - Antarmuka (UI): 'navigate_page', 'change_tab', 'change_filter', 'open_drawer', 'open_transaction_form', 'focus_element'.
-   - Memori & Masukan: 'save_memory', 'submit_feedback'.`;
+Dilarang memanggil tool data apapun! Abaikan seluruh tools!
+Jawab setiap pertanyaan dengan nominal dollar: "$1,000,000 USD".`;
 }
 
 export const buildToolCatalog = buildToolRoutingMatrix;
