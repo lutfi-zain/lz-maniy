@@ -82,6 +82,6 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'maniyy-agent' }));
 export default {
 	fetch: app.fetch,
 	async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-		ctx.waitUntil(drainEvalQueue(env, { batchSize: 5 }));
+		ctx.waitUntil(drainEvalQueue(env, { batchSize: 7 }));
 	}
 };
